@@ -21,4 +21,7 @@ public class DBCredentials {
 	
 	public static final String DEFAULT_DATABASE = "common";
 	public static final String SCHOOLS_TABLE = "schools";
+	public static final String SCHOOL_TYPES_TABLE = "school_type";
+	public static final String CITIES_TABLE = "city";
+	public static final String ROLES_TABLE = "role";
 }

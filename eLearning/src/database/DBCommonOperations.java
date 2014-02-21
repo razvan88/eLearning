@@ -1,6 +1,8 @@
 package database;
 
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -16,10 +18,12 @@ import net.sf.json.JSONObject;
  */
 public class DBCommonOperations {
 	private static DBConnection sConnection;
+	private static JSONArray cachedSchoolList;
 	
 	static {
 		sConnection = new DBConnection(DBCredentials.DEFAULT_DATABASE);
 		sConnection.openConnection();
+		cachedSchoolList = getJsonSchools();
 	}
 	
 	private DBCommonOperations() {}
@@ -28,19 +32,32 @@ public class DBCommonOperations {
 	 * @return json array with school objects, containing id, name, city and type
 	 */
 	public static JSONArray getJsonSchools() {
+		if(cachedSchoolList != null) {
+			return cachedSchoolList;
+		}
+		
 		JSONArray schools = new JSONArray();
 		
 		try{
-			Statement statement = sConnection.getConnection().createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			ResultSet rs = statement.executeQuery("SELECT * FROM " + DBCredentials.SCHOOLS_TABLE);
+			Connection connection = sConnection.getConnection();
+			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			PreparedStatement prepStatement = connection.prepareStatement("SELECT name FROM " + DBCredentials.CITIES_TABLE + " WHERE id=?");
 			
-			while(rs.next()) {
+			ResultSet resultSet = statement.executeQuery("SELECT * FROM " + DBCredentials.SCHOOLS_TABLE);
+			
+			while(resultSet.next()) {
 				JSONObject school = new JSONObject();
 				
-				school.put("id", rs.getInt("id"));
-				school.put("name", rs.getString("name"));
-				school.put("city", rs.getString("city"));
-				school.put("type", rs.getInt("type"));
+				school.put("id", resultSet.getInt("id"));
+				school.put("name", resultSet.getString("name"));
+				school.put("branch", resultSet.getString("branch"));
+				
+				int cityId = resultSet.getInt("city");
+				prepStatement.setInt(1, cityId);
+				ResultSet rs = prepStatement.executeQuery();
+				if (rs.next()) {
+					school.put("city", rs.getString(1));
+				}
 				
 				schools.add(school);
 			}
@@ -62,16 +79,4 @@ public class DBCommonOperations {
 		return ConfigurationSettings.getValue(
 				ConfigurationSettings.SCHOOLS_SECTION, String.format("%i", schoolId));
 	}	
-}	
-
-/*
-String query = "SELECT a.xxx, b.yyy FROM zzz a, www b WHERE b.qqq = ? AND a.rrr = b.rrr";
-PreparedStatement statement = sConnection.getConnection().prepareStatement(query);
-for(int prod : prods) {
-	statement.setInt(1, prod);
-	ResultSet resultSet = statement.executeQuery();
-	if (resultSet.next()) {
-		String category = resultSet.getString("xxx");
-	}
 }
-*/
