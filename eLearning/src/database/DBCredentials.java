@@ -1,0 +1,24 @@
+package database;
+
+
+/**
+ * Class used for storing as final strings
+ * the credentials used for database operations
+ * 
+ * @author Razvan Nedelcu
+ */
+public class DBCredentials {
+	public static final String IP = "localhost";
+	public static final String USER = "root";
+	public static final String PASSWORD = "";
+	
+	public static final String DRIVER = "com.mysql.jdbc.Driver";
+	
+	public static String getLink(String databaseName) {
+		return "jdbc:mysql://" + IP + "/" + databaseName + 
+			"?user=" + USER + "&password=" + PASSWORD;
+	}
+	
+	public static final String DEFAULT_DATABASE = "common";
+	public static final String SCHOOLS_TABLE = "schools";
+}
