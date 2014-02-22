@@ -36,4 +36,14 @@ public class DBConnectionManager {
 		}
 	}
 	
+	public static boolean addConnection(int schoolId, DBConnection connection) {
+		synchronized (sLock) {
+			if(!sConnections.containsKey(schoolId)) {
+				sConnections.put(schoolId, connection);
+				return true;
+			}
+			return false;
+		}
+	}
+	
 }

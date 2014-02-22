@@ -62,6 +62,9 @@ public class DBCommonOperations {
 				schools.add(school);
 			}
 			
+			prepStatement.close();
+			statement.close();
+			
 		} catch(Exception e)
 		{
 			e.printStackTrace();

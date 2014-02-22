@@ -1,0 +1,296 @@
+#studentTableModel
+	{ 
+		'name': 'student', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'firstName', 
+			'type': 'varchar', 
+			'length': '50', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'lastName', 
+			'type': 'varchar', 
+			'length': '100', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'cnp', 
+			'type': 'varchar', 
+			'length': '13', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'birthdate', 
+			'type': 'date',  /*YYYY-MM-DD, starting from 1*/
+			'length': '0', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'email', 
+			'type': 'varchar', 
+			'length': '100', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'username', 
+			'type': 'varchar', 
+			'length': '100', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'roles', 
+			'type': 'varchar', 
+			'length': '10', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'group', 
+			'type': 'varchar', 
+			'length': '10', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},	
+		{ 
+			'name': 'description', 
+			'type': 'varchar', 
+			'length': '2000', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#teacherTableModel
+	{ 
+		'name': 'teacher', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'firstName', 
+			'type': 'varchar', 
+			'length': '50', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'lastName', 
+			'type': 'varchar', 
+			'length': '100', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'cnp', 
+			'type': 'varchar', 
+			'length': '13', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'birthdate', 
+			'type': 'date',  /*YYYY-MM-DD, starting from 1*/
+			'length': '0', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'email', 
+			'type': 'varchar', 
+			'length': '100', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'username', 
+			'type': 'varchar', 
+			'length': '100', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'roles', 
+			'type': 'varchar', 
+			'length': '10', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'title', 
+			'type': 'int', 
+			'length': '2', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'courses', 
+			'type': 'varchar', 
+			'length': '50', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},		
+		{ 
+			'name': 'description', 
+			'type': 'varchar', 
+			'length': '2000', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+	
+#auxiliaryTableModel
+	{ 
+		'name': 'auxiliary', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'firstName', 
+			'type': 'varchar', 
+			'length': '50', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'lastName', 
+			'type': 'varchar', 
+			'length': '100', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'cnp', 
+			'type': 'varchar', 
+			'length': '13', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'birthdate', 
+			'type': 'date',  /*YYYY-MM-DD, starting from 1*/
+			'length': '0', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'email', 
+			'type': 'varchar', 
+			'length': '100', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'username', 
+			'type': 'varchar', 
+			'length': '100', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'function', 
+			'type': 'int', 
+			'length': '2', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'timetable', 
+			'type': 'varchar', 
+			'length': '2000', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},		
+		{ 
+			'name': 'description', 
+			'type': 'varchar', 
+			'length': '2000', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}

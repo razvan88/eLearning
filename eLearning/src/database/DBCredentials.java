@@ -14,13 +14,18 @@ public class DBCredentials {
 	
 	public static final String DRIVER = "com.mysql.jdbc.Driver";
 	
+	public static String getDefaultLink() {
+		return "jdbc:mysql://" + IP + "/" + 
+			"?user=" + USER + "&password=" + PASSWORD;
+	}
+	
 	public static String getLink(String databaseName) {
 		return "jdbc:mysql://" + IP + "/" + databaseName + 
 			"?user=" + USER + "&password=" + PASSWORD;
 	}
 	
 	public static final String DEFAULT_DATABASE = "common";
-	public static final String SCHOOLS_TABLE = "schools";
+	public static final String SCHOOLS_TABLE = "school";
 	public static final String SCHOOL_TYPES_TABLE = "school_type";
 	public static final String CITIES_TABLE = "city";
 	public static final String ROLES_TABLE = "role";
