@@ -32,7 +32,9 @@ public class DBUtils {
 			return null;
 		}
 		
-		return new DBConnection(databaseName);
+		DBConnection dbConnection = new DBConnection(databaseName);
+		dbConnection.openConnection();
+		return dbConnection;
 	}
 	
 	public static String getTableCreationQuery(JSONObject structure) {
@@ -126,9 +128,12 @@ public class DBUtils {
 		return true;
 	}
 
+	/*
 	public static void main(String[] args) {
-		DBConnection conn = DBUtils.createDatabase("XXXYYY");
-		conn.openConnection();
-		boolean success = DBUtils.createTable(conn, TableModels.getTableModel("student"));
+		DBConnection conn = DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
+		DBUtils.createTable(conn, TableModels.getTableModel("student"));
+		DBUtils.createTable(conn, TableModels.getTableModel("teacher"));
+		DBUtils.createTable(conn, TableModels.getTableModel("auxiliary"));
 	}
+	*/
 }

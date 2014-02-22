@@ -41,7 +41,11 @@ public class TableModels {
 				
 				model.append(line);
 			}
-		
+			//add the last table model, as it was not added because EOF
+			if(model.length() > 0) {
+				sTableModels.put(key, model.toString());
+			}
+			
 			reader.close();
 		} catch (Exception e) {
 			return;
