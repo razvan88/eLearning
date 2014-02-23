@@ -4,6 +4,7 @@ package webservice.application;
 import org.restlet.*;
 import org.restlet.routing.Router;
 
+import webserviceResources.LoginCheckResource;
 import webserviceResources.SchoolsListResource;
 
 /**
@@ -19,6 +20,7 @@ public class WebserviceDispatcher extends Application{
 		Router router = new Router(getContext());
 		
 		router.attach("/getSchoolsList", SchoolsListResource.class);
+		router.attach("/checkLogin", LoginCheckResource.class);
 		
 		return router;
 	}

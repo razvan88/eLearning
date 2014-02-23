@@ -66,6 +66,15 @@
 			'isUnique': '1' 
 		},
 		{ 
+			'name': 'password', 
+			'type': 'varchar', 
+			'length': '500', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
 			'name': 'roles', 
 			'type': 'varchar', 
 			'length': '10', 
@@ -160,6 +169,15 @@
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
 			'isUnique': '1' 
+		},
+		{ 
+			'name': 'password', 
+			'type': 'varchar', 
+			'length': '500', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
 		},
 		{ 
 			'name': 'roles', 
@@ -267,6 +285,15 @@
 			'isUnique': '1' 
 		},
 		{ 
+			'name': 'password', 
+			'type': 'varchar', 
+			'length': '500', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
 			'name': 'function', 
 			'type': 'int', 
 			'length': '2', 
@@ -279,7 +306,7 @@
 			'name': 'timetable', 
 			'type': 'varchar', 
 			'length': '2000', 
-			'isNull': '0', 
+			'isNull': '1', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
 			'isUnique': '0' 

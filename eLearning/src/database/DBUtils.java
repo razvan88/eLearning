@@ -4,11 +4,11 @@ import static database.DBCredentials.DRIVER;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-
-import utils.TableModels;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -37,7 +37,7 @@ public class DBUtils {
 		return dbConnection;
 	}
 	
-	public static String getTableCreationQuery(JSONObject structure) {
+	private static String getTableCreationQuery(JSONObject structure) {
 		List<Integer> pk = new ArrayList<Integer>();
 		List<Integer> unq = new ArrayList<Integer>();
 		StringBuffer query = new StringBuffer("CREATE TABLE IF NOT EXISTS `");
@@ -128,6 +128,25 @@ public class DBUtils {
 		return true;
 	}
 
+	public static boolean checkLogin(DBConnection dbConnection, String dbName, String username, String password) {
+		Connection connection = dbConnection.getConnection();
+		boolean result = false;
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery("SELECT password FROM " + dbName + " WHERE username=`" + username + "`");
+			if(resultSet.next()) {
+				String correctPass = resultSet.getString(1);
+				result = correctPass.equals(password);
+			}
+			resultSet.close();
+		} catch (Exception e) {
+			return false;
+		}
+		
+		return result;
+	}
+	
 	/*
 	public static void main(String[] args) {
 		DBConnection conn = DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
