@@ -18,7 +18,7 @@ import utils.ConfigurationSettings;
 public class LoginCheckResource extends ServerResource {
 
 	@Post
-	public boolean getJsonContent(Representation entity) throws IOException {
+	public String getJsonContent(Representation entity) throws IOException {
 		String stringUserInput = new Form(this.getRequestEntity()).getValues("userData");
 		JSONObject jsonUserInput = JSONObject.fromObject(stringUserInput);
 		
@@ -28,9 +28,9 @@ public class LoginCheckResource extends ServerResource {
 		String dbName = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		
 		DBConnection dbConn = DBConnectionManager.getConnection(schoolId, dbName);
-		boolean login = DBUtils.checkLogin(dbConn, dbName, username, password);
+		JSONObject result = DBUtils.checkLogin(dbConn, username, password);
 		
-		return login;
+		return result == null ? new JSONObject().toString() : result.toString();
 	}
 	
 }

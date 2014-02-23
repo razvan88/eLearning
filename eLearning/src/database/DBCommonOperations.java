@@ -41,7 +41,7 @@ public class DBCommonOperations {
 		try{
 			Connection connection = sConnection.getConnection();
 			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			PreparedStatement prepStatement = connection.prepareStatement("SELECT name FROM " + DBCredentials.CITIES_TABLE + " WHERE id=?");
+			PreparedStatement prepStatement = connection.prepareStatement("SELECT `name` FROM " + DBCredentials.CITIES_TABLE + " WHERE `id`=?");
 			
 			ResultSet resultSet = statement.executeQuery("SELECT * FROM " + DBCredentials.SCHOOLS_TABLE);
 			

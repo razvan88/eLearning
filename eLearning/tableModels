@@ -69,7 +69,7 @@
 			'name': 'password', 
 			'type': 'varchar', 
 			'length': '500', 
-			'isNull': '0', 
+			'isNull': '1', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
 			'isUnique': '0' 
@@ -174,7 +174,7 @@
 			'name': 'password', 
 			'type': 'varchar', 
 			'length': '500', 
-			'isNull': '0', 
+			'isNull': '1', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
 			'isUnique': '0' 
@@ -288,7 +288,7 @@
 			'name': 'password', 
 			'type': 'varchar', 
 			'length': '500', 
-			'isNull': '0', 
+			'isNull': '1', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
 			'isUnique': '0' 
@@ -316,6 +316,39 @@
 			'type': 'varchar', 
 			'length': '2000', 
 			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+	
+#adminTableModel
+	{ 
+		'name': 'admin', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '1', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'username', 
+			'type': 'varchar', 
+			'length': '50', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'password', 
+			'type': 'varchar', 
+			'length': '500', 
+			'isNull': '0', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
 			'isUnique': '0' 

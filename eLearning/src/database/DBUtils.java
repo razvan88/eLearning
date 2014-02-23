@@ -5,7 +5,6 @@ import static database.DBCredentials.DRIVER;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -128,20 +127,42 @@ public class DBUtils {
 		return true;
 	}
 
-	public static boolean checkLogin(DBConnection dbConnection, String dbName, String username, String password) {
+	public static JSONObject checkLogin(DBConnection dbConnection, String username, String password) {
 		Connection connection = dbConnection.getConnection();
-		boolean result = false;
+		JSONObject result = new JSONObject();
 		
 		try {
 			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery("SELECT password FROM " + dbName + " WHERE username=`" + username + "`");
+			ResultSet resultSet = statement.executeQuery("SELECT `id`, `password` FROM student WHERE `username`='" + username + "'");
 			if(resultSet.next()) {
-				String correctPass = resultSet.getString(1);
-				result = correctPass.equals(password);
+				result.put("login", resultSet.getString(2).equals(password));
+				result.put("userId", resultSet.getInt(1));
+				result.put("table", "student");
+			} else {
+				resultSet = statement.executeQuery("SELECT `id`, `password` FROM teacher WHERE `username`='" + username + "'");
+				if(resultSet.next()) {
+					result.put("login", resultSet.getString(2).equals(password));
+					result.put("userId", resultSet.getInt(1));
+					result.put("table", "teacher");
+				} else {
+					resultSet = statement.executeQuery("SELECT `id`, `password` FROM auxiliary WHERE `username`='" + username + "'");
+					if(resultSet.next()) {
+						result.put("login", resultSet.getString(2).equals(password));
+						result.put("userId", resultSet.getInt(1));
+						result.put("table", "auxiliary");
+					} else {
+						resultSet = statement.executeQuery("SELECT `id`, `password` FROM admin WHERE `username`='" + username + "'");
+						if(resultSet.next()) {
+							result.put("login", resultSet.getString(2).equals(password));
+							result.put("userId", resultSet.getInt(1));
+							result.put("table", "admin");
+						}
+					}
+				}
 			}
 			resultSet.close();
 		} catch (Exception e) {
-			return false;
+			return null;
 		}
 		
 		return result;
