@@ -133,22 +133,28 @@ public class DBUtils {
 		
 		try {
 			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery("SELECT `id`, `password` FROM student WHERE `username`='" + username + "'");
+			ResultSet resultSet = statement.executeQuery("SELECT `id`, `password`, `firstName`, `lastName` FROM student WHERE `username`='" + username + "'");
 			if(resultSet.next()) {
 				result.put("login", resultSet.getString(2).equals(password));
 				result.put("userId", resultSet.getInt(1));
+				result.put("firstName", resultSet.getString(3));
+				result.put("lastName", resultSet.getString(4));
 				result.put("table", "student");
 			} else {
-				resultSet = statement.executeQuery("SELECT `id`, `password` FROM teacher WHERE `username`='" + username + "'");
+				resultSet = statement.executeQuery("SELECT `id`, `password`, `firstName`, `lastName` FROM teacher WHERE `username`='" + username + "'");
 				if(resultSet.next()) {
 					result.put("login", resultSet.getString(2).equals(password));
 					result.put("userId", resultSet.getInt(1));
+					result.put("firstName", resultSet.getString(3));
+					result.put("lastName", resultSet.getString(4));
 					result.put("table", "teacher");
 				} else {
-					resultSet = statement.executeQuery("SELECT `id`, `password` FROM auxiliary WHERE `username`='" + username + "'");
+					resultSet = statement.executeQuery("SELECT `id`, `password`, `firstName`, `lastName` FROM auxiliary WHERE `username`='" + username + "'");
 					if(resultSet.next()) {
 						result.put("login", resultSet.getString(2).equals(password));
 						result.put("userId", resultSet.getInt(1));
+						result.put("firstName", resultSet.getString(3));
+						result.put("lastName", resultSet.getString(4));
 						result.put("table", "auxiliary");
 					} else {
 						resultSet = statement.executeQuery("SELECT `id`, `password` FROM admin WHERE `username`='" + username + "'");
@@ -166,6 +172,21 @@ public class DBUtils {
 		}
 		
 		return result;
+	}
+
+	public static int updatePhoto(DBConnection dbConnection, String table, int userId, String userPhoto) {
+		Connection connection = dbConnection.getConnection();
+		
+		String query = "UPDATE " + table + " SET `photo`='" + userPhoto + "' WHERE `id`=" + userId;
+		
+		try {
+			Statement statement = connection.createStatement();
+			statement.executeUpdate(query);
+		} catch (Exception e) {
+			return 0;
+		}
+		
+		return 1;
 	}
 	
 	/*

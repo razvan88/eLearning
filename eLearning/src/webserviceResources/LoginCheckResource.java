@@ -29,6 +29,7 @@ public class LoginCheckResource extends ServerResource {
 		
 		DBConnection dbConn = DBConnectionManager.getConnection(schoolId, dbName);
 		JSONObject result = DBUtils.checkLogin(dbConn, username, password);
+		result.put("schoolId", schoolId);
 		
 		return result == null ? new JSONObject().toString() : result.toString();
 	}
