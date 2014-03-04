@@ -9,6 +9,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -187,6 +188,30 @@ public class DBUtils {
 		}
 		
 		return 1;
+	}
+	
+	public static JSONObject getInformation(DBConnection dbConnection, String table, int userId) {
+		Connection connection = dbConnection.getConnection();
+		JSONObject info = new JSONObject();
+		
+		String query = "SELECT `firstname`, `lastname`, `photo`, `birthdate`, `description` FROM " + table + " WHERE `id`=" + userId;
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery(query);
+			
+			while(rs.next()) {
+				info.put("firstname", rs.getString("firstname"));
+				info.put("lastname", rs.getString("lastname"));
+				info.put("photo", rs.getString("photo"));
+				info.put("description", rs.getString("description"));
+				info.put("birthdate", rs.getDate("birthdate"));
+			}
+		} catch (Exception e) {
+			return null;
+		}
+		
+		return info;
 	}
 	
 	/*
