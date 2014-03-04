@@ -15,7 +15,7 @@ import database.DBUtils;
 
 import utils.ConfigurationSettings;
 
-public class UpdatePhotoResource extends ServerResource{
+public class UpdateColumnResource extends ServerResource{
 
 	@Post
 	public String updateColumn(Representation entity) throws IOException {

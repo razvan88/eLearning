@@ -6,7 +6,7 @@ import org.restlet.routing.Router;
 
 import webserviceResources.LoginCheckResource;
 import webserviceResources.SchoolsListResource;
-import webserviceResources.UpdatePhotoResource;
+import webserviceResources.UpdateColumnResource;
 
 /**
  * Used to create a root restlet that will receive all the
@@ -22,7 +22,7 @@ public class WebserviceDispatcher extends Application{
 		
 		router.attach("/getSchoolsList", SchoolsListResource.class);
 		router.attach("/checkLogin", LoginCheckResource.class);
-		router.attach("/updatePhoto", UpdatePhotoResource.class);
+		router.attach("/updateColumn", UpdateColumnResource.class);
 		
 		return router;
 	}
