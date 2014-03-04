@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.HashMap;
 
 import utils.ConfigurationSettings;
 import net.sf.json.JSONArray;
@@ -18,22 +19,43 @@ import net.sf.json.JSONObject;
  */
 public class DBCommonOperations {
 	private static DBConnection sConnection;
-	private static JSONArray cachedSchoolList;
+	private static JSONArray sCachedSchoolList;
+	private static HashMap<Integer, String> sHighschoolGroups;
 	
 	static {
 		sConnection = new DBConnection(DBCredentials.DEFAULT_DATABASE);
 		sConnection.openConnection();
-		cachedSchoolList = getJsonSchools();
+		sCachedSchoolList = getJsonSchools();
+		sHighschoolGroups = new HashMap<Integer, String>();
+		populateHighschoolGroups();
 	}
 	
 	private DBCommonOperations() {}
+	
+	private static void populateHighschoolGroups() {
+		try {
+			Connection connection = sConnection.getConnection();
+			Statement statement = connection.createStatement();
+			
+			ResultSet result = statement.executeQuery("SELECT * FROM group");
+			
+			while(result.next()) {
+				int id = result.getInt("id");
+				String name = result.getString("name");
+				
+				sHighschoolGroups.put(id, name);
+			}
+		} catch(Exception e) {
+			
+		}
+	}
 	
 	/**
 	 * @return json array with school objects, containing id, name, city and type
 	 */
 	public static JSONArray getJsonSchools() {
-		if(cachedSchoolList != null) {
-			return cachedSchoolList;
+		if(sCachedSchoolList != null) {
+			return sCachedSchoolList;
 		}
 		
 		JSONArray schools = new JSONArray();
@@ -81,5 +103,27 @@ public class DBCommonOperations {
 	public static String getDatabaseName(int schoolId) {
 		return ConfigurationSettings.getValue(
 				ConfigurationSettings.SCHOOLS_SECTION, String.format("%i", schoolId));
-	}	
+	}
+	
+	/**
+	 * @param schoolId
+	 * @return a jsonObject containing school's id, name, branch and city
+	 */
+	public static JSONObject getSchoolInfo(int schoolId) {
+		for(int i = 0; i < sCachedSchoolList.size(); i++) {
+			if( ((JSONObject)(sCachedSchoolList.get(i))).getInt("id") == schoolId){
+				return (JSONObject)(sCachedSchoolList.get(i));
+			}
+		}
+		
+		return null;
+	}
+	
+	public static String getGroupName(int groupId) {
+		if(sHighschoolGroups.containsKey(groupId)) {
+			return sHighschoolGroups.get(groupId);
+		}
+		
+		return null;
+	}
 }
