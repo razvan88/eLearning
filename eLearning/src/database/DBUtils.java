@@ -174,10 +174,10 @@ public class DBUtils {
 		return result;
 	}
 
-	public static int updatePhoto(DBConnection dbConnection, String table, int userId, String userPhoto) {
+	public static int updateColumn(DBConnection dbConnection, String table, int userId, String column, String value) {
 		Connection connection = dbConnection.getConnection();
 		
-		String query = "UPDATE " + table + " SET `photo`='" + userPhoto + "' WHERE `id`=" + userId;
+		String query = "UPDATE " + table + " SET `" + column + "`='" + value + "' WHERE `id`=" + userId;
 		
 		try {
 			Statement statement = connection.createStatement();
