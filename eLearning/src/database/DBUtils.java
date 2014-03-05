@@ -169,12 +169,32 @@ public class DBUtils {
 			}
 			resultSet.close();
 		} catch (Exception e) {
-			return null;
+			return result;
 		}
 		
 		return result;
 	}
 
+	public static boolean checkPassword(DBConnection dbConnection, String table, int userId, String pass) {
+		Connection connection = dbConnection.getConnection();
+		
+		String query = "SELECT `password` FROM " + table + " WHERE `id`=" + userId;
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+			
+			if(result.next()) {
+				return pass.equals(result.getString(1));
+			}
+			
+		} catch (Exception e) {
+			return false;
+		}
+		
+		return false;
+	}
+	
 	public static int updateColumn(DBConnection dbConnection, String table, int userId, String column, String value) {
 		Connection connection = dbConnection.getConnection();
 		

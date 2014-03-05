@@ -5,6 +5,7 @@ import org.restlet.*;
 import org.restlet.routing.Router;
 
 import webserviceResources.AllGradesResource;
+import webserviceResources.CheckPasswordResource;
 import webserviceResources.LoginCheckResource;
 import webserviceResources.PersonalInformationResource;
 import webserviceResources.SchoolsListResource;
@@ -27,6 +28,7 @@ public class WebserviceDispatcher extends Application{
 		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/getPersonalInformation", PersonalInformationResource.class);
 		router.attach("/getAllGrades", AllGradesResource.class);
+		router.attach("/checkPassword", CheckPasswordResource.class);
 		
 		return router;
 	}
