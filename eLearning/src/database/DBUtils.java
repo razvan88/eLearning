@@ -194,7 +194,7 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 		JSONObject info = new JSONObject();
 		
-		String query = "SELECT `firstName`, `lastName`, `photo`, `birthdate`, `description`, `group` FROM " + table + " WHERE `id`=" + userId;
+		String query = "SELECT `firstName`, `lastName`, `photo`, `birthdate`, `description`, `group`, `email` FROM " + table + " WHERE `id`=" + userId;
 		
 		try {
 			Statement statement = connection.createStatement();
