@@ -205,6 +205,7 @@ public class DBUtils {
 				info.put("lastname", rs.getString("lastname"));
 				info.put("photo", rs.getString("photo"));
 				info.put("description", rs.getString("description"));
+				info.put("email", rs.getString("email"));
 				info.put("birthdate", rs.getDate("birthdate"));
 				info.put("group", DBCommonOperations.getGroupName(rs.getInt("group")));
 			}
