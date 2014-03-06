@@ -9,7 +9,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -228,6 +227,27 @@ public class DBUtils {
 				info.put("email", rs.getString("email"));
 				info.put("birthdate", rs.getDate("birthdate"));
 				info.put("group", DBCommonOperations.getGroupName(rs.getInt("group")));
+			}
+		} catch (Exception e) {
+			return null;
+		}
+		
+		return info;
+	}
+	
+	public static JSONObject getShortInformation(DBConnection dbConnection, String table, int userId) {
+		Connection connection = dbConnection.getConnection();
+		JSONObject info = new JSONObject();
+		
+		String query = "SELECT `description`, `email` FROM " + table + " WHERE `id`=" + userId;
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery(query);
+			
+			if(rs.next()) {
+				info.put("description", rs.getString("description"));
+				info.put("email", rs.getString("email"));
 			}
 		} catch (Exception e) {
 			return null;
