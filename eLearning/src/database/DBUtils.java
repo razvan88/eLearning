@@ -225,7 +225,7 @@ public class DBUtils {
 				info.put("photo", rs.getString("photo"));
 				info.put("description", rs.getString("description"));
 				info.put("email", rs.getString("email"));
-				info.put("birthdate", rs.getDate("birthdate"));
+				info.put("birthdate", rs.getString("birthdate"));
 				info.put("group", DBCommonOperations.getGroupName(rs.getInt("group")));
 			}
 		} catch (Exception e) {

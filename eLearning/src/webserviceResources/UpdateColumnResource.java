@@ -1,4 +1,4 @@
-package webserviceResources;
+	package webserviceResources;
 
 import java.io.IOException;
 
@@ -21,14 +21,13 @@ public class UpdateColumnResource extends ServerResource{
 	public String updateColumn(Representation entity) throws IOException {
 		Form request = new Form(this.getRequestEntity());
 		
+		String column = request.getValues("column");
 		String value = request.getValues("value");
 		
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		int userId = info.getInt("userId");
 		int schoolId = info.getInt("schoolId");
 		String table = info.getString("table");
-		String column = info.getString("column");
-		
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);

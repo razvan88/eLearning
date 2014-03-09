@@ -20,11 +20,12 @@ public class CheckPasswordResource extends ServerResource {
 	public String getInforamtion(Representation entity) throws IOException {
 		Form request = new Form(this.getRequestEntity());
 		
+		String pass = request.getValues("password");
+		
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		int userId = info.getInt("userId");
 		int schoolId = info.getInt("schoolId");
 		String table = info.getString("table");
-		String pass = request.getValues("password");
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);

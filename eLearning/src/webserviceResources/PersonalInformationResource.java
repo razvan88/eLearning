@@ -33,7 +33,11 @@ public class PersonalInformationResource extends ServerResource{
 		
 		JSONObject school = DBCommonOperations.getSchoolInfo(schoolId);
 		json.put("schoolName", school.getString("name"));
-		json.put("schoolBranch", school.getString("branch"));
+		try {
+			json.put("schoolBranch", school.getString("branch"));
+		} catch(Exception e) {
+			// it's OK. No branch for this school
+		}
 		json.put("city", school.getString("city"));
 		
 		return json.toString();

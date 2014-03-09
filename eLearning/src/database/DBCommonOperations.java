@@ -1,6 +1,5 @@
 package database;
 
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,7 +36,7 @@ public class DBCommonOperations {
 			Connection connection = sConnection.getConnection();
 			Statement statement = connection.createStatement();
 			
-			ResultSet result = statement.executeQuery("SELECT * FROM group");
+			ResultSet result = statement.executeQuery("SELECT `id`, `name` FROM group");
 			
 			while(result.next()) {
 				int id = result.getInt("id");
