@@ -34,9 +34,9 @@ public class DBCommonOperations {
 	private static void populateHighschoolGroups() {
 		try {
 			Connection connection = sConnection.getConnection();
-			Statement statement = connection.createStatement();
-			
-			ResultSet result = statement.executeQuery("SELECT `id`, `name` FROM group");
+			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			String query = "SELECT `id`, `name` FROM " + DBCredentials.CLASS_TABLE;
+			ResultSet result = statement.executeQuery(query);
 			
 			while(result.next()) {
 				int id = result.getInt("id");
@@ -86,8 +86,7 @@ public class DBCommonOperations {
 			prepStatement.close();
 			statement.close();
 			
-		} catch(Exception e)
-		{
+		} catch(Exception e) {
 			e.printStackTrace();
 		}
 		

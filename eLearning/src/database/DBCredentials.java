@@ -29,4 +29,5 @@ public class DBCredentials {
 	public static final String SCHOOL_TYPES_TABLE = "school_type";
 	public static final String CITIES_TABLE = "city";
 	public static final String ROLES_TABLE = "role";
+	public static final String CLASS_TABLE = "class";
 }
