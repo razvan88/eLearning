@@ -256,6 +256,34 @@ public class DBUtils {
 		return info;
 	}
 	
+	public static JSONArray getSchoolNews(DBConnection dbConnection) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT * FROM " + DBCredentials.SCHOOL_NEWS_TABLE;
+		JSONArray news = new JSONArray();
+		
+		try {
+		Statement statement = connection.createStatement();
+		ResultSet resultSet = statement.executeQuery(query);
+		
+		while(resultSet.next()) {
+			JSONObject newsArticle = new JSONObject();
+			
+			newsArticle.put("id", resultSet.getInt("id"));
+			newsArticle.put("date", resultSet.getString("date"));
+			newsArticle.put("title", resultSet.getString("title"));
+			newsArticle.put("content", resultSet.getString("content"));
+			
+			news.add(newsArticle);
+		}
+		
+		statement.close();
+		} catch (Exception e) {
+			
+		}
+		
+		return news;
+	}
+	
 	/*
 	public static void main(String[] args) {
 		DBConnection conn = DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");

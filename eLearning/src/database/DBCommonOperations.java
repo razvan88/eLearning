@@ -62,7 +62,8 @@ public class DBCommonOperations {
 		try{
 			Connection connection = sConnection.getConnection();
 			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			PreparedStatement prepStatement = connection.prepareStatement("SELECT `name` FROM " + DBCredentials.CITIES_TABLE + " WHERE `id`=?");
+			PreparedStatement prepStatementCity = connection.prepareStatement("SELECT `name` FROM " + DBCredentials.CITIES_TABLE + " WHERE `id`=?");
+			PreparedStatement prepStatementType = connection.prepareStatement("SELECT `name` FROM " + DBCredentials.SCHOOL_TYPES_TABLE + " WHERE `id`=?");
 			
 			ResultSet resultSet = statement.executeQuery("SELECT * FROM " + DBCredentials.SCHOOLS_TABLE);
 			
@@ -74,16 +75,24 @@ public class DBCommonOperations {
 				school.put("branch", resultSet.getString("branch"));
 				
 				int cityId = resultSet.getInt("city");
-				prepStatement.setInt(1, cityId);
-				ResultSet rs = prepStatement.executeQuery();
+				prepStatementCity.setInt(1, cityId);
+				ResultSet rs = prepStatementCity.executeQuery();
 				if (rs.next()) {
 					school.put("city", rs.getString(1));
+				}
+				
+				int schoolTypeId = resultSet.getInt("type");
+				prepStatementType.setInt(1, schoolTypeId);
+				rs = prepStatementType.executeQuery();
+				if (rs.next()) {
+					school.put("type", rs.getString(1));
 				}
 				
 				schools.add(school);
 			}
 			
-			prepStatement.close();
+			prepStatementCity.close();
+			prepStatementType.close();
 			statement.close();
 			
 		} catch(Exception e) {

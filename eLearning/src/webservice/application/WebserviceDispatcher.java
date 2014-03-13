@@ -8,6 +8,7 @@ import webserviceResources.AllGradesResource;
 import webserviceResources.CheckPasswordResource;
 import webserviceResources.LoginCheckResource;
 import webserviceResources.PersonalInformationResource;
+import webserviceResources.SchoolNewsResource;
 import webserviceResources.SchoolsListResource;
 import webserviceResources.SettingsInformationResource;
 import webserviceResources.UpdateColumnResource;
@@ -31,7 +32,7 @@ public class WebserviceDispatcher extends Application{
 		router.attach("/getEmailAndDescription", SettingsInformationResource.class);
 		router.attach("/getAllGrades", AllGradesResource.class);
 		router.attach("/checkPassword", CheckPasswordResource.class);
-		
+		router.attach("/getSchoolNews", SchoolNewsResource.class);
 		return router;
 	}
 }
