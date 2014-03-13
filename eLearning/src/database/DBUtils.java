@@ -262,28 +262,47 @@ public class DBUtils {
 		JSONArray news = new JSONArray();
 		
 		try {
-		Statement statement = connection.createStatement();
-		ResultSet resultSet = statement.executeQuery(query);
-		
-		while(resultSet.next()) {
-			JSONObject newsArticle = new JSONObject();
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
 			
-			newsArticle.put("id", resultSet.getInt("id"));
-			newsArticle.put("date", resultSet.getString("date"));
-			newsArticle.put("title", resultSet.getString("title"));
-			newsArticle.put("content", resultSet.getString("content"));
+			while(resultSet.next()) {
+				JSONObject newsArticle = new JSONObject();
+				
+				newsArticle.put("id", resultSet.getInt("id"));
+				newsArticle.put("date", resultSet.getString("date"));
+				newsArticle.put("title", resultSet.getString("title"));
+				newsArticle.put("content", resultSet.getString("content"));
+				
+				news.add(newsArticle);
+			}
 			
-			news.add(newsArticle);
-		}
-		
-		statement.close();
-		} catch (Exception e) {
-			
-		}
+			statement.close();
+		} catch (Exception e) { }
 		
 		return news;
 	}
 	
+	public static JSONObject getSchoolNewsArticle(DBConnection dbConnection, int newsArticleId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT * FROM " + DBCredentials.SCHOOL_NEWS_TABLE + " WHERE `id`=" + newsArticleId;
+		JSONObject article = new JSONObject();
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			if(resultSet.next()) {
+				article.put("id", resultSet.getInt("id"));
+				article.put("date", resultSet.getString("date"));
+				article.put("title", resultSet.getString("title"));
+				article.put("content", resultSet.getString("content"));
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return article;
+	}
 	/*
 	public static void main(String[] args) {
 		DBConnection conn = DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
