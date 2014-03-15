@@ -133,4 +133,34 @@ public class DBCommonOperations {
 		
 		return null;
 	}
+	
+	public static JSONArray getCoursesInfo(String[] coursesIds) {
+		String query = "SELECT * FROM " + DBCredentials.COURSES_TABLE + " WHERE `id`=?";
+		JSONArray courses = new JSONArray();
+		
+		try{
+			PreparedStatement prepStmt = sConnection.getConnection().prepareStatement(query);
+			
+			for(int i = 0; i < coursesIds.length; i++) {
+				prepStmt.setString(1, coursesIds[i]);
+				ResultSet resultSet = prepStmt.executeQuery();
+				
+				if(resultSet.next()) {
+					JSONObject course = new JSONObject();
+					
+					course.put("id", resultSet.getInt("id"));
+					course.put("name", resultSet.getString("name"));
+					course.put("photo", resultSet.getString("photo"));
+					
+					courses.add(course);
+				}
+			}
+			
+			prepStmt.close();
+		} catch(Exception e) {
+			
+		}
+		
+		return courses;
+	}
 }

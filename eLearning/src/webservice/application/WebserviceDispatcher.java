@@ -6,12 +6,15 @@ import org.restlet.routing.Router;
 
 import webserviceResources.AllGradesResource;
 import webserviceResources.CheckPasswordResource;
+import webserviceResources.CourseDetailsResource;
+import webserviceResources.CoursesListResource;
 import webserviceResources.LoginCheckResource;
 import webserviceResources.PersonalInformationResource;
 import webserviceResources.SchoolNewsArticleResource;
 import webserviceResources.SchoolNewsResource;
 import webserviceResources.SchoolsListResource;
 import webserviceResources.SettingsInformationResource;
+import webserviceResources.TimetableResource;
 import webserviceResources.UpdateColumnResource;
 
 /**
@@ -20,7 +23,7 @@ import webserviceResources.UpdateColumnResource;
  * 
  * @author Razvan Nedelcu
  */
-public class WebserviceDispatcher extends Application{
+public class WebserviceDispatcher extends Application {
 	
 	@Override
 	public synchronized Restlet createInboundRoot() {
@@ -35,6 +38,9 @@ public class WebserviceDispatcher extends Application{
 		router.attach("/checkPassword", CheckPasswordResource.class);
 		router.attach("/getSchoolNews", SchoolNewsResource.class);
 		router.attach("/getSchoolNewsArticle", SchoolNewsArticleResource.class);
+		router.attach("/getTimetable", TimetableResource.class);
+		router.attach("/getCoursesList", CoursesListResource.class);
+		router.attach("/getCourseDetails", CourseDetailsResource.class);
 		
 		return router;
 	}

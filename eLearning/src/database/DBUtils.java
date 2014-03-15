@@ -18,7 +18,7 @@ public class DBUtils {
 		Connection connection = null;
 		String link = DBCredentials.getDefaultLink();
 		String createQuery = "CREATE DATABASE IF NOT EXISTS `" + databaseName + "` " +
-					"DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci";
+					"DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci";
 		
 		try {
 			Class.forName(DRIVER).newInstance();
@@ -303,6 +303,66 @@ public class DBUtils {
 		
 		return article;
 	}
+	
+	public static String getTimetable(DBConnection dbConnection, int classId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `timetable` FROM " + DBCredentials.SCHOOL_TIMETABLE + " WHERE `classId`=" + classId;
+		String timetable = "";
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			if(resultSet.next()) {
+				timetable = resultSet.getString(1);
+			}
+			
+			statement.close();
+		} catch (Exception e) {
+			timetable = "{}";
+		}
+		
+		return timetable;
+	}
+	
+	public static int getClassIdForUser(DBConnection dbConnection, int userId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `group` FROM student WHERE `id`=" + userId;
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			if(resultSet.next()) {
+				return resultSet.getInt(1);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return -1;
+	}
+	
+	public static JSONArray getCoursesList(DBConnection dbConnection, int userId) {
+		Connection connection = dbConnection.getConnection();
+		String coursesIdsQuery = "SELECT `courseIds` FROM " + DBCredentials.COURSES_LIST + " WHERE `studentId`=" + userId;
+		JSONArray courses = new JSONArray();
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(coursesIdsQuery);
+			
+			if(resultSet.next()) {
+				String[] coursesIds = resultSet.getString(1).split(",");
+				courses = DBCommonOperations.getCoursesInfo(coursesIds);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return courses;
+	}
+	
 	/*
 	public static void main(String[] args) {
 		DBConnection conn = DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
