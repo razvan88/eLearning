@@ -363,6 +363,106 @@ public class DBUtils {
 		return courses;
 	}
 	
+	public static int getTeachClassCourseId(DBConnection dbConnection, int classId, int courseId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `id` FROM " + DBCredentials.TEACHER_COURSE_CLASS_TABLE + " WHERE `courseId`=" + courseId + " AND `classId`=" + classId;
+		int id = 0;
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			if(resultSet.next()) {
+				id = resultSet.getInt(1);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return id;
+	}
+	
+	public static JSONObject getDeadlines(DBConnection dbConnection, int teacherCourseClassId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `dates`, `tips` FROM " + DBCredentials.DEADLINES_TABLE + " WHERE `teacher_course_class_id`=" + teacherCourseClassId;
+		JSONObject result = new JSONObject();
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			if(resultSet.next()) {
+				String[] array = resultSet.getString("dates").split("#");
+				JSONArray dates = new JSONArray();
+				for(String date : array) {
+					dates.add(date);
+				}
+				result.put("dates", dates);
+				
+				array = resultSet.getString("tips").split("#");
+				JSONArray tips = new JSONArray();
+				for(String tip : array) {
+					tips.add(tip);
+				}
+				result.put("tips", tips);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return result;
+	}
+	
+	public static JSONArray getResources(DBConnection dbConnection, int teacherCourseClassId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `content` FROM " + DBCredentials.RESOURCES_TABLE + " WHERE `teacher_course_class_id`=" + teacherCourseClassId;
+		JSONArray resources = new JSONArray();
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			if(resultSet.next()) {
+				String rawJson = resultSet.getString("content");
+				resources = JSONArray.fromObject(rawJson);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return resources;
+	}
+	
+	public static JSONObject getHolidayDetails(DBConnection dbConnection) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT * FROM " + DBCredentials.HOLIDAYS_TABLE;
+		JSONObject result = new JSONObject();
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			if(resultSet.next()) {
+				String startingDate = resultSet.getString("starting_date");
+				result.put("startingDate", startingDate);
+				
+				int weeksNo = resultSet.getInt("total_weeks");
+				result.put("totalWeeks", weeksNo);
+				
+				String[] holidayWeeks = resultSet.getString("holiday_weeks").split("#");
+				JSONArray dates = new JSONArray();
+				for(String week : holidayWeeks) {
+					dates.add(week);
+				}
+				result.put("holidayWeeks", dates);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return result;
+	}
+	
 	/*
 	public static void main(String[] args) {
 		DBConnection conn = DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
