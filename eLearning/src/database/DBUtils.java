@@ -307,7 +307,7 @@ public class DBUtils {
 	
 	public static String getTimetable(DBConnection dbConnection, int classId) {
 		Connection connection = dbConnection.getConnection();
-		String query = "SELECT `timetable` FROM " + DBCredentials.SCHOOL_TIMETABLE + " WHERE `classId`=" + classId;
+		String query = "SELECT `timetable` FROM " + DBCredentials.SCHOOL_TIMETABLE_TABLE + " WHERE `classId`=" + classId;
 		String timetable = "";
 		
 		try {
@@ -346,7 +346,7 @@ public class DBUtils {
 	
 	public static JSONArray getCoursesList(DBConnection dbConnection, int userId) {
 		Connection connection = dbConnection.getConnection();
-		String coursesIdsQuery = "SELECT `courseIds` FROM " + DBCredentials.COURSES_LIST + " WHERE `studentId`=" + userId;
+		String coursesIdsQuery = "SELECT `courseIds` FROM " + DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=" + userId;
 		JSONArray courses = new JSONArray();
 		
 		try {
@@ -366,7 +366,8 @@ public class DBUtils {
 	
 	public static int getTeachClassCourseId(DBConnection dbConnection, int classId, int courseId) {
 		Connection connection = dbConnection.getConnection();
-		String query = "SELECT `id` FROM " + DBCredentials.TEACHER_COURSE_CLASS_TABLE + " WHERE `courseId`=" + courseId + " AND `classId`=" + classId;
+		String query = "SELECT `id` FROM " + DBCredentials.TEACHER_COURSE_CLASS_TABLE + 
+					" WHERE `courseId`=" + courseId + " AND `classId`=" + classId;
 		int id = 0;
 		
 		try {
@@ -385,7 +386,8 @@ public class DBUtils {
 	
 	public static JSONObject getDeadlines(DBConnection dbConnection, int teacherCourseClassId) {
 		Connection connection = dbConnection.getConnection();
-		String query = "SELECT `dates`, `tips` FROM " + DBCredentials.DEADLINES_TABLE + " WHERE `teacher_course_class_id`=" + teacherCourseClassId;
+		String query = "SELECT `dates`, `tips` FROM " + DBCredentials.DEADLINES_TABLE + 
+					" WHERE `teacher_course_class_id`=" + teacherCourseClassId;
 		JSONObject result = new JSONObject();
 		
 		try {
@@ -416,7 +418,8 @@ public class DBUtils {
 	
 	public static JSONArray getResources(DBConnection dbConnection, int teacherCourseClassId) {
 		Connection connection = dbConnection.getConnection();
-		String query = "SELECT `content` FROM " + DBCredentials.RESOURCES_TABLE + " WHERE `teacher_course_class_id`=" + teacherCourseClassId;
+		String query = "SELECT `content` FROM " + DBCredentials.RESOURCES_TABLE + 
+					" WHERE `teacher_course_class_id`=" + teacherCourseClassId;
 		JSONArray resources = new JSONArray();
 		
 		try {
@@ -468,7 +471,9 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 		
 		String homeworkQuery = "SELECT * FROM " + DBCredentials.HOMEWORK_TABLE + " WHERE `teacher_course_class_id`=" + tccId;
-		String homeworkResultQuery = "SELECT * FROM " + DBCredentials.HOMEWORK_RESULTS_TABLE + " WHERE `teacher_course_class_id`=" + tccId + " AND `student_id`=" + studentId + " AND `homework_id`=?";
+		String homeworkResultQuery = "SELECT * FROM " + DBCredentials.HOMEWORK_RESULTS_TABLE + 
+								" WHERE `teacher_course_class_id`=" + tccId + 
+								" AND `student_id`=" + studentId + " AND `homework_id`=?";
 		JSONArray result = new JSONArray();
 		
 		try {
@@ -504,6 +509,55 @@ public class DBUtils {
 		} catch (Exception e) { }
 		
 		return result;
+	}
+	
+	public static JSONArray getCourseClassbook(DBConnection dbConnection, int tccId, int studentId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT * FROM " + DBCredentials.COURSE_CLASSBOOK_TABLE + 
+					" WHERE `teacher_course_class_id`=" + tccId + " AND `student_id`=" + studentId;
+		JSONArray result = new JSONArray();
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			while(resultSet.next()) {
+				JSONObject grade = new JSONObject();
+				
+				grade.put("date", resultSet.getString("date"));
+				grade.put("activity", resultSet.getString("activity"));
+				grade.put("max", resultSet.getFloat("max"));
+				grade.put("grade", resultSet.getFloat("grade"));
+				grade.put("notes", resultSet.getString("notes"));
+				
+				result.add(grade);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return result;
+	}
+	
+	public static JSONObject getFeedbackRequest(DBConnection dbConnection, int tccId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `available`, `aspects` FROM " + DBCredentials.FEEDBACK_REQUEST_TABLE + 
+					" WHERE `teacher_course_class_id`=" + tccId;
+		JSONObject feedback = new JSONObject();
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			if(resultSet.next()) {
+				feedback.put("isAvailable", resultSet.getInt("available"));
+				feedback.put("aspects", resultSet.getString("aspects"));
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return feedback;
 	}
 	
 	/*
