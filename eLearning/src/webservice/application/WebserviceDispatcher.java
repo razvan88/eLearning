@@ -8,6 +8,7 @@ import webserviceResources.AllGradesResource;
 import webserviceResources.CheckPasswordResource;
 import webserviceResources.CourseDetailsResource;
 import webserviceResources.CoursesListResource;
+import webserviceResources.HomeworkResource;
 import webserviceResources.LoginCheckResource;
 import webserviceResources.PersonalInformationResource;
 import webserviceResources.SchoolNewsArticleResource;
@@ -41,6 +42,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getTimetable", TimetableResource.class);
 		router.attach("/getCoursesList", CoursesListResource.class);
 		router.attach("/getCourseDetails", CourseDetailsResource.class);
+		router.attach("/getCourseDetails", HomeworkResource.class);
 		
 		return router;
 	}

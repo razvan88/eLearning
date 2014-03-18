@@ -4,6 +4,7 @@ import static database.DBCredentials.DRIVER;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -458,6 +459,48 @@ public class DBUtils {
 			}
 			
 			statement.close();
+		} catch (Exception e) { }
+		
+		return result;
+	}
+	
+	public static JSONArray getHomework(DBConnection dbConnection, int tccId, int studentId) {
+		Connection connection = dbConnection.getConnection();
+		
+		String homeworkQuery = "SELECT * FROM " + DBCredentials.HOMEWORK_TABLE + " WHERE `teacher_course_class_id`=" + tccId;
+		String homeworkResultQuery = "SELECT * FROM " + DBCredentials.HOMEWORK_RESULTS_TABLE + " WHERE `teacher_course_class_id`=" + tccId + " AND `student_id`=" + studentId + " AND `homework_id`=?";
+		JSONArray result = new JSONArray();
+		
+		try {
+			Statement homeworkStatement = connection.createStatement();
+			ResultSet homeworkResultSet = homeworkStatement.executeQuery(homeworkQuery);
+			
+			while(homeworkResultSet.next()) {
+				JSONObject homework = new JSONObject();
+				
+				homework.put("name", homeworkResultSet.getString("name"));
+				homework.put("content", homeworkResultSet.getString("content"));
+				homework.put("deadline", homeworkResultSet.getString("deadline"));
+				homework.put("resources", homeworkResultSet.getString("resources"));
+				homework.put("maxGrade", homeworkResultSet.getString("maxGrade"));
+				
+				PreparedStatement resultsStatement = connection.prepareStatement(homeworkResultQuery);
+				resultsStatement.setInt(1, homeworkResultSet.getInt("id"));
+				ResultSet resultsResultSet = resultsStatement.executeQuery();
+				if(resultsResultSet.next()) {
+					homework.put("uploaded", resultsResultSet.getInt("uploaded"));
+					homework.put("graded", resultsResultSet.getInt("graded"));
+					homework.put("grade", resultsResultSet.getInt("grade"));
+					homework.put("feedback", resultsResultSet.getString("feedback"));
+					homework.put("archive", resultsResultSet.getString("archive"));
+					homework.put("upload_time", resultsResultSet.getString("upload_time"));
+				}
+				resultsStatement.close();
+				
+				result.add(homework);
+			}
+			
+			homeworkStatement.close();
 		} catch (Exception e) { }
 		
 		return result;

@@ -39,4 +39,6 @@ public class DBCredentials {
 	public static final String DEADLINES_TABLE = "deadlines";
 	public static final String HOLIDAYS_TABLE = "holiday";
 	public static final String RESOURCES_TABLE = "resources";
+	public static final String HOMEWORK_TABLE = "homework";
+	public static final String HOMEWORK_RESULTS_TABLE = "homework_results";
 }
