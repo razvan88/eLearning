@@ -479,7 +479,7 @@ public class DBUtils {
 				JSONObject homework = new JSONObject();
 				
 				homework.put("name", homeworkResultSet.getString("name"));
-				homework.put("content", homeworkResultSet.getString("content"));
+				homework.put("text", homeworkResultSet.getString("content"));
 				homework.put("deadline", homeworkResultSet.getString("deadline"));
 				homework.put("resources", homeworkResultSet.getString("resources"));
 				homework.put("maxGrade", homeworkResultSet.getString("maxGrade"));
@@ -493,7 +493,7 @@ public class DBUtils {
 					homework.put("grade", resultsResultSet.getInt("grade"));
 					homework.put("feedback", resultsResultSet.getString("feedback"));
 					homework.put("archive", resultsResultSet.getString("archive"));
-					homework.put("upload_time", resultsResultSet.getString("upload_time"));
+					homework.put("uploadTime", resultsResultSet.getString("upload_time"));
 				}
 				resultsStatement.close();
 				
