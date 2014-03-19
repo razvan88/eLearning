@@ -560,6 +560,54 @@ public class DBUtils {
 		return feedback;
 	}
 	
+	public static JSONArray getForumSummary(DBConnection dbConnection, int courseId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT * FROM " + DBCredentials.FORUM_SUMMARY_TABLE + 
+					" WHERE `course_id`=" + courseId;
+		JSONArray forum = new JSONArray();
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			while(resultSet.next()) {
+				JSONObject subject = new JSONObject();
+				
+				subject.put("id", resultSet.getInt("id"));
+				subject.put("subject", resultSet.getString("subject"));
+				subject.put("totalPosts", resultSet.getInt("total_posts"));
+				subject.put("lastPostDate", resultSet.getString("last_post_date"));
+				
+				int userId = resultSet.getInt("initiator_id");
+				String tableName = resultSet.getString("initiator_table");
+				String userQuery = "SELECT `firstName`, `lastName` FROM " + tableName + " WHERE `id`=" + userId;
+				Statement userStmt = connection.createStatement();
+				ResultSet userResultSet = userStmt.executeQuery(userQuery);
+				if(userResultSet.next()) {
+					subject.put("initiator", userResultSet.getString("firstName") + " " + 
+											userResultSet.getString("lastName"));
+				}
+				
+				userId = resultSet.getInt("last_post_by_id");
+				tableName = resultSet.getString("last_post_by_table");
+				userQuery = "SELECT `firstName`, `lastName` FROM " + tableName + " WHERE `id`=" + userId;
+				userResultSet = userStmt.executeQuery(userQuery);
+				if(userResultSet.next()) {
+					subject.put("lastPostBy", userResultSet.getString("firstName") + " " +
+											userResultSet.getString("lastName"));
+				}
+				
+				userStmt.close();
+				
+				forum.add(subject);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return forum;
+	}
+	
 	/*
 	public static void main(String[] args) {
 		DBConnection conn = DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
