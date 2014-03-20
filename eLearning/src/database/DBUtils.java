@@ -608,6 +608,44 @@ public class DBUtils {
 		return forum;
 	}
 	
+	public static JSONArray getForumSubject(DBConnection dbConnection, int subjectId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT * FROM " + DBCredentials.FORUM_SUBJECT_TABLE + 
+					" WHERE `subject_id`=" + subjectId;
+		JSONArray forum = new JSONArray();
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			while(resultSet.next()) {
+				JSONObject subject = new JSONObject();
+				
+				subject.put("id", resultSet.getInt("id"));
+				subject.put("parentId", resultSet.getInt("parent_post_id"));
+				subject.put("timestamp", resultSet.getString("date"));
+				
+				int userId = resultSet.getInt("sender_id");
+				String tableName = resultSet.getString("sender_table");
+				String userQuery = "SELECT `firstName`, `lastName`, `photo` FROM " + tableName + " WHERE `id`=" + userId;
+				Statement userStmt = connection.createStatement();
+				ResultSet userResultSet = userStmt.executeQuery(userQuery);
+				if(userResultSet.next()) {
+					subject.put("sender", userResultSet.getString("firstName") + " " + 
+											userResultSet.getString("lastName"));
+					subject.put("photo", userResultSet.getString("photo"));
+				}
+				
+				userStmt.close();
+				forum.add(subject);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return forum;
+	}
+	
 	/*
 	public static void main(String[] args) {
 		DBConnection conn = DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
