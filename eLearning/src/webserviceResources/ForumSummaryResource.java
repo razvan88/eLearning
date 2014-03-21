@@ -22,11 +22,12 @@ public class ForumSummaryResource extends ServerResource {
 		
 		int schoolId = info.getInt("schoolId");
 		int courseId = info.getInt("courseId");
+		int isAnnouncement = info.getInt("isAnnouncement");
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		JSONArray forumSummary = DBUtils.getForumSummary(dbConnection, courseId);
+		JSONArray forumSummary = DBUtils.getForumSummary(dbConnection, courseId, isAnnouncement);
 		
 		return forumSummary.toString();
 	}

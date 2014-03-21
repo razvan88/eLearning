@@ -560,10 +560,10 @@ public class DBUtils {
 		return feedback;
 	}
 	
-	public static JSONArray getForumSummary(DBConnection dbConnection, int courseId) {
+	public static JSONArray getForumSummary(DBConnection dbConnection, int courseId, int isAnnouncement) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT * FROM " + DBCredentials.FORUM_SUMMARY_TABLE + 
-					" WHERE `course_id`=" + courseId;
+					" WHERE `course_id`=" + courseId + " AND `is_announcement`=" + isAnnouncement;
 		JSONArray forum = new JSONArray();
 		
 		try {
@@ -624,6 +624,7 @@ public class DBUtils {
 				subject.put("id", resultSet.getInt("id"));
 				subject.put("parentId", resultSet.getInt("parent_post_id"));
 				subject.put("timestamp", resultSet.getString("date"));
+				subject.put("content", resultSet.getString("content"));
 				
 				int userId = resultSet.getInt("sender_id");
 				String tableName = resultSet.getString("sender_table");
