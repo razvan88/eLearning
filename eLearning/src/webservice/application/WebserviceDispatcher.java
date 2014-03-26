@@ -14,6 +14,7 @@ import webserviceResources.ForumSubjectResource;
 import webserviceResources.ForumSummaryResource;
 import webserviceResources.HomeworkResource;
 import webserviceResources.LoginCheckResource;
+import webserviceResources.MessagesResource;
 import webserviceResources.PersonalInformationResource;
 import webserviceResources.SchoolNewsArticleResource;
 import webserviceResources.SchoolNewsResource;
@@ -51,6 +52,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getFeedbackRequest", FeedbackRequestResource.class);
 		router.attach("/getForumSummary", ForumSummaryResource.class);
 		router.attach("/getForumSubject", ForumSubjectResource.class);
+		router.attach("/getMessages", MessagesResource.class);
 		
 		return router;
 	}

@@ -647,6 +647,72 @@ public class DBUtils {
 		return forum;
 	}
 	
+	public static JSONArray getMessages(DBConnection dbConnection, int userId, String userTable) {
+		JSONArray messages = new JSONArray();
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT * FROM " + DBCredentials.MESSAGES_TABLE + 
+					" WHERE (`initiator_id`=" + userId + " AND `initiator_table`=" + userTable + ") " +
+						"OR (`responder_id`=" + userId + " AND `responder_table`=" + userTable + ")";
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			while(resultSet.next()) {
+				JSONObject message = new JSONObject();
+				
+				message.put("id", resultSet.getInt("id"));
+
+				String initiatorName = null, initiatorPhoto = null;
+				int initiatorId = resultSet.getInt("initiator_id");
+				String tableName = resultSet.getString("initiator_table");
+				String userQuery = "SELECT `firstName`, `lastName`, `photo` FROM " + tableName + " WHERE `id`=" + initiatorId;
+				Statement userStmt = connection.createStatement();
+				ResultSet userResultSet = userStmt.executeQuery(userQuery);
+				if(userResultSet.next()) {
+					initiatorName = userResultSet.getString("firstName") + " " + userResultSet.getString("lastName");
+					initiatorPhoto = userResultSet.getString("photo");
+				}
+				userStmt.close();
+				
+				int selfIndex = 1;
+				if(initiatorId == userId && tableName == userTable) {
+					selfIndex = 0;
+				}
+				
+				String responderName = null, responderPhoto = null;
+				int responderId = resultSet.getInt("responder_id");
+				tableName = resultSet.getString("responder_table");
+				userQuery = "SELECT `firstName`, `lastName`, `photo` FROM " + tableName + " WHERE `id`=" + responderId;
+				userStmt = connection.createStatement();
+				userResultSet = userStmt.executeQuery(userQuery);
+				if(userResultSet.next()) {
+					responderName = userResultSet.getString("firstName") + " " + userResultSet.getString("lastName");
+					responderPhoto = userResultSet.getString("photo");
+				}
+				userStmt.close();
+				
+				message.put("with", selfIndex == 0 ? responderName : initiatorName);
+				message.put("photo", selfIndex == 0 ? responderPhoto : initiatorPhoto);
+				message.put("personalPhoto", selfIndex == 0 ? initiatorPhoto: responderPhoto);
+				
+				JSONArray conversations = JSONArray.fromObject(resultSet.getString("messages"));
+				for(int i = 0; i < conversations.size(); i++) {
+					int senderIndex = ((JSONObject)(conversations.get(i))).getInt("sender_index");
+					
+					((JSONObject)(conversations.get(i))).put("sender", senderIndex == 0 ? initiatorName : responderName);
+				}
+				message.put("messages", conversations);
+				
+				messages.add(message);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return messages;
+	}
+	
 	/*
 	public static void main(String[] args) {
 		DBConnection conn = DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");

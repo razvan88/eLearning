@@ -46,4 +46,5 @@ public class DBCredentials {
 	public static final String FEEDBACK_REQUEST_TABLE = "feedback_request";
 	public static final String FORUM_SUMMARY_TABLE = "forum_summary";
 	public static final String FORUM_SUBJECT_TABLE = "forum_subject";
+	public static final String MESSAGES_TABLE = "message";
 }
