@@ -134,7 +134,8 @@ public class DBUtils {
 		
 		try {
 			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery("SELECT `id`, `password`, `firstName`, `lastName` FROM student WHERE `username`='" + username + "'");
+			ResultSet resultSet = statement.executeQuery("SELECT `id`, `password`, `firstName`, `lastName` FROM " + DBCredentials.STUDENT_TABLE + 
+														" WHERE `username`='" + username + "'");
 			if(resultSet.next()) {
 				result.put("login", resultSet.getString(2).equals(password));
 				result.put("userId", resultSet.getInt(1));
@@ -142,7 +143,8 @@ public class DBUtils {
 				result.put("lastName", resultSet.getString(4));
 				result.put("table", "student");
 			} else {
-				resultSet = statement.executeQuery("SELECT `id`, `password`, `firstName`, `lastName` FROM teacher WHERE `username`='" + username + "'");
+				resultSet = statement.executeQuery("SELECT `id`, `password`, `firstName`, `lastName` FROM " + DBCredentials.TEACHER_TABLE + 
+													" WHERE `username`='" + username + "'");
 				if(resultSet.next()) {
 					result.put("login", resultSet.getString(2).equals(password));
 					result.put("userId", resultSet.getInt(1));
@@ -150,7 +152,8 @@ public class DBUtils {
 					result.put("lastName", resultSet.getString(4));
 					result.put("table", "teacher");
 				} else {
-					resultSet = statement.executeQuery("SELECT `id`, `password`, `firstName`, `lastName` FROM auxiliary WHERE `username`='" + username + "'");
+					resultSet = statement.executeQuery("SELECT `id`, `password`, `firstName`, `lastName` FROM " + DBCredentials.AUXILIARY_TABLE + 
+														" WHERE `username`='" + username + "'");
 					if(resultSet.next()) {
 						result.put("login", resultSet.getString(2).equals(password));
 						result.put("userId", resultSet.getInt(1));
@@ -158,7 +161,8 @@ public class DBUtils {
 						result.put("lastName", resultSet.getString(4));
 						result.put("table", "auxiliary");
 					} else {
-						resultSet = statement.executeQuery("SELECT `id`, `password` FROM admin WHERE `username`='" + username + "'");
+						resultSet = statement.executeQuery("SELECT `id`, `password` FROM " + DBCredentials.ADMIN_TABLE + 
+															" WHERE `username`='" + username + "'");
 						if(resultSet.next()) {
 							result.put("login", resultSet.getString(2).equals(password));
 							result.put("userId", resultSet.getInt(1));
@@ -178,7 +182,8 @@ public class DBUtils {
 	public static boolean checkPassword(DBConnection dbConnection, String table, int userId, String pass) {
 		Connection connection = dbConnection.getConnection();
 		
-		String query = "SELECT `password` FROM " + table + " WHERE `id`=" + userId;
+		String query = "SELECT `password` FROM " + table + 
+						" WHERE `id`=" + userId;
 		
 		try {
 			Statement statement = connection.createStatement();
@@ -198,7 +203,8 @@ public class DBUtils {
 	public static int updateColumn(DBConnection dbConnection, String table, int userId, String column, String value) {
 		Connection connection = dbConnection.getConnection();
 		
-		String query = "UPDATE " + table + " SET `" + column + "`='" + value + "' WHERE `id`=" + userId;
+		String query = "UPDATE " + table + " SET `" + column + "`='" + value + 
+						"' WHERE `id`=" + userId;
 		
 		try {
 			Statement statement = connection.createStatement();
@@ -214,7 +220,8 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 		JSONObject info = new JSONObject();
 		
-		String query = "SELECT `firstName`, `lastName`, `photo`, `birthdate`, `description`, `group`, `email` FROM " + table + " WHERE `id`=" + userId;
+		String query = "SELECT `firstName`, `lastName`, `photo`, `birthdate`, `description`, `group`, `email` FROM " + table + 
+						" WHERE `id`=" + userId;
 		
 		try {
 			Statement statement = connection.createStatement();
@@ -240,7 +247,8 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 		JSONObject info = new JSONObject();
 		
-		String query = "SELECT `description`, `email` FROM " + table + " WHERE `id`=" + userId;
+		String query = "SELECT `description`, `email` FROM " + table + 
+						" WHERE `id`=" + userId;
 		
 		try {
 			Statement statement = connection.createStatement();
@@ -285,7 +293,8 @@ public class DBUtils {
 	
 	public static JSONObject getSchoolNewsArticle(DBConnection dbConnection, int newsArticleId) {
 		Connection connection = dbConnection.getConnection();
-		String query = "SELECT * FROM " + DBCredentials.SCHOOL_NEWS_TABLE + " WHERE `id`=" + newsArticleId;
+		String query = "SELECT * FROM " + DBCredentials.SCHOOL_NEWS_TABLE + 
+						" WHERE `id`=" + newsArticleId;
 		JSONObject article = new JSONObject();
 		
 		try {
@@ -307,7 +316,8 @@ public class DBUtils {
 	
 	public static String getTimetable(DBConnection dbConnection, int classId) {
 		Connection connection = dbConnection.getConnection();
-		String query = "SELECT `timetable` FROM " + DBCredentials.SCHOOL_TIMETABLE_TABLE + " WHERE `classId`=" + classId;
+		String query = "SELECT `timetable` FROM " + DBCredentials.SCHOOL_TIMETABLE_TABLE + 
+						" WHERE `classId`=" + classId;
 		String timetable = "";
 		
 		try {
@@ -328,7 +338,8 @@ public class DBUtils {
 	
 	public static int getClassIdForUser(DBConnection dbConnection, int userId) {
 		Connection connection = dbConnection.getConnection();
-		String query = "SELECT `group` FROM student WHERE `id`=" + userId;
+		String query = "SELECT `group` FROM " + DBCredentials.STUDENT_TABLE + 
+						" WHERE `id`=" + userId;
 		
 		try {
 			Statement statement = connection.createStatement();
@@ -346,7 +357,8 @@ public class DBUtils {
 	
 	public static JSONArray getCoursesList(DBConnection dbConnection, int userId) {
 		Connection connection = dbConnection.getConnection();
-		String coursesIdsQuery = "SELECT `courseIds` FROM " + DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=" + userId;
+		String coursesIdsQuery = "SELECT `courseIds` FROM " + DBCredentials.COURSES_LIST_TABLE + 
+									" WHERE `studentId`=" + userId;
 		JSONArray courses = new JSONArray();
 		
 		try {
@@ -367,7 +379,7 @@ public class DBUtils {
 	public static int getTeachClassCourseId(DBConnection dbConnection, int classId, int courseId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `id` FROM " + DBCredentials.TEACHER_COURSE_CLASS_TABLE + 
-					" WHERE `courseId`=" + courseId + " AND `classId`=" + classId;
+						" WHERE `courseId`=" + courseId + " AND `classId`=" + classId;
 		int id = 0;
 		
 		try {
@@ -387,7 +399,7 @@ public class DBUtils {
 	public static JSONObject getDeadlines(DBConnection dbConnection, int teacherCourseClassId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `dates`, `tips` FROM " + DBCredentials.DEADLINES_TABLE + 
-					" WHERE `teacher_course_class_id`=" + teacherCourseClassId;
+						" WHERE `teacher_course_class_id`=" + teacherCourseClassId;
 		JSONObject result = new JSONObject();
 		
 		try {
@@ -419,7 +431,7 @@ public class DBUtils {
 	public static JSONArray getResources(DBConnection dbConnection, int teacherCourseClassId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `content` FROM " + DBCredentials.RESOURCES_TABLE + 
-					" WHERE `teacher_course_class_id`=" + teacherCourseClassId;
+						" WHERE `teacher_course_class_id`=" + teacherCourseClassId;
 		JSONArray resources = new JSONArray();
 		
 		try {
@@ -470,10 +482,11 @@ public class DBUtils {
 	public static JSONArray getHomework(DBConnection dbConnection, int tccId, int studentId) {
 		Connection connection = dbConnection.getConnection();
 		
-		String homeworkQuery = "SELECT * FROM " + DBCredentials.HOMEWORK_TABLE + " WHERE `teacher_course_class_id`=" + tccId;
+		String homeworkQuery = "SELECT * FROM " + DBCredentials.HOMEWORK_TABLE + 
+								" WHERE `teacher_course_class_id`=" + tccId;
 		String homeworkResultQuery = "SELECT * FROM " + DBCredentials.HOMEWORK_RESULTS_TABLE + 
-								" WHERE `teacher_course_class_id`=" + tccId + 
-								" AND `student_id`=" + studentId + " AND `homework_id`=?";
+									" WHERE `teacher_course_class_id`=" + tccId + 
+									" AND `student_id`=" + studentId + " AND `homework_id`=?";
 		JSONArray result = new JSONArray();
 		
 		try {
@@ -514,7 +527,7 @@ public class DBUtils {
 	public static JSONArray getCourseClassbook(DBConnection dbConnection, int tccId, int studentId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT * FROM " + DBCredentials.COURSE_CLASSBOOK_TABLE + 
-					" WHERE `teacher_course_class_id`=" + tccId + " AND `student_id`=" + studentId;
+						" WHERE `teacher_course_class_id`=" + tccId + " AND `student_id`=" + studentId;
 		JSONArray result = new JSONArray();
 		
 		try {
@@ -542,7 +555,7 @@ public class DBUtils {
 	public static JSONObject getFeedbackRequest(DBConnection dbConnection, int tccId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `available`, `aspects` FROM " + DBCredentials.FEEDBACK_REQUEST_TABLE + 
-					" WHERE `teacher_course_class_id`=" + tccId;
+						" WHERE `teacher_course_class_id`=" + tccId;
 		JSONObject feedback = new JSONObject();
 		
 		try {
@@ -563,7 +576,7 @@ public class DBUtils {
 	public static JSONArray getForumSummary(DBConnection dbConnection, int courseId, int isAnnouncement) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT * FROM " + DBCredentials.FORUM_SUMMARY_TABLE + 
-					" WHERE `course_id`=" + courseId + " AND `is_announcement`=" + isAnnouncement;
+						" WHERE `course_id`=" + courseId + " AND `is_announcement`=" + isAnnouncement;
 		JSONArray forum = new JSONArray();
 		
 		try {
@@ -580,7 +593,8 @@ public class DBUtils {
 				
 				int userId = resultSet.getInt("initiator_id");
 				String tableName = resultSet.getString("initiator_table");
-				String userQuery = "SELECT `firstName`, `lastName` FROM " + tableName + " WHERE `id`=" + userId;
+				String userQuery = "SELECT `firstName`, `lastName` FROM " + tableName + 
+									" WHERE `id`=" + userId;
 				Statement userStmt = connection.createStatement();
 				ResultSet userResultSet = userStmt.executeQuery(userQuery);
 				if(userResultSet.next()) {
@@ -590,7 +604,8 @@ public class DBUtils {
 				
 				userId = resultSet.getInt("last_post_by_id");
 				tableName = resultSet.getString("last_post_by_table");
-				userQuery = "SELECT `firstName`, `lastName` FROM " + tableName + " WHERE `id`=" + userId;
+				userQuery = "SELECT `firstName`, `lastName` FROM " + tableName + 
+							" WHERE `id`=" + userId;
 				userResultSet = userStmt.executeQuery(userQuery);
 				if(userResultSet.next()) {
 					subject.put("lastPostBy", userResultSet.getString("firstName") + " " +
@@ -611,7 +626,7 @@ public class DBUtils {
 	public static JSONArray getForumSubject(DBConnection dbConnection, int subjectId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT * FROM " + DBCredentials.FORUM_SUBJECT_TABLE + 
-					" WHERE `subject_id`=" + subjectId;
+						" WHERE `subject_id`=" + subjectId;
 		JSONArray forum = new JSONArray();
 		
 		try {
@@ -628,7 +643,8 @@ public class DBUtils {
 				
 				int userId = resultSet.getInt("sender_id");
 				String tableName = resultSet.getString("sender_table");
-				String userQuery = "SELECT `firstName`, `lastName`, `photo` FROM " + tableName + " WHERE `id`=" + userId;
+				String userQuery = "SELECT `firstName`, `lastName`, `photo` FROM " + tableName + 
+									" WHERE `id`=" + userId;
 				Statement userStmt = connection.createStatement();
 				ResultSet userResultSet = userStmt.executeQuery(userQuery);
 				if(userResultSet.next()) {
@@ -651,8 +667,8 @@ public class DBUtils {
 		JSONArray messages = new JSONArray();
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT * FROM " + DBCredentials.MESSAGES_TABLE + 
-					" WHERE (`initiator_id`=" + userId + " AND `initiator_table`=" + userTable + ") " +
-						"OR (`responder_id`=" + userId + " AND `responder_table`=" + userTable + ")";
+						" WHERE (`initiator_id`=" + userId + " AND `initiator_table`='" + userTable + "')" +
+						" OR (`responder_id`=" + userId + " AND `responder_table`='" + userTable + "')";
 		
 		try {
 			Statement statement = connection.createStatement();
@@ -666,7 +682,8 @@ public class DBUtils {
 				String initiatorName = null, initiatorPhoto = null;
 				int initiatorId = resultSet.getInt("initiator_id");
 				String tableName = resultSet.getString("initiator_table");
-				String userQuery = "SELECT `firstName`, `lastName`, `photo` FROM " + tableName + " WHERE `id`=" + initiatorId;
+				String userQuery = "SELECT `firstName`, `lastName`, `photo` FROM " + tableName + 
+									" WHERE `id`=" + initiatorId;
 				Statement userStmt = connection.createStatement();
 				ResultSet userResultSet = userStmt.executeQuery(userQuery);
 				if(userResultSet.next()) {
@@ -676,7 +693,7 @@ public class DBUtils {
 				userStmt.close();
 				
 				int selfIndex = 1;
-				if(initiatorId == userId && tableName == userTable) {
+				if(initiatorId == userId && tableName.equals(userTable)) {
 					selfIndex = 0;
 				}
 				
@@ -711,6 +728,88 @@ public class DBUtils {
 		} catch (Exception e) { }
 		
 		return messages;
+	}
+	
+	public static JSONArray getSchoolTeam(DBConnection dbConnection) {
+		JSONArray team = new JSONArray();
+		Connection connection = dbConnection.getConnection();
+		String teacherQuery = "SELECT `id`, `firstName`, `lastName`, `photo`, `description`, `roles`, `courses` FROM " + DBCredentials.TEACHER_TABLE;
+		String auxiliaryQuery = "SELECT `id`, `firstName`, `lastName`, `photo`, `description`, `function` FROM " + DBCredentials.AUXILIARY_TABLE;
+		
+		//teachers
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(teacherQuery);
+			
+			while(resultSet.next()) {
+				JSONObject member = new JSONObject();
+				
+				member.put("id", resultSet.getInt("id"));
+				member.put("name", resultSet.getString("firstName") + " " + resultSet.getString("lastName"));
+				member.put("photo", resultSet.getString("photo"));
+				member.put("description", resultSet.getString("description"));
+				
+				String[] roles = resultSet.getString("roles").split(",");
+				List<String> roleNames = DBCommonOperations.getRolesNames(roles);
+				
+				StringBuffer entireRole = new StringBuffer();
+				
+				for(String role : roleNames) {
+					entireRole.append(role);
+					
+					if(role.equalsIgnoreCase("profesor")) {
+						entireRole.append(" de ");
+						
+						String[] courses = resultSet.getString("courses").split(",");
+						JSONArray jsonCourses = DBCommonOperations.getCoursesInfo(courses);
+						
+						for(int i = 0; i < jsonCourses.size(); i++) {
+							entireRole.append(((JSONObject)(jsonCourses.get(i))).getString("name"));
+							if(i + 1 < jsonCourses.size()) {
+								entireRole.append(", ");
+							}
+						}
+					}
+					
+					entireRole.append(", ");
+				}
+				
+				entireRole.deleteCharAt(entireRole.length() - 2);
+				member.put("role", entireRole.toString());
+				
+				team.add(member);
+			}
+			
+			//auxiliary
+			resultSet.close();
+			resultSet = statement.executeQuery(auxiliaryQuery);
+			
+			while(resultSet.next()) {
+				JSONObject member = new JSONObject();
+				
+				member.put("id", resultSet.getInt("id"));
+				member.put("name", resultSet.getString("firstName") + " " + resultSet.getString("lastName"));
+				member.put("photo", resultSet.getString("photo"));
+				member.put("description", resultSet.getString("description"));
+				
+				String[] functions = resultSet.getString("function").split(",");
+				List<String> functionNames = DBCommonOperations.getAuxiliaryFunctions(functions);
+				
+				StringBuffer entireFunctions = new StringBuffer();
+				for(String function : functionNames) {
+					entireFunctions.append(function);
+					entireFunctions.append(", ");
+				}
+				entireFunctions.deleteCharAt(entireFunctions.length() - 2);
+				member.put("role", entireFunctions.toString());
+				
+				team.add(member);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return team;
 	}
 	
 	/*

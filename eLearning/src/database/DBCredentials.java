@@ -32,6 +32,10 @@ public class DBCredentials {
 	public static final String CLASS_TABLE = "class";
 	public static final String COURSES_TABLE = "course";
 	
+	public static final String TEACHER_TABLE = "teacher";
+	public static final String AUXILIARY_TABLE = "auxiliary";
+	public static final String STUDENT_TABLE = "student";
+	public static final String ADMIN_TABLE = "admin";
 	public static final String SCHOOL_NEWS_TABLE = "school_news";
 	public static final String SCHOOL_TIMETABLE_TABLE = "timetable";
 	public static final String COURSES_LIST_TABLE = "course_list";

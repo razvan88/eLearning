@@ -4,7 +4,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import utils.ConfigurationSettings;
 import net.sf.json.JSONArray;
@@ -20,13 +22,25 @@ public class DBCommonOperations {
 	private static DBConnection sConnection;
 	private static JSONArray sCachedSchoolList;
 	private static HashMap<Integer, String> sHighschoolGroups;
+	private static HashMap<Integer, String> sAuxiliaryFunctions;
+	private static HashMap<Integer, String> sRoles;
+	private static HashMap<Integer, JSONObject> sCourses;
 	
 	static {
 		sConnection = new DBConnection(DBCredentials.DEFAULT_DATABASE);
 		sConnection.openConnection();
+		
 		sCachedSchoolList = getJsonSchools();
+		
 		sHighschoolGroups = new HashMap<Integer, String>();
+		sAuxiliaryFunctions = new HashMap<Integer, String>();
+		sRoles = new HashMap<Integer, String>();
+		sCourses = new HashMap<Integer, JSONObject>();
+		
 		populateHighschoolGroups();
+		populateAuxiliaryFunctions();
+		populateRoles();
+		populateCourses();
 	}
 	
 	private DBCommonOperations() {}
@@ -43,6 +57,65 @@ public class DBCommonOperations {
 				String name = result.getString("name");
 				
 				sHighschoolGroups.put(id, name);
+			}
+		} catch(Exception e) {
+			
+		}
+	}
+	
+	private static void populateAuxiliaryFunctions() {
+		try {
+			Connection connection = sConnection.getConnection();
+			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			String query = "SELECT `id`, `name` FROM " + DBCredentials.AUXILIARY_TABLE;
+			ResultSet result = statement.executeQuery(query);
+			
+			while(result.next()) {
+				int id = result.getInt("id");
+				String name = result.getString("name");
+				
+				sAuxiliaryFunctions.put(id, name);
+			}
+		} catch(Exception e) {
+			
+		}
+	}
+	
+	private static void populateRoles() {
+		try {
+			Connection connection = sConnection.getConnection();
+			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			String query = "SELECT `id`, `name` FROM " + DBCredentials.ROLES_TABLE;
+			ResultSet result = statement.executeQuery(query);
+			
+			while(result.next()) {
+				int id = result.getInt("id");
+				String name = result.getString("name");
+				
+				sRoles.put(id, name);
+			}
+		} catch(Exception e) {
+			
+		}
+	}
+	
+	private static void populateCourses() {
+		try {
+			Connection connection = sConnection.getConnection();
+			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			String query = "SELECT `id`, `name`, `abbreviation`, `photo` FROM " + DBCredentials.COURSES_TABLE;
+			ResultSet result = statement.executeQuery(query);
+			
+			while(result.next()) {
+				JSONObject course = new JSONObject();
+				
+				int id = result.getInt("id");
+				course.put("id", id);
+				course.put("name", result.getString("name"));
+				course.put("abbreviation", result.getString("abbreviation"));
+				course.put("photo", result.getString("photo"));
+				
+				sCourses.put(id, course);
 			}
 		} catch(Exception e) {
 			
@@ -135,32 +208,43 @@ public class DBCommonOperations {
 	}
 	
 	public static JSONArray getCoursesInfo(String[] coursesIds) {
-		String query = "SELECT * FROM " + DBCredentials.COURSES_TABLE + " WHERE `id`=?";
 		JSONArray courses = new JSONArray();
 		
-		try{
-			PreparedStatement prepStmt = sConnection.getConnection().prepareStatement(query);
-			
-			for(int i = 0; i < coursesIds.length; i++) {
-				prepStmt.setString(1, coursesIds[i]);
-				ResultSet resultSet = prepStmt.executeQuery();
-				
-				if(resultSet.next()) {
-					JSONObject course = new JSONObject();
-					
-					course.put("id", resultSet.getInt("id"));
-					course.put("name", resultSet.getString("name"));
-					course.put("photo", resultSet.getString("photo"));
-					
-					courses.add(course);
-				}
+		for(String courseId : coursesIds) {
+			int key = Integer.parseInt(courseId);
+			if(sCourses.containsKey(key)) {
+				courses.add(sCourses.get(key));
 			}
-			
-			prepStmt.close();
-		} catch(Exception e) {
-			
 		}
 		
 		return courses;
 	}
+	
+	public static List<String> getRolesNames(String[] rolesIds) {
+		List<String> roles = new ArrayList<String>();
+		
+		for(String roleId : rolesIds) {
+			int key = Integer.parseInt(roleId);
+			if(sRoles.containsKey(key)) {
+				roles.add(sRoles.get(key));
+			}
+		}
+		
+		return roles;
+	}
+	
+	public static List<String> getAuxiliaryFunctions(String[] auxiliaryFunctionsIds) {
+		List<String> functions = new ArrayList<String>();
+		
+		for(String auxiliaryFunctionId : auxiliaryFunctionsIds) {
+			int key = Integer.parseInt(auxiliaryFunctionId);
+			if(sAuxiliaryFunctions.containsKey(key)) {
+				functions.add(sAuxiliaryFunctions.get(key));
+			}
+		}
+		
+		return functions;
+	}
+	
+	
 }
