@@ -748,6 +748,7 @@ public class DBUtils {
 				member.put("name", resultSet.getString("firstName") + " " + resultSet.getString("lastName"));
 				member.put("photo", resultSet.getString("photo"));
 				member.put("description", resultSet.getString("description"));
+				member.put("table", DBCredentials.TEACHER_TABLE);
 				
 				String[] roles = resultSet.getString("roles").split(",");
 				List<String> roleNames = DBCommonOperations.getRolesNames(roles);
@@ -791,6 +792,7 @@ public class DBUtils {
 				member.put("name", resultSet.getString("firstName") + " " + resultSet.getString("lastName"));
 				member.put("photo", resultSet.getString("photo"));
 				member.put("description", resultSet.getString("description"));
+				member.put("table", DBCredentials.AUXILIARY_TABLE);
 				
 				String[] functions = resultSet.getString("function").split(",");
 				List<String> functionNames = DBCommonOperations.getAuxiliaryFunctions(functions);
@@ -810,6 +812,25 @@ public class DBUtils {
 		} catch (Exception e) { }
 		
 		return team;
+	}
+	
+	public static JSONObject getTeacher(DBConnection dbConnection, String table, int userId) {
+		JSONArray team = new JSONArray();
+		Connection connection = dbConnection.getConnection();
+		String teacherQuery = "SELECT `id`, `firstName`, `lastName`, `photo`, `description`, `roles`, `courses` FROM " + DBCredentials.TEACHER_TABLE;
+		String auxiliaryQuery = "SELECT `id`, `firstName`, `lastName`, `photo`, `description`, `function` FROM " + DBCredentials.AUXILIARY_TABLE;
+		
+		//teachers
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(teacherQuery);
+			
+			while(resultSet.next()) {
+				JSONObject member = new JSONObject();
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
 	}
 	
 	/*

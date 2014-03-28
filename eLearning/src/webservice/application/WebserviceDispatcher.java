@@ -20,6 +20,7 @@ import webserviceResources.SchoolNewsArticleResource;
 import webserviceResources.SchoolNewsResource;
 import webserviceResources.SchoolsListResource;
 import webserviceResources.SettingsInformationResource;
+import webserviceResources.TeacherResource;
 import webserviceResources.TeachersResource;
 import webserviceResources.TimetableResource;
 import webserviceResources.UpdateColumnResource;
@@ -55,6 +56,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getForumSubject", ForumSubjectResource.class);
 		router.attach("/getMessages", MessagesResource.class);
 		router.attach("/getTeachers", TeachersResource.class);
+		router.attach("/getTeacher", TeacherResource.class);
 		
 		return router;
 	}
