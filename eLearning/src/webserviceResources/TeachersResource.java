@@ -25,7 +25,7 @@ public class TeachersResource extends ServerResource {
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		JSONArray team = DBUtils.getSchoolTeam(dbConnection);
+		JSONArray team = DBUtils.getSchoolTeam(dbConnection, schoolId);
 		
 		return team.toString();
 	}

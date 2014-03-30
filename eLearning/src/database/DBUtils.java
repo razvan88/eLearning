@@ -8,12 +8,18 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 public class DBUtils {
+	private static HashMap<Integer, JSONArray> sTeachers;
+	
+	static {
+		sTeachers = new HashMap<Integer, JSONArray>();
+	}
 	
 	public static DBConnection createDatabase(String databaseName) {
 		Connection connection = null;
@@ -730,7 +736,11 @@ public class DBUtils {
 		return messages;
 	}
 	
-	public static JSONArray getSchoolTeam(DBConnection dbConnection) {
+	public static JSONArray getSchoolTeam(DBConnection dbConnection, int schoolId) {
+		if(sTeachers.containsKey(schoolId)) {
+			return sTeachers.get(schoolId);
+		}
+		
 		JSONArray team = new JSONArray();
 		Connection connection = dbConnection.getConnection();
 		String teacherQuery = "SELECT `id`, `firstName`, `lastName`, `photo`, `description`, `roles`, `courses` FROM " + DBCredentials.TEACHER_TABLE;
@@ -811,26 +821,24 @@ public class DBUtils {
 			statement.close();
 		} catch (Exception e) { }
 		
+		sTeachers.put(schoolId, team);
 		return team;
 	}
 	
-	public static JSONObject getTeacher(DBConnection dbConnection, String table, int userId) {
-		JSONArray team = new JSONArray();
-		Connection connection = dbConnection.getConnection();
-		String teacherQuery = "SELECT `id`, `firstName`, `lastName`, `photo`, `description`, `roles`, `courses` FROM " + DBCredentials.TEACHER_TABLE;
-		String auxiliaryQuery = "SELECT `id`, `firstName`, `lastName`, `photo`, `description`, `function` FROM " + DBCredentials.AUXILIARY_TABLE;
+	public static JSONObject getTeacher(DBConnection dbConnection, int schoolId, String table, int userId) {
+		if(!sTeachers.containsKey(schoolId)) {
+			getSchoolTeam(dbConnection, schoolId);
+		}
 		
-		//teachers
-		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(teacherQuery);
-			
-			while(resultSet.next()) {
-				JSONObject member = new JSONObject();
+		JSONArray team = sTeachers.get(schoolId);
+		for(int i = 0; i < team.size(); i++) {
+			JSONObject person = team.getJSONObject(i);
+			if(person.getInt("id") == userId && person.getString("table").equals(table)) {
+				return person;
 			}
-			
-			statement.close();
-		} catch (Exception e) { }
+		}
+		
+		return new JSONObject();
 	}
 	
 	/*

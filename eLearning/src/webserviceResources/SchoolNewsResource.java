@@ -1,6 +1,5 @@
 package webserviceResources;
 
-import java.io.IOException;
 
 import net.sf.json.JSONArray;
 
@@ -17,7 +16,7 @@ import database.DBUtils;
 public class SchoolNewsResource extends ServerResource {
 	
 	@Post
-	public String getInformation(Representation entity) throws IOException {
+	public String getInformation(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
 		
 		int schoolId = Integer.parseInt(request.getValues("schoolId"));

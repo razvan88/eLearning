@@ -1,6 +1,5 @@
 package webserviceResources;
 
-import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.restlet.data.Form;
@@ -20,14 +19,14 @@ public class TeacherResource extends ServerResource {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		
-		int userId = info.getInt("userId");
+		int userId = info.getInt("personId");
 		String table = info.getString("table");
 		int schoolId = info.getInt("schoolId");
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		JSONArray team = DBUtils.getTeacher(dbConnection, table, userId);
+		JSONObject team = DBUtils.getTeacher(dbConnection, schoolId, table, userId);
 		
 		return team.toString();
 	}
