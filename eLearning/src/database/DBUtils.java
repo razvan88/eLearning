@@ -841,6 +841,78 @@ public class DBUtils {
 		return new JSONObject();
 	}
 	
+	public static JSONArray getAvailableClasses(DBConnection dbConnection) {
+		JSONArray classes = new JSONArray();
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT DISTINCT(`group`) FROM " + DBCredentials.STUDENT_TABLE;
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			while(resultSet.next()) {
+				JSONObject group = new JSONObject();
+				
+				int id = resultSet.getInt("group");
+				group.put("id", id);
+				group.put("name", DBCommonOperations.getGroupName(id));
+				
+				classes.add(group);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return classes;
+	}
+	
+	public static JSONArray getClassStudents(DBConnection dbConnection, int classId) {
+		JSONArray students = new JSONArray();
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `id` FROM " + DBCredentials.STUDENT_TABLE + 
+						" WHERE `group`=" + classId;
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			while(resultSet.next()) {
+				students.add(
+						getInformation(dbConnection, DBCredentials.STUDENT_TABLE, resultSet.getInt("id")));
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return students;
+	}
+	
+	public static JSONArray getAllStudents(DBConnection dbConnection) {
+		JSONArray students = new JSONArray();
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `id` FROM " + DBCredentials.STUDENT_TABLE;
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			while(resultSet.next()) {
+				JSONObject student = getInformation(dbConnection, DBCredentials.STUDENT_TABLE, resultSet.getInt("id"));
+				
+				JSONObject minInfoStudent = new JSONObject();
+				minInfoStudent.put("id", student.getInt("id"));
+				minInfoStudent.put("label", student.getString("firstName") + " " + student.getString("lastName"));
+				minInfoStudent.put("photo", student.getString("photo"));
+				minInfoStudent.put("description", student.getString("description"));
+				
+				students.add(minInfoStudent);
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return students;
+	}
 	/*
 	public static void main(String[] args) {
 		DBConnection conn = DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");

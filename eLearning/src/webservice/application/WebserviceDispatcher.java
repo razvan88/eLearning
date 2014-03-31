@@ -5,7 +5,10 @@ import org.restlet.*;
 import org.restlet.routing.Router;
 
 import webserviceResources.AllGradesResource;
+import webserviceResources.AllStudentsResource;
+import webserviceResources.AvailableClassesResource;
 import webserviceResources.CheckPasswordResource;
+import webserviceResources.ClassStudentsResource;
 import webserviceResources.CourseClassbookResource;
 import webserviceResources.CourseDetailsResource;
 import webserviceResources.CoursesListResource;
@@ -57,6 +60,9 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getMessages", MessagesResource.class);
 		router.attach("/getTeachers", TeachersResource.class);
 		router.attach("/getTeacher", TeacherResource.class);
+		router.attach("/getAvailableClasses", AvailableClassesResource.class);
+		router.attach("/getClassStudents", ClassStudentsResource.class);
+		router.attach("/getAllStudents", AllStudentsResource.class);
 		
 		return router;
 	}
