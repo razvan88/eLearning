@@ -32,6 +32,8 @@ public class PersonResource extends ServerResource {
 			person = DBUtils.getTeacher(dbConnection, schoolId, table, userId);
 		} else {
 			person = DBUtils.getInformation(dbConnection, table, userId);
+			person.put("name", person.getString("firstName") + " " + person.getString("lastName"));
+			person.put("role", person.getString("group"));
 			person.put("table", DBCredentials.STUDENT_TABLE);
 			person.put("id", userId);
 		}

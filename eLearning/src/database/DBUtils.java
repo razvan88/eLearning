@@ -234,8 +234,8 @@ public class DBUtils {
 			ResultSet rs = statement.executeQuery(query);
 			
 			if(rs.next()) {
-				info.put("firstname", rs.getString("firstname"));
-				info.put("lastname", rs.getString("lastname"));
+				info.put("firstName", rs.getString("firstName"));
+				info.put("lastName", rs.getString("lastName"));
 				info.put("photo", rs.getString("photo"));
 				info.put("description", rs.getString("description"));
 				info.put("email", rs.getString("email"));
