@@ -10,12 +10,13 @@ import org.restlet.resource.ServerResource;
 import utils.ConfigurationSettings;
 import database.DBConnection;
 import database.DBConnectionManager;
+import database.DBCredentials;
 import database.DBUtils;
 
-public class TeacherResource extends ServerResource {
+public class PersonResource extends ServerResource {
 
 	@Post
-	public String getForumSummary(Representation entity) {
+	public String getPersonInformation(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		
@@ -26,8 +27,15 @@ public class TeacherResource extends ServerResource {
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		JSONObject team = DBUtils.getTeacher(dbConnection, schoolId, table, userId);
+		JSONObject person = new JSONObject();
+		if(!table.equalsIgnoreCase("student")) {
+			person = DBUtils.getTeacher(dbConnection, schoolId, table, userId);
+		} else {
+			person = DBUtils.getInformation(dbConnection, table, userId);
+			person.put("table", DBCredentials.STUDENT_TABLE);
+			person.put("id", userId);
+		}
 		
-		return team.toString();
+		return person.toString();
 	}
 }
