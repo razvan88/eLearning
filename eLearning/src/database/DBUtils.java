@@ -877,8 +877,9 @@ public class DBUtils {
 			ResultSet resultSet = statement.executeQuery(query);
 			
 			while(resultSet.next()) {
-				students.add(
-						getInformation(dbConnection, DBCredentials.STUDENT_TABLE, resultSet.getInt("id")));
+				JSONObject student = getInformation(dbConnection, DBCredentials.STUDENT_TABLE, resultSet.getInt("id"));
+				student.put("id", resultSet.getInt("id"));
+				students.add(student);
 			}
 			
 			statement.close();
@@ -912,7 +913,7 @@ public class DBUtils {
 				JSONObject student = getInformation(dbConnection, DBCredentials.STUDENT_TABLE, resultSet.getInt("id"));
 				
 				JSONObject minInfoStudent = new JSONObject();
-				minInfoStudent.put("id", student.getInt("id"));
+				minInfoStudent.put("id", resultSet.getInt("id"));
 				minInfoStudent.put("label", student.getString("firstName") + " " + student.getString("lastName"));
 				minInfoStudent.put("photo", student.getString("photo"));
 				minInfoStudent.put("description", student.getString("description"));
