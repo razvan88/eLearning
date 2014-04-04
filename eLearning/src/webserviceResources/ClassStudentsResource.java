@@ -26,8 +26,8 @@ public class ClassStudentsResource extends ServerResource {
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		JSONArray classes = DBUtils.getClassStudents(dbConnection, classId);
+		JSONArray classStuds = DBUtils.getClassStudents(dbConnection, classId);
 		
-		return classes.toString();
+		return classStuds.toString();
 	}
 }

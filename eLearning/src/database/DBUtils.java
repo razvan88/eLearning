@@ -884,7 +884,19 @@ public class DBUtils {
 			statement.close();
 		} catch (Exception e) { }
 		
-		return students;
+		JSONArray classStudents = new JSONArray();
+		for(int i = 0; i < students.size(); i++) {
+			JSONObject student = students.getJSONObject(i);
+			JSONObject newStudent = new JSONObject();
+			newStudent.put("label", student.getString("firstName") + " " + student.getString("lastName"));
+			newStudent.put("description", student.getString("description"));
+			newStudent.put("photo", student.getString("photo"));
+			newStudent.put("id", student.getInt("id"));
+			
+			classStudents.add(newStudent);
+		}
+		
+		return classStudents;
 	}
 	
 	public static JSONArray getAllStudents(DBConnection dbConnection) {
