@@ -1,5 +1,6 @@
-package webserviceResources;
+package webserviceResources.getters;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.restlet.data.Form;
@@ -12,10 +13,10 @@ import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
 
-public class FeedbackRequestResource extends ServerResource {
+public class HomeworkResource extends ServerResource {
 
 	@Post
-	public String getFeedbackRequest(Representation entity) {
+	public String getHomework(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		
@@ -28,8 +29,8 @@ public class FeedbackRequestResource extends ServerResource {
 		int classId = DBUtils.getClassIdForUser(dbConnection, userId);
 		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
 		
-		JSONObject feedback = DBUtils.getFeedbackRequest(dbConnection, tccId);
+		JSONArray homework = DBUtils.getHomework(dbConnection, tccId, userId);
 		
-		return feedback.toString();
+		return homework.toString();
 	}
 }

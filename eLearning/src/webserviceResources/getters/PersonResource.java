@@ -1,4 +1,4 @@
-package webserviceResources;
+package webserviceResources.getters;
 
 import net.sf.json.JSONObject;
 

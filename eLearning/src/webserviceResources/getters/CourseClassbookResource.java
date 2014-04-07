@@ -1,4 +1,4 @@
-package webserviceResources;
+package webserviceResources.getters;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -13,20 +13,24 @@ import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
 
-public class AvailableClassesResource extends ServerResource {
-	
+public class CourseClassbookResource extends ServerResource {
+
 	@Post
-	public String getAvailableClasses(Representation entity) {
+	public String getHomework(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		
 		int schoolId = info.getInt("schoolId");
+		int userId = info.getInt("userId");
+		int courseId = info.getInt("courseId");
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
+		int classId = DBUtils.getClassIdForUser(dbConnection, userId);
+		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
 		
-		JSONArray classes = DBUtils.getAvailableClasses(dbConnection);
+		JSONArray courseClassbook = DBUtils.getCourseClassbook(dbConnection, tccId, userId);
 		
-		return classes.toString();
+		return courseClassbook.toString();
 	}
 }

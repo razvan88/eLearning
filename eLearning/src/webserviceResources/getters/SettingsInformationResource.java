@@ -1,6 +1,7 @@
-package webserviceResources;
+package webserviceResources.getters;
 
-import net.sf.json.JSONArray;
+import java.io.IOException;
+
 import net.sf.json.JSONObject;
 
 import org.restlet.data.Form;
@@ -13,21 +14,22 @@ import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
 
-public class ClassStudentsResource extends ServerResource {
-
+public class SettingsInformationResource extends ServerResource {
+	
 	@Post
-	public String getClassStudents(Representation entity) {
+	public String getInformation(Representation entity) throws IOException {
 		Form request = new Form(this.getRequestEntity());
-		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		
+		JSONObject info = JSONObject.fromObject(request.getValues("info"));
+		int userId = info.getInt("userId");
 		int schoolId = info.getInt("schoolId");
-		int classId = info.getInt("classId");
+		String table = info.getString("table");
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		JSONArray classStuds = DBUtils.getClassStudents(dbConnection, classId);
+		JSONObject json = DBUtils.getShortInformation(dbConnection, table, userId);
 		
-		return classStuds.toString();
+		return json.toString();
 	}
 }

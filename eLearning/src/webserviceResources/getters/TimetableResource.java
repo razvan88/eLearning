@@ -1,6 +1,5 @@
-package webserviceResources;
+package webserviceResources.getters;
 
-import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.restlet.data.Form;
@@ -9,24 +8,25 @@ import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 
 import utils.ConfigurationSettings;
+
 import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
 
-public class TeachersResource extends ServerResource {
+public class TimetableResource extends ServerResource {
 
 	@Post
-	public String getForumSummary(Representation entity) {
+	public String getTimetable(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
-		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		
+		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		int schoolId = info.getInt("schoolId");
+		int userId = info.getInt("userId");
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
+		int classId = DBUtils.getClassIdForUser(dbConnection, userId);
 		
-		JSONArray team = DBUtils.getSchoolTeam(dbConnection, schoolId);
-		
-		return team.toString();
+		return DBUtils.getTimetable(dbConnection, classId);
 	}
 }

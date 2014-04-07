@@ -1,6 +1,7 @@
-package webserviceResources;
+package webserviceResources.getters;
 
-import net.sf.json.JSONObject;
+
+import net.sf.json.JSONArray;
 
 import org.restlet.data.Form;
 import org.restlet.representation.Representation;
@@ -12,22 +13,19 @@ import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
 
-public class SchoolNewsArticleResource extends ServerResource {
+public class SchoolNewsResource extends ServerResource {
 	
 	@Post
-	public String getSchoolNewsArticle(Representation entity) {
+	public String getInformation(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
-		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		
-		int schoolId = info.getInt("schoolId");
-		int newsId = info.getInt("newsId");
+		int schoolId = Integer.parseInt(request.getValues("schoolId"));
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		JSONObject article = DBUtils.getSchoolNewsArticle(dbConnection, newsId);
+		JSONArray news = DBUtils.getSchoolNews(dbConnection);
 		
-		return article.toString();
+		return news.toString();
 	}
-	
 }

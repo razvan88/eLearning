@@ -1,4 +1,4 @@
-package webserviceResources;
+package webserviceResources.getters;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -13,22 +13,22 @@ import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
 
-public class ForumSummaryResource extends ServerResource {
+public class MessagesResource extends ServerResource {
 
 	@Post
-	public String getForumSummary(Representation entity) {
+	public String getMessages(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		
 		int schoolId = info.getInt("schoolId");
-		int courseId = info.getInt("courseId");
-		int isAnnouncement = info.getInt("isAnnouncement");
+		int userId = info.getInt("userId");
+		String userTable = info.getString("table");
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		JSONArray forumSummary = DBUtils.getForumSummary(dbConnection, courseId, isAnnouncement);
+		JSONArray messages = DBUtils.getMessages(dbConnection, userId, userTable);
 		
-		return forumSummary.toString();
+		return messages.toString();
 	}
 }

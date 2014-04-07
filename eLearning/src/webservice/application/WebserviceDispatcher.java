@@ -5,28 +5,29 @@ import org.restlet.*;
 import org.restlet.routing.Router;
 
 import webserviceResources.AllGradesResource;
-import webserviceResources.AllStudentsResource;
-import webserviceResources.AvailableClassesResource;
 import webserviceResources.CheckPasswordResource;
-import webserviceResources.ClassStudentsResource;
-import webserviceResources.CourseClassbookResource;
-import webserviceResources.CourseDetailsResource;
-import webserviceResources.CoursesListResource;
-import webserviceResources.FeedbackRequestResource;
-import webserviceResources.ForumSubjectResource;
-import webserviceResources.ForumSummaryResource;
-import webserviceResources.HomeworkResource;
 import webserviceResources.LoginCheckResource;
-import webserviceResources.MessagesResource;
-import webserviceResources.PersonalInformationResource;
-import webserviceResources.SchoolNewsArticleResource;
-import webserviceResources.SchoolNewsResource;
-import webserviceResources.SchoolsListResource;
-import webserviceResources.SettingsInformationResource;
-import webserviceResources.PersonResource;
-import webserviceResources.TeachersResource;
-import webserviceResources.TimetableResource;
-import webserviceResources.UpdateColumnResource;
+import webserviceResources.getters.AllStudentsResource;
+import webserviceResources.getters.AvailableClassesResource;
+import webserviceResources.getters.ClassStudentsResource;
+import webserviceResources.getters.CourseClassbookResource;
+import webserviceResources.getters.CourseDetailsResource;
+import webserviceResources.getters.CoursesListResource;
+import webserviceResources.getters.FeedbackRequestResource;
+import webserviceResources.getters.ForumSubjectResource;
+import webserviceResources.getters.ForumSummaryResource;
+import webserviceResources.getters.HomeworkResource;
+import webserviceResources.getters.MessagesResource;
+import webserviceResources.getters.PersonResource;
+import webserviceResources.getters.PersonalInformationResource;
+import webserviceResources.getters.SchoolNewsArticleResource;
+import webserviceResources.getters.SchoolNewsResource;
+import webserviceResources.getters.SchoolsListResource;
+import webserviceResources.getters.SettingsInformationResource;
+import webserviceResources.getters.TeachersResource;
+import webserviceResources.getters.TimetableResource;
+import webserviceResources.setters.UpdateColumnResource;
+import webserviceResources.setters.UploadMessageResource;
 
 /**
  * Used to create a root restlet that will receive all the
@@ -63,6 +64,8 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getAvailableClasses", AvailableClassesResource.class);
 		router.attach("/getClassStudents", ClassStudentsResource.class);
 		router.attach("/getAllStudents", AllStudentsResource.class);
+		
+		router.attach("/uploadMessage", UploadMessageResource.class);
 		
 		return router;
 	}

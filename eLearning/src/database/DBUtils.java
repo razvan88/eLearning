@@ -703,6 +703,9 @@ public class DBUtils {
 					selfIndex = 0;
 				}
 				
+				message.put("initiator_id", initiatorId);
+				message.put("initiator_table", tableName);
+				
 				String responderName = null, responderPhoto = null;
 				int responderId = resultSet.getInt("responder_id");
 				tableName = resultSet.getString("responder_table");
@@ -925,6 +928,38 @@ public class DBUtils {
 		} catch (Exception e) { }
 		
 		return students;
+	}
+	
+	public static int uploadMessage(DBConnection dbConnection, int messageId, JSONObject messageContent) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `messages` FROM " + DBCredentials.MESSAGES_TABLE +
+						" WHERE `id`=" + messageId;
+		String newMessages = "";
+		int result = 0;
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+			
+			if(resultSet.next()) {
+				JSONArray messages = JSONArray.fromObject(resultSet.getString(1));
+				messages.add(messageContent);
+				newMessages = messages.toString();
+			}
+			
+			statement.close();
+		
+			query = "UPDATE " + DBCredentials.MESSAGES_TABLE + 
+							" SET `messages`='" + newMessages + 
+							"' WHERE `id`=" + messageId;
+			
+			statement = connection.createStatement();
+			result = statement.executeUpdate(query);
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return result;
 	}
 	/*
 	public static void main(String[] args) {
