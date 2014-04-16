@@ -502,6 +502,7 @@ public class DBUtils {
 			while(homeworkResultSet.next()) {
 				JSONObject homework = new JSONObject();
 				
+				homework.put("id", homeworkResultSet.getInt("id"));
 				homework.put("name", homeworkResultSet.getString("name"));
 				homework.put("text", homeworkResultSet.getString("content"));
 				homework.put("deadline", homeworkResultSet.getString("deadline"));
