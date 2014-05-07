@@ -28,7 +28,7 @@ public class AllGradesResource extends ServerResource{
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		//TODO
+		// TODO
 		
 		return null;
 	}
