@@ -4,30 +4,9 @@ package webservice.application;
 import org.restlet.*;
 import org.restlet.routing.Router;
 
-import webserviceResources.AllGradesResource;
-import webserviceResources.CheckPasswordResource;
-import webserviceResources.LoginCheckResource;
-import webserviceResources.getters.AllStudentsResource;
-import webserviceResources.getters.AvailableClassesResource;
-import webserviceResources.getters.ClassStudentsResource;
-import webserviceResources.getters.CourseClassbookResource;
-import webserviceResources.getters.CourseDetailsResource;
-import webserviceResources.getters.CoursesListResource;
-import webserviceResources.getters.FeedbackRequestResource;
-import webserviceResources.getters.ForumSubjectResource;
-import webserviceResources.getters.ForumSummaryResource;
-import webserviceResources.getters.HomeworkResource;
-import webserviceResources.getters.MessagesResource;
-import webserviceResources.getters.PersonResource;
-import webserviceResources.getters.PersonalInformationResource;
-import webserviceResources.getters.SchoolNewsArticleResource;
-import webserviceResources.getters.SchoolNewsResource;
-import webserviceResources.getters.SchoolsListResource;
-import webserviceResources.getters.SettingsInformationResource;
-import webserviceResources.getters.TeachersResource;
-import webserviceResources.getters.TimetableResource;
-import webserviceResources.setters.UpdateColumnResource;
-import webserviceResources.setters.UploadMessageResource;
+import webserviceResources.*;
+import webserviceResources.getters.*;
+import webserviceResources.setters.*;
 
 /**
  * Used to create a root restlet that will receive all the
@@ -64,6 +43,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getAvailableClasses", AvailableClassesResource.class);
 		router.attach("/getClassStudents", ClassStudentsResource.class);
 		router.attach("/getAllStudents", AllStudentsResource.class);
+		router.attach("/getAllDeadlines", AllDeadlinesResource.class);
 		
 		router.attach("/uploadMessage", UploadMessageResource.class);
 		

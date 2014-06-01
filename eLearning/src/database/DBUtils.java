@@ -962,6 +962,69 @@ public class DBUtils {
 		
 		return result;
 	}
+	
+	public static JSONArray getAllDeadlines(DBConnection dbConnection, int userId) {
+		JSONArray deadlines = new JSONArray();
+		Connection connection = dbConnection.getConnection();
+		String courses[] = new String[0];
+		int classId = -1;
+		String coursesQuery = "SELECT `courseIds` FROM " + DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=" + userId;
+		String classQuery = "SELECT `group` FROM " + DBCredentials.STUDENT_TABLE + " WHERE `id`=" + userId;
+		String deadlineQuery = "SELECT `name`, `deadline` FROM " + DBCredentials.HOMEWORK_TABLE + " WHERE `teacher_course_class_id`=?";
+		
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(coursesQuery);
+			
+			if(resultSet.next()) {
+				courses = resultSet.getString("courseIds").split(",");
+			}
+			
+			resultSet = statement.executeQuery(classQuery);
+			if(resultSet.next()) {
+				classId = resultSet.getInt("group");
+			}
+			
+			String tccQuery = "SELECT `id` FROM " + DBCredentials.TEACHER_COURSE_CLASS_TABLE + " WHERE `courseId`=? AND `classId`=" + classId;
+			
+			PreparedStatement tccStmt = connection.prepareStatement(tccQuery);
+			PreparedStatement deadlineStmt = connection.prepareStatement(deadlineQuery);
+			
+			for(int i = 0; i < courses.length; i++) {
+				int courseId = Integer.parseInt(courses[i]);
+				int tccId = -1;
+				
+				tccStmt.setInt(1, courseId);
+				
+				ResultSet res = tccStmt.executeQuery();
+				if(res.next()) {
+					tccId = res.getInt("id");
+				}
+				
+				if(tccId == -1) {
+					continue;
+				}
+				
+				deadlineStmt.setInt(1, tccId);
+				res = deadlineStmt.executeQuery();
+				while(res.next()) {
+					JSONObject deadline = new JSONObject();
+					
+					deadline.put("name", res.getString("name"));
+					deadline.put("deadline", res.getString("deadline"));
+					
+					deadlines.add(deadline);
+				}
+				
+				res.close();
+			}
+			
+			statement.close();
+		} catch (Exception e) { }
+		
+		return deadlines;
+	}
+	
 	/*
 	public static void main(String[] args) {
 		DBConnection conn = DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
