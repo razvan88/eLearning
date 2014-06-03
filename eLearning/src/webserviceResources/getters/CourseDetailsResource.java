@@ -32,15 +32,26 @@ public class CourseDetailsResource extends ServerResource {
 		
 		int classId = DBUtils.getClassIdForUser(dbConnection, userId);
 		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
-		JSONObject deadlines = DBUtils.getDeadlines(dbConnection, tccId);
+		JSONArray deadlines = DBUtils.getAllDeadlines(dbConnection, userId, new String[] {courseId + ""});
 		JSONObject holidays = DBUtils.getHolidayDetails(dbConnection);
 		JSONArray resources = DBUtils.getResources(dbConnection, tccId);
 		
 		JSONObject courseDetails = new JSONObject();
 		courseDetails.put("name", ((JSONObject)(courseInfo.get(0))).getString("name"));
-		courseDetails.put("deadlines", deadlines);
 		courseDetails.put("holidays", holidays);
 		courseDetails.put("resources", resources);
+		
+		JSONObject allDeadlines = new JSONObject();
+		JSONArray allDates = new JSONArray();
+		JSONArray allTips = new JSONArray();
+		for(int i = 0; i < deadlines.size(); i++) {
+			JSONObject deadline = (JSONObject)deadlines.get(i);
+			allDates.add(deadline.get("deadline"));
+			allTips.add(deadline.get("name"));
+		}
+		allDeadlines.put("dates", allDates);
+		allDeadlines.put("tips", allTips);
+		courseDetails.put("deadlines", allDeadlines);
 		
 		return courseDetails.toString();
 	}

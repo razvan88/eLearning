@@ -5,6 +5,7 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.GregorianCalendar;
 
+import net.sf.ezmorph.bean.MorphDynaBean;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -29,9 +30,10 @@ public class AllDeadlinesResource extends ServerResource {
 		int schoolId = info.getInt("schoolId");
 		int userId = info.getInt("userId");
 
-		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
-		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
-				database);
+		String database = ConfigurationSettings
+				.getSchoolDatabaseName(schoolId);
+		DBConnection dbConnection = DBConnectionManager.getConnection(
+				schoolId, database);
 
 		JSONArray deadlines = DBUtils.getAllDeadlines(dbConnection, userId);
 
@@ -56,24 +58,35 @@ public class AllDeadlinesResource extends ServerResource {
 		}
 
 		// sort the deadlines
-		JSONObject[] array = (JSONObject[]) JSONArray
-				.toArray(filteredDeadlines);
-		Arrays.sort(array, new Comparator<JSONObject>() {
+		Object[] array = (Object[])JSONArray.toArray(filteredDeadlines);
+		MorphDynaBean[] mdb = new MorphDynaBean[array.length];
+		for(int i = 0; i < array.length; i++) {
+			mdb[i] = (MorphDynaBean)array[i];
+		}
+
+		Arrays.sort(mdb, new Comparator<MorphDynaBean>() {
 			@Override
-			public int compare(JSONObject o1, JSONObject o2) {
-				String date1 = o1.getString("deadline");
-				String date2 = o2.getString("deadline");
+			public int compare(MorphDynaBean o1, MorphDynaBean o2) {
+				String date1 = (String)o1.get("deadline");
+				String date2 = (String)o2.get("deadline");
 
 				return Date.timeDateBefore(date1, date2) ? -1 : 1;
 			}
 		});
 
-		// remove unsorted elements and add them in order
-		filteredDeadlines.clear();
-		for (JSONObject obj : array) {
-			filteredDeadlines.add(obj);
+		JSONObject allDeadlines = new JSONObject();
+		JSONArray allNames = new JSONArray();
+		JSONArray allDates = new JSONArray();
+		JSONArray allCourses = new JSONArray();
+		for (MorphDynaBean obj : mdb) {
+			allNames.add(obj.get("name"));
+			allDates.add(obj.get("deadline"));
+			allCourses.add(obj.get("course"));
 		}
-
-		return filteredDeadlines.toString();
+		allDeadlines.put("dates", allDates);
+		allDeadlines.put("tips", allNames);
+		allDeadlines.put("courses", allCourses);
+		
+		return allDeadlines.toString();
 	}
 }
