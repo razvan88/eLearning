@@ -1,7 +1,23 @@
 package utils;
 
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
 public class Date {
-	
+
+	public static String getSQLDateNow() {
+		Calendar cal = new GregorianCalendar();
+		
+		int yy = cal.get(Calendar.YEAR);
+		int mm = cal.get(Calendar.MONTH) + 1;
+		int dd = cal.get(Calendar.DAY_OF_MONTH);
+		
+		int h = cal.get(Calendar.HOUR_OF_DAY);
+		int m = cal.get(Calendar.MINUTE);
+		int s = cal.get(Calendar.SECOND);
+		
+		return String.format("%s-%s-%s %s:%s:%s", yy, mm, dd, h, m ,s);
+	}
 	/**
 	 * @param date1 first date to be compared (format: YYYY-MM-DD)
 	 * @param date2 second date to be compared (format: YYYY-MM-DD)

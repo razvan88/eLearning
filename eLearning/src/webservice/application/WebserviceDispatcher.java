@@ -22,7 +22,6 @@ public class WebserviceDispatcher extends Application {
 		
 		router.attach("/getSchoolsList", SchoolsListResource.class);
 		router.attach("/checkLogin", LoginCheckResource.class);
-		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/getPersonalInformation", PersonalInformationResource.class);
 		router.attach("/getEmailAndDescription", SettingsInformationResource.class);
 		router.attach("/getAllGrades", AllGradesResource.class);
@@ -45,7 +44,9 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getAllStudents", AllStudentsResource.class);
 		router.attach("/getAllDeadlines", AllDeadlinesResource.class);
 		
+		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/uploadMessage", UploadMessageResource.class);
+		router.attach("/uploadCourseForumTopic", UploadCourseForumTopicResource.class);
 		
 		return router;
 	}

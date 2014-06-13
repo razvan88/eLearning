@@ -1029,11 +1029,14 @@ public class DBUtils {
 		return result;
 	}
 
-	public static JSONArray getAllDeadlines(DBConnection dbConnection, int userId) {
-		String coursesQuery = "SELECT `courseIds` FROM " + DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=" + userId;
+	public static JSONArray getAllDeadlines(DBConnection dbConnection,
+			int userId) {
+		String coursesQuery = "SELECT `courseIds` FROM "
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
+				+ userId;
 		String courses[] = new String[0];
 		JSONArray deadlines = new JSONArray();
-		
+
 		try {
 			Connection connection = dbConnection.getConnection();
 			Statement statement = connection.createStatement();
@@ -1042,12 +1045,13 @@ public class DBUtils {
 			if (resultSet.next()) {
 				courses = resultSet.getString("courseIds").split(",");
 			}
-			
+
 			deadlines = getAllDeadlines(dbConnection, userId, courses);
-			
+
 			statement.close();
-		} catch (Exception e) {}
-		
+		} catch (Exception e) {
+		}
+
 		return deadlines;
 	}
 
@@ -1113,7 +1117,7 @@ public class DBUtils {
 
 					deadlines.add(deadline);
 				}
-				
+
 				simpleDeadlineStmt.setInt(1, tccId);
 				res = simpleDeadlineStmt.executeQuery();
 				while (res.next()) {
@@ -1130,9 +1134,63 @@ public class DBUtils {
 			}
 
 			statement.close();
-		} catch (Exception e) { }
+		} catch (Exception e) {
+		}
 
 		return deadlines;
+	}
+
+	/**
+	 * @param dbConnection
+	 * @param courseId
+	 * @param isAnnouncement
+	 * @param subject
+	 * @param initiatorId
+	 * @param initiatorTable
+	 * @param totalPosts
+	 * @param lastPostDate
+	 * @param lastPostById
+	 * @param lastPostByTable
+	 * @return the primary key given to inserted row
+	 */
+	public static int uploadForumTopic(DBConnection dbConnection, int courseId,
+			int isAnnouncement, String subject, int initiatorId,
+			String initiatorTable, int totalPosts, String lastPostDate,
+			int lastPostById, String lastPostByTable) {
+		Connection connection = dbConnection.getConnection();
+		int primaryKey = 0;
+		String query = "INSERT INTO "
+				+ DBCredentials.FORUM_SUMMARY_TABLE
+				+ " (`course_id`, `is_announcement`, `subject`, `initiator_id`, `initiator_table`, `total_posts`, `last_post_date`, `last_post_by_id`, `last_post_by_table`) VALUES ("
+				+ courseId + "," + isAnnouncement + ",'" + subject + "',"
+				+ initiatorId + ",'" + initiatorTable + "'," + totalPosts
+				+ ",'" + lastPostDate + "'," + lastPostById + ",'"
+				+ lastPostByTable + "'";
+
+		try {
+			Statement statement = connection.createStatement();
+			int rows = statement.executeUpdate(query);
+
+			if (rows == 1) {
+				// added row, so get the primary key
+				query = "SELECT `id` FROM " + DBCredentials.FORUM_SUMMARY_TABLE
+						+ " WHERE `course_id`=" + courseId
+						+ " AND `is_announcement`=" + isAnnouncement
+						+ " AND `subject`=" + subject
+						+ " AND `last_post_date`=" + lastPostDate
+						+ " AND `initiator_id`=" + initiatorId
+						+ " AND `initiator_table`=" + initiatorTable;
+				ResultSet result = statement.executeQuery(query);
+				if(result.next()) {
+					primaryKey = result.getInt("id");
+				}
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return primaryKey;
 	}
 
 	/*
