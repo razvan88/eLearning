@@ -1418,7 +1418,7 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		boolean given = false;
-		String query = "SELECT `id` FROM " + DBCredentials.FEEDBACK_TABLE + " WHERE `feedbackId`=" + feedbackId + " AND `student_id`=" + studentId;
+		String query = "SELECT `id` FROM " + DBCredentials.FEEDBACK_TABLE + " WHERE `feedback_Id`=" + feedbackId + " AND `student_id`=" + studentId;
 
 		try {
 			Statement statement = connection.createStatement();
