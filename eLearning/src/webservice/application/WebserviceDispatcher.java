@@ -43,7 +43,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getClassStudents", ClassStudentsResource.class);
 		router.attach("/getAllStudents", AllStudentsResource.class);
 		router.attach("/getAllDeadlines", AllDeadlinesResource.class);
-		router.attach("/getFeedbackStatus", FeedbackStatusResource.class);
+		router.attach("/getFeedbackGiven", FeedbackStatusResource.class);
 		
 		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/startMessage", StartMessageResource.class);
