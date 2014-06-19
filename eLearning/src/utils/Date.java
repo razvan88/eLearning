@@ -9,12 +9,17 @@ public class Date {
 		Calendar cal = new GregorianCalendar();
 		
 		int yy = cal.get(Calendar.YEAR);
-		int mm = cal.get(Calendar.MONTH) + 1;
-		int dd = cal.get(Calendar.DAY_OF_MONTH);
+		int rawMm = cal.get(Calendar.MONTH) + 1;
+		String mm = (rawMm < 10 ? "0" : "") + rawMm;
+		int rawDd = cal.get(Calendar.DAY_OF_MONTH);
+		String dd = (rawDd < 10 ? "0" : "") + rawDd;
 		
-		int h = cal.get(Calendar.HOUR_OF_DAY);
-		int m = cal.get(Calendar.MINUTE);
-		int s = cal.get(Calendar.SECOND);
+		int rawH = cal.get(Calendar.HOUR_OF_DAY);
+		String h = (rawH < 10 ? "0" : "") + rawH;
+		int rawM = cal.get(Calendar.MINUTE);
+		String m = (rawM < 10 ? "0" : "") + rawM;
+		int rawS = cal.get(Calendar.SECOND);
+		String s = (rawS < 10 ? "0" : "") + rawS;
 		
 		return String.format("%s-%s-%s %s:%s:%s", yy, mm, dd, h, m ,s);
 	}

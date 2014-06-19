@@ -30,7 +30,7 @@ public class UploadCourseForumTopicResource extends ServerResource {
 		int isAnnouncement = info.getInt("isAnnouncement");
 		int totalPosts = info.getInt("totalPosts");
 		String content = info.getString("content");
-		
+
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
@@ -39,9 +39,18 @@ public class UploadCourseForumTopicResource extends ServerResource {
 		int primaryKey = DBUtils.uploadForumTopic(dbConnection, courseId,
 				isAnnouncement, subject, initiatorId, initiatorTable,
 				totalPosts, sqlDate, lastPostById, lastPostByTable);
-		
-		// TODO - use primaryKey and content
 
-		return "";
+		if(primaryKey < 0) {
+			return "0";
+		}
+		
+		boolean added = DBUtils.uploadFirstEntryForumSubject(dbConnection,
+				primaryKey, initiatorId, initiatorTable, sqlDate, content);
+		if(!added) {
+			DBUtils.removeForumTopic(dbConnection, primaryKey);
+			return "0";
+		}
+		
+		return "1";
 	}
 }

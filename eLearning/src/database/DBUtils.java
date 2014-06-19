@@ -519,6 +519,7 @@ public class DBUtils {
 						.prepareStatement(homeworkResultQuery);
 				resultsStatement.setInt(1, homeworkResultSet.getInt("id"));
 				ResultSet resultsResultSet = resultsStatement.executeQuery();
+				
 				if (resultsResultSet.next()) {
 					homework.put("uploaded",
 							resultsResultSet.getInt("uploaded"));
@@ -530,7 +531,11 @@ public class DBUtils {
 							resultsResultSet.getString("archive"));
 					homework.put("uploadTime",
 							resultsResultSet.getString("upload_time"));
+				} else {
+					//not yet uploaded
+					homework.put("uploaded", 0);
 				}
+				
 				resultsStatement.close();
 
 				result.add(homework);
@@ -1158,14 +1163,14 @@ public class DBUtils {
 			String initiatorTable, int totalPosts, String lastPostDate,
 			int lastPostById, String lastPostByTable) {
 		Connection connection = dbConnection.getConnection();
-		int primaryKey = 0;
+		int primaryKey = -1;
 		String query = "INSERT INTO "
 				+ DBCredentials.FORUM_SUMMARY_TABLE
 				+ " (`course_id`, `is_announcement`, `subject`, `initiator_id`, `initiator_table`, `total_posts`, `last_post_date`, `last_post_by_id`, `last_post_by_table`) VALUES ("
 				+ courseId + "," + isAnnouncement + ",'" + subject + "',"
 				+ initiatorId + ",'" + initiatorTable + "'," + totalPosts
 				+ ",'" + lastPostDate + "'," + lastPostById + ",'"
-				+ lastPostByTable + "'";
+				+ lastPostByTable + "')";
 
 		try {
 			Statement statement = connection.createStatement();
@@ -1176,12 +1181,12 @@ public class DBUtils {
 				query = "SELECT `id` FROM " + DBCredentials.FORUM_SUMMARY_TABLE
 						+ " WHERE `course_id`=" + courseId
 						+ " AND `is_announcement`=" + isAnnouncement
-						+ " AND `subject`=" + subject
-						+ " AND `last_post_date`=" + lastPostDate
+						+ " AND `subject`='" + subject + "'"
+						+ " AND `last_post_date`='" + lastPostDate + "'"
 						+ " AND `initiator_id`=" + initiatorId
-						+ " AND `initiator_table`=" + initiatorTable;
+						+ " AND `initiator_table`='" + initiatorTable + "'";
 				ResultSet result = statement.executeQuery(query);
-				if(result.next()) {
+				if (result.next()) {
 					primaryKey = result.getInt("id");
 				}
 			}
@@ -1191,6 +1196,179 @@ public class DBUtils {
 		}
 
 		return primaryKey;
+	}
+
+	public static boolean uploadFirstEntryForumSubject(
+			DBConnection dbConnection, int forumTopicId, int senderId,
+			String senderTable, String date, String content) {
+		int rows = 0;
+		Connection connection = dbConnection.getConnection();
+		String query = "INSERT INTO "
+				+ DBCredentials.FORUM_SUBJECT_TABLE
+				+ " (`subject_id`, `parent_post_id`, `sender_id`, `sender_table`, `date`, `content`) VALUES ("
+				+ forumTopicId + ",-1," + senderId + ",'" + senderTable + "','"
+				+ date + "','" + content + "')";
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows == 1;
+	}
+
+	public static void removeForumTopic(DBConnection dbConnection,
+			int forumTopicId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "DELETE FROM " + DBCredentials.FORUM_SUMMARY_TABLE
+				+ " WHERE `id`=" + forumTopicId;
+
+		try {
+			Statement statement = connection.createStatement();
+			statement.executeUpdate(query);
+
+			statement.close();
+		} catch (Exception e) {
+		}
+	}
+
+	public static boolean uploadForumSubjectEntry(DBConnection dbConnection,
+			int subjectId, int parentPostId, int senderId, String senderTable,
+			String date, String content) {
+		Connection connection = dbConnection.getConnection();
+		int rows = 0;
+		String query = "INSERT INTO "
+				+ DBCredentials.FORUM_SUBJECT_TABLE
+				+ " (`subject_id`, `parent_post_id`, `sender_id`, `sender_table`, `date`, `content`) VALUES ("
+				+ subjectId + "," + parentPostId + "," + senderId + ",'"
+				+ senderTable + "','" + date + "','" + content + "')";
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+
+			if (rows == 1) {
+				// if added the entry, increase the total posts number
+				query = "SELECT `total_posts` FROM "
+						+ DBCredentials.FORUM_SUMMARY_TABLE + " WHERE `id`="
+						+ subjectId;
+				ResultSet result = statement.executeQuery(query);
+				if (result.next()) {
+					int totalPosts = result.getInt("total_posts");
+
+					query = "UPDATE " + DBCredentials.FORUM_SUMMARY_TABLE
+							+ " SET `total_posts`=" + (++totalPosts)
+							+ " WHERE `id`=" + subjectId;
+					statement.executeUpdate(query);
+				}
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows == 1;
+	}
+
+	public static int getConversationIdBetween(DBConnection dbConnection,
+			int firstId, String firstTable, int secondId, String secondTable) {
+		int pk = -1;
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `id` FROM " + DBCredentials.MESSAGES_TABLE
+				+ " WHERE (`initiator_id`=" + firstId
+				+ " AND `initiator_table`='" + firstTable
+				+ "' AND `responder_id`=" + secondId
+				+ " AND `responder_table`='" + secondTable + "') OR "
+				+ "(`initiator_id`=" + secondId + " AND `initiator_table`='"
+				+ secondTable + "' AND `responder_id`=" + firstId
+				+ " AND `responder_table`='" + firstTable + "')";
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				pk = result.getInt("id");
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return pk;
+	}
+
+	public static boolean uploadNewMessage(DBConnection dbConnection,
+			int initiatorId, String initiatorTable, int responderId,
+			String responderTable, String timestamp, String content) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+
+		String messages = "[{\"sender_index\":0, \"timestamp\":\"" + timestamp
+				+ "\", \"content\":\"" + content + "\"}]";
+		String query = "INSERT INTO "
+				+ DBCredentials.MESSAGES_TABLE
+				+ " (`initiator_id`, `initiator_table`, `responder_id`, `responder_table`, `messages`) VALUES ("
+				+ initiatorId + ",'" + initiatorTable + "'," + responderId
+				+ ",'" + responderTable + "','" + messages + "')";
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows == 1;
+	}
+
+	public static int getSenderIndexForMessage(DBConnection dbConnection,
+			int messageId, int userId, String userTable) {
+		int index = 0;
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `initiator_id`, `initiator_table` FROM "
+				+ DBCredentials.MESSAGES_TABLE + " WHERE `id`=" + messageId;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				index = (result.getInt("initiator_id") == userId && result
+						.getString("initiator_table") == userTable) ? 0 : 1;
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return index;
+	}
+
+	public static boolean uploadHomework(DBConnection dbConnection,
+			int homeworkId, int tccId, int studentId, String archivePath,
+			String date) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "INSERT INTO "
+				+ DBCredentials.HOMEWORK_RESULTS_TABLE
+				+ " (`homework_id`, `teacher_course_class_id`, `student_id`, `uploaded`, `graded`, `archive`, `upload_time`) VALUES ("
+				+ homeworkId + "," + tccId + "," + studentId + ",1,0,'"
+				+ archivePath + "','" + date + "')";
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows == 1;
 	}
 
 	/*
