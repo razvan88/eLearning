@@ -1412,25 +1412,109 @@ public class DBUtils {
 
 		return rows == 1;
 	}
-	
+
 	public static boolean getFeedbackStatus(DBConnection dbConnection,
 			int feedbackId, int studentId) {
 		Connection connection = dbConnection.getConnection();
 
 		boolean given = false;
-		String query = "SELECT `id` FROM " + DBCredentials.FEEDBACK_TABLE + " WHERE `feedback_Id`=" + feedbackId + " AND `student_id`=" + studentId;
+		String query = "SELECT `id` FROM " + DBCredentials.FEEDBACK_TABLE
+				+ " WHERE `feedback_Id`=" + feedbackId + " AND `student_id`="
+				+ studentId;
 
 		try {
 			Statement statement = connection.createStatement();
 			ResultSet result = statement.executeQuery(query);
-			
+
 			given = result.next();
-			
+
 			statement.close();
 		} catch (Exception e) {
 		}
 
 		return given;
+	}
+
+	public static JSONArray getTeacherCoursesAndClasses(
+			DBConnection dbConnection, int teacherId) {
+		Connection connection = dbConnection.getConnection();
+		JSONArray coursesClasses = new JSONArray();
+		String query = "SELECT `courses` FROM " + DBCredentials.TEACHER_TABLE
+				+ " WHERE `id`=" + teacherId;
+		String sql = "SELECT * FROM " + DBCredentials.COURSES_LIST_TABLE;
+		List<Integer> classesAlreadyAdded = new ArrayList<Integer>();
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				Statement stmt = connection.createStatement();
+				ResultSet res = stmt.executeQuery(sql);
+				
+				String[] courses = result.getString("courses").split(",");
+				JSONArray coursesInfo = DBCommonOperations
+						.getCoursesInfo(courses);
+				for (int i = 0; i < coursesInfo.size(); i++) {
+					classesAlreadyAdded.clear();
+					
+					JSONObject course = (JSONObject) coursesInfo.get(i);
+					JSONObject courseClassObject = new JSONObject();
+					
+					int id = course.getInt("id");
+					String name = course.getString("name");
+					courseClassObject.put("id", id);
+					courseClassObject.put("course", name);
+					
+					JSONArray courseClassesArray = new JSONArray();
+
+					while (res.next()) {
+						int studentId = res.getInt("studentId");
+						
+						// check student's class
+						int classId = DBUtils.getClassIdForUser(
+								dbConnection, studentId);
+						boolean found = false;
+						// check if his class was already added
+						for (int addedClass : classesAlreadyAdded) {
+							if (addedClass == classId) {
+								found = true;
+								break;
+							}
+						}
+						
+						//class already added, skip
+						if(found) continue;
+						
+						String[] coursesIds = res.getString("courseIds").split(
+								",");
+						for (String courseId : coursesIds) {
+							if (Integer.parseInt(courseId) == id) {
+								// class was not added, so add it
+								classesAlreadyAdded.add(classId);
+								
+								JSONObject teachedClass = new JSONObject();
+								teachedClass.put("id", classId);
+								String className = DBCommonOperations
+										.getGroupName(classId);
+								teachedClass.put("className", className);
+								
+								courseClassesArray.add(teachedClass);
+							}
+						}
+					}
+					
+					courseClassObject.put("classes", courseClassesArray);
+					coursesClasses.add(courseClassObject);
+				}
+
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return coursesClasses;
 	}
 
 	/*
