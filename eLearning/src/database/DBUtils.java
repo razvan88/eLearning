@@ -519,7 +519,7 @@ public class DBUtils {
 						.prepareStatement(homeworkResultQuery);
 				resultsStatement.setInt(1, homeworkResultSet.getInt("id"));
 				ResultSet resultsResultSet = resultsStatement.executeQuery();
-				
+
 				if (resultsResultSet.next()) {
 					homework.put("uploaded",
 							resultsResultSet.getInt("uploaded"));
@@ -532,10 +532,10 @@ public class DBUtils {
 					homework.put("uploadTime",
 							resultsResultSet.getString("upload_time"));
 				} else {
-					//not yet uploaded
+					// not yet uploaded
 					homework.put("uploaded", 0);
 				}
-				
+
 				resultsStatement.close();
 
 				result.add(homework);
@@ -1369,6 +1369,68 @@ public class DBUtils {
 		}
 
 		return rows == 1;
+	}
+
+	public static int getFeedbackId(DBConnection dbConnection, int tccId) {
+		Connection connection = dbConnection.getConnection();
+
+		int id = 0;
+		String query = "SELECT `id` FROM "
+				+ DBCredentials.FEEDBACK_REQUEST_TABLE
+				+ " WHERE `teacher_course_class_id`=" + tccId;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				id = result.getInt("id");
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return id;
+	}
+
+	public static boolean uploadFeedback(DBConnection dbConnection,
+			int feedbackId, int studentId, String opinion) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "INSERT INTO " + DBCredentials.FEEDBACK_TABLE
+				+ " (`feedback_id`, `student_id`, `opinion`) VALUES ("
+				+ feedbackId + "," + studentId + ",'" + opinion + "')";
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows == 1;
+	}
+	
+	public static boolean getFeedbackStatus(DBConnection dbConnection,
+			int feedbackId, int studentId) {
+		Connection connection = dbConnection.getConnection();
+
+		boolean given = false;
+		String query = "SELECT `id` FROM " + DBCredentials.FEEDBACK_TABLE + " WHERE `feedbackId`=" + feedbackId + " AND `student_id`=" + studentId;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+			
+			given = result.next();
+			
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return given;
 	}
 
 	/*

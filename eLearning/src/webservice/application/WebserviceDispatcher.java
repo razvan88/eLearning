@@ -43,6 +43,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getClassStudents", ClassStudentsResource.class);
 		router.attach("/getAllStudents", AllStudentsResource.class);
 		router.attach("/getAllDeadlines", AllDeadlinesResource.class);
+		router.attach("/getFeedbackStatus", FeedbackStatusResource.class);
 		
 		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/startMessage", StartMessageResource.class);
@@ -50,6 +51,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/uploadCourseForumTopic", UploadCourseForumTopicResource.class);
 		router.attach("/uploadCourseForumSubject", UploadCourseForumSubjectResource.class);
 		router.attach("/uploadHomework", UploadHomeworkResource.class);
+		router.attach("/uploadFeedback", UploadFeedbackResource.class);
 		
 		return router;
 	}
