@@ -242,9 +242,15 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 		JSONObject info = new JSONObject();
 
-		String query = "SELECT `firstName`, `lastName`, `photo`, `birthdate`, `description`, `group`, `email` FROM "
-				+ table + " WHERE `id`=" + userId;
+		String query = "SELECT `firstName`, `lastName`, `photo`, `birthdate`, `description`, `email`"; 
 
+		if(table.equals("student")) {
+			query += ",`group`";
+		} else if(table.equals("teacher")) {
+			query += ",`courses`";
+		}
+		
+		query += " FROM " + table + " WHERE `id`=" + userId;
 		try {
 			Statement statement = connection.createStatement();
 			ResultSet rs = statement.executeQuery(query);
@@ -256,8 +262,15 @@ public class DBUtils {
 				info.put("description", rs.getString("description"));
 				info.put("email", rs.getString("email"));
 				info.put("birthdate", rs.getString("birthdate"));
-				info.put("group",
-						DBCommonOperations.getGroupName(rs.getInt("group")));
+				
+				if(table.equals("student")) {
+					info.put("group", DBCommonOperations.getGroupName(rs.getInt("group")));
+				} else if(table.equals("teacher")) {
+					String[] courses = rs.getString("courses").split(",");
+					JSONArray coursesList = DBCommonOperations.getCoursesInfo(courses);
+					info.put("courses", coursesList);
+				}
+				
 			}
 		} catch (Exception e) {
 			return null;
