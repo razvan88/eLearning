@@ -42,20 +42,18 @@ public class UploadTeacherFeedbackResource extends ServerResource {
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
 		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
+		boolean success = false;
 		
-		boolean feedbackExists = false;
-		int rows = 0;
-		
-		//TODO - check if it exists
-		//--
-		if(!feedbackExists) {
+		// check if it exists
+		int feedbackId = DBUtils.getTeacherFeedbackId(dbConnection, tccId);
+		if(feedbackId < 0) {
 			//insert
-			//rows = DBUtils.uploadTeacherFeedback(dbConnection, tccId, isAvailable, stringAspects.toString());
+			success = DBUtils.uploadTeacherFeedback(dbConnection, tccId, isAvailable, stringAspects.toString());
 		} else {
 			//update
-			//rows = --
+			success = DBUtils.updateTeacherFeedback(dbConnection, feedbackId, isAvailable, stringAspects.toString());
 		}
 		
-		return rows + "";
+		return success ? "1" : "0";
 	}
 }
