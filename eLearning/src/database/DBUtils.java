@@ -1537,7 +1537,7 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int id = -1;
-		String query = "SELECT `id` FROM " + DBCredentials.FEEDBACK_TABLE
+		String query = "SELECT `id` FROM " + DBCredentials.FEEDBACK_REQUEST_TABLE
 				+ " WHERE `teacher_course_class_id`=" + tccId;
 
 		try {
@@ -1560,9 +1560,9 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0;
-		String query = "UPDATE " + DBCredentials.FEEDBACK_TABLE
-				+ " SET `available`=" + available + ", `aspects`=\"" + aspects
-				+ "\" WHERE `id`=" + feedbackId;
+		String query = "UPDATE " + DBCredentials.FEEDBACK_REQUEST_TABLE
+				+ " SET `available`=" + available + ", `aspects`='" + aspects
+				+ "' WHERE `id`=" + feedbackId;
 
 		try {
 			Statement statement = connection.createStatement();
@@ -1580,7 +1580,7 @@ public class DBUtils {
 
 		int rows = 0;
 		String query = "INSERT INTO "
-				+ DBCredentials.FEEDBACK_TABLE
+				+ DBCredentials.FEEDBACK_REQUEST_TABLE
 				+ " (`teacher_course_class_id`, `available`, `aspects`) VALUES ("
 				+ tccId + "," + available + ",'" + aspects + "')";
 

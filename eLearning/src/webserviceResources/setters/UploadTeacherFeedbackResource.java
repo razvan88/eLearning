@@ -29,9 +29,9 @@ public class UploadTeacherFeedbackResource extends ServerResource {
 		
 		stringAspects.append("[");
 		for(int i = 0; i < jsonAspects.size(); i++) {
-			stringAspects.append("'");
+			stringAspects.append("\"");
 			stringAspects.append((String)(jsonAspects.get(i)));
-			stringAspects.append("'");
+			stringAspects.append("\"");
 			if(i + 1 < jsonAspects.size()) {
 				stringAspects.append(",");
 			}
