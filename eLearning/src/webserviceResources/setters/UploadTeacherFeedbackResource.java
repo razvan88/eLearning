@@ -19,41 +19,45 @@ public class UploadTeacherFeedbackResource extends ServerResource {
 	public String getFeedbackRequest(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
-		
+
 		int schoolId = info.getInt("schoolId");
 		int courseId = info.getInt("courseId");
 		int classId = info.getInt("classId");
 		int isAvailable = info.getInt("isAvailable");
 		JSONArray jsonAspects = JSONArray.fromObject(info.getString("aspects"));
 		StringBuffer stringAspects = new StringBuffer();
-		
+
 		stringAspects.append("[");
-		for(int i = 0; i < jsonAspects.size(); i++) {
+		for (int i = 0; i < jsonAspects.size(); i++) {
 			stringAspects.append("\"");
-			stringAspects.append((String)(jsonAspects.get(i)));
+			stringAspects.append((String) (jsonAspects.get(i)));
 			stringAspects.append("\"");
-			if(i + 1 < jsonAspects.size()) {
+			if (i + 1 < jsonAspects.size()) {
 				stringAspects.append(",");
 			}
 		}
 		stringAspects.append("]");
-		
+
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
-		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
-		
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
+		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
+				database);
+
+		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId,
+				courseId);
 		boolean success = false;
-		
+
 		// check if it exists
 		int feedbackId = DBUtils.getTeacherFeedbackId(dbConnection, tccId);
-		if(feedbackId < 0) {
-			//insert
-			success = DBUtils.uploadTeacherFeedback(dbConnection, tccId, isAvailable, stringAspects.toString());
+		if (feedbackId < 0) {
+			// insert
+			success = DBUtils.uploadTeacherFeedback(dbConnection, tccId,
+					isAvailable, stringAspects.toString());
 		} else {
-			//update
-			success = DBUtils.updateTeacherFeedback(dbConnection, feedbackId, isAvailable, stringAspects.toString());
+			// update
+			success = DBUtils.updateTeacherFeedback(dbConnection, feedbackId,
+					isAvailable, stringAspects.toString());
 		}
-		
+
 		return success ? "1" : "0";
 	}
 }

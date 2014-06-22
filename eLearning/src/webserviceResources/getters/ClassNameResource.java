@@ -16,7 +16,7 @@ public class ClassNameResource extends ServerResource {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		
-		int schoolId = info.getInt("schoolId");
+		//int schoolId = info.getInt("schoolId");
 		int classId = info.getInt("classId");
 		
 		//String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
