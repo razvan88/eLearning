@@ -1617,7 +1617,7 @@ public class DBUtils {
 						+ " AND `name`='" + name + "' and `deadline`='"
 						+ deadline + "'";
 				ResultSet result = statement.executeQuery(query);
-				if(result.next()) {
+				if (result.next()) {
 					id = result.getInt("id");
 				}
 			}
@@ -1646,6 +1646,60 @@ public class DBUtils {
 		}
 
 		return rows == 1;
+	}
+
+	public static JSONArray getHomeworkListForTeacher(
+			DBConnection dbConnection, int tccId) {
+		JSONArray homework = new JSONArray();
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `id`, `name` FROM "
+				+ DBCredentials.HOMEWORK_TABLE
+				+ " WHERE `teacher_course_class_id`=" + tccId;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			while (result.next()) {
+				JSONObject homewrk = new JSONObject();
+
+				homewrk.put("id", result.getInt("id"));
+				homewrk.put("name", result.getString("name"));
+
+				homework.add(homewrk);
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return homework;
+	}
+
+	public static JSONObject getTeacherHomework(DBConnection dbConnection,
+			int homeworkId) {
+		JSONObject homework = new JSONObject();
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `name`, `content`, `deadline`, `resources`, `maxGrade` FROM "
+				+ DBCredentials.HOMEWORK_TABLE + " WHERE `id`=" + homeworkId;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				homework.put("name", result.getString("name"));
+				homework.put("text", result.getString("content"));
+				homework.put("deadline", result.getString("deadline"));
+				homework.put("resources", result.getString("resources"));
+				homework.put("maxGrade", result.getDouble("maxGrade"));
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return homework;
 	}
 
 	/*
