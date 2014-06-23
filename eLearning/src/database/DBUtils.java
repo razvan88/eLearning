@@ -1634,12 +1634,32 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0;
-		String query = "UPDATE " + DBCredentials.HOMEWORK_TABLE
-				+ " SET `resources`='" + resources + "' WHERE `id`="
-				+ homeworkId;
+		String resourcesQuery = "SELECT `resources` FROM "
+				+ DBCredentials.HOMEWORK_TABLE + " WHERE `id`=" + homeworkId;
 
 		try {
 			Statement statement = connection.createStatement();
+			
+			// first get the resources and keep the links
+			ResultSet result = statement.executeQuery(resourcesQuery);
+			JSONArray links = new JSONArray();
+			JSONArray res = JSONArray.fromObject(resources);
+			if(result.next()) {
+				links = JSONArray.fromObject(result.getString("resources"));
+			}
+			
+			//add all resources together
+			JSONArray allRes = new JSONArray();
+			for(int i = 0; i < res.size(); i++) {
+				allRes.add(res.getJSONObject(i));
+			}
+			for(int i = 0; i < links.size(); i++) {
+				allRes.add(links.getJSONObject(i));
+			}
+			
+			String query = "UPDATE " + DBCredentials.HOMEWORK_TABLE
+					+ " SET `resources`='" + allRes.toString() + "' WHERE `id`="
+					+ homeworkId;
 			rows = statement.executeUpdate(query);
 			statement.close();
 		} catch (Exception e) {
