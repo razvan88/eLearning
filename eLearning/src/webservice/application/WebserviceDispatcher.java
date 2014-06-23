@@ -57,6 +57,8 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/uploadHomework", UploadHomeworkResource.class);
 		router.attach("/uploadFeedback", UploadFeedbackResource.class);
 		router.attach("/uploadTeacherFeedback", UploadTeacherFeedbackResource.class);
+		router.attach("/uploadTeacherHomework", UploadTeacherHomeworkResource.class);
+		router.attach("/uploadTeacherHomeworkResources", UploadTeacherHomeworkResourcesResource.class);
 		
 		return router;
 	}

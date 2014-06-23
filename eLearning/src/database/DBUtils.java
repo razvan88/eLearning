@@ -1537,7 +1537,8 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int id = -1;
-		String query = "SELECT `id` FROM " + DBCredentials.FEEDBACK_REQUEST_TABLE
+		String query = "SELECT `id` FROM "
+				+ DBCredentials.FEEDBACK_REQUEST_TABLE
 				+ " WHERE `teacher_course_class_id`=" + tccId;
 
 		try {
@@ -1583,6 +1584,59 @@ public class DBUtils {
 				+ DBCredentials.FEEDBACK_REQUEST_TABLE
 				+ " (`teacher_course_class_id`, `available`, `aspects`) VALUES ("
 				+ tccId + "," + available + ",'" + aspects + "')";
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows == 1;
+	}
+
+	public static int uploadTeacherHomework(DBConnection dbConnection,
+			int tccId, String name, String content, String deadline,
+			String resources, float maxGrade) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0, id = -1;
+		String query = "INSERT INTO "
+				+ DBCredentials.HOMEWORK_TABLE
+				+ " (`teacher_course_class_id`, `name`, `content`, `deadline`, `maxGrade`) VALUES ("
+				+ tccId + ",'" + name + "','" + content + "','" + deadline
+				+ "'," + maxGrade + ")";
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+
+			if (rows == 1) {
+				query = "SELECT `id` FROM " + DBCredentials.HOMEWORK_TABLE
+						+ " WHERE `teacher_course_class_id`=" + tccId
+						+ " AND `name`='" + name + "' and `deadline`='"
+						+ deadline + "'";
+				ResultSet result = statement.executeQuery(query);
+				if(result.next()) {
+					id = result.getInt("id");
+				}
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return id;
+	}
+
+	public static boolean uploadTeacherHomeworkResources(
+			DBConnection dbConnection, int homeworkId, String resources) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "UPDATE " + DBCredentials.HOMEWORK_TABLE
+				+ " SET `resources`='" + resources + "' WHERE `id`="
+				+ homeworkId;
 
 		try {
 			Statement statement = connection.createStatement();
