@@ -1603,9 +1603,9 @@ public class DBUtils {
 		int rows = 0, id = -1;
 		String query = "INSERT INTO "
 				+ DBCredentials.HOMEWORK_TABLE
-				+ " (`teacher_course_class_id`, `name`, `content`, `deadline`, `maxGrade`) VALUES ("
+				+ " (`teacher_course_class_id`, `name`, `content`, `deadline`, `resources`, `maxGrade`) VALUES ("
 				+ tccId + ",'" + name + "','" + content + "','" + deadline
-				+ "'," + maxGrade + ")";
+				+ "','" + resources + "'," + maxGrade + ")";
 
 		try {
 			Statement statement = connection.createStatement();
@@ -1639,26 +1639,22 @@ public class DBUtils {
 
 		try {
 			Statement statement = connection.createStatement();
-			
+
 			// first get the resources and keep the links
 			ResultSet result = statement.executeQuery(resourcesQuery);
 			JSONArray links = new JSONArray();
 			JSONArray res = JSONArray.fromObject(resources);
-			if(result.next()) {
+			if (result.next()) {
 				links = JSONArray.fromObject(result.getString("resources"));
 			}
-			
-			//add all resources together
-			JSONArray allRes = new JSONArray();
-			for(int i = 0; i < res.size(); i++) {
-				allRes.add(res.getJSONObject(i));
+
+			// add all resources together
+			for (int i = 0; i < links.size(); i++) {
+				res.add(links.getJSONObject(i));
 			}
-			for(int i = 0; i < links.size(); i++) {
-				allRes.add(links.getJSONObject(i));
-			}
-			
+
 			String query = "UPDATE " + DBCredentials.HOMEWORK_TABLE
-					+ " SET `resources`='" + allRes.toString() + "' WHERE `id`="
+					+ " SET `resources`='" + res.toString() + "' WHERE `id`="
 					+ homeworkId;
 			rows = statement.executeUpdate(query);
 			statement.close();
@@ -1720,6 +1716,133 @@ public class DBUtils {
 		}
 
 		return homework;
+	}
+
+	public static int updateTeacherHomework(DBConnection dbConnection,
+			int homeworkId, String name, String content, String deadline,
+			String resources, float maxGrade) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "UPDATE " + DBCredentials.HOMEWORK_TABLE
+				+ " SET `name`='" + name + "', `content`='" + content
+				+ "', `deadline`='" + deadline + "', `resources`='" + resources
+				+ "', `maxGrade`=" + maxGrade + " WHERE `id`=" + homeworkId;
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+
+	public static JSONObject getHomeworkNameAndMaxGrade(
+			DBConnection dbConnection, int homeworkId) {
+		Connection connection = dbConnection.getConnection();
+
+		JSONObject json = new JSONObject();
+		String query = "SELECT `name`, `maxGrade`, `deadline` FROM "
+				+ DBCredentials.HOMEWORK_TABLE + " WHERE `id`=" + homeworkId;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				json.put("title", result.getString("name"));
+				json.put("maxGrade", result.getDouble("maxGrade"));
+				json.put("deadline", result.getString("deadline"));
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return json;
+	}
+
+	public static JSONArray getSubmittedHomework(DBConnection dbConnection,
+			int homeworkId, int tccId) {
+		Connection connection = dbConnection.getConnection();
+
+		JSONArray json = new JSONArray();
+		String query = "SELECT `id`, `student_id`, `uploaded`, `graded`, `grade`, `feedback`, `archive`, `upload_time` FROM "
+				+ DBCredentials.HOMEWORK_RESULTS_TABLE
+				+ " WHERE `homework_id`="
+				+ homeworkId
+				+ " AND `teacher_course_class_id`=" + tccId;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			while (result.next()) {
+				JSONObject obj = new JSONObject();
+
+				obj.put("id", result.getInt("id"));
+
+				JSONObject archive = JSONObject.fromObject(result
+						.getString("archive"));
+				obj.put("name", archive.getString("name"));
+				obj.put("location", archive.getString("location"));
+
+				String[] uploadTime = result.getString("upload_time")
+						.split(" ");
+				obj.put("date", uploadTime[0]);
+				obj.put("time", uploadTime[1]);
+
+				int graded = result.getInt("graded");
+				obj.put("graded", graded);
+
+				obj.put("grade", graded == 1 ? result.getDouble("grade") : "");
+
+				String feedback = result.getString("feedback");
+				obj.put("feedback", feedback != null ? feedback : "");
+
+				query = "SELECT `firstName`, `lastName` FROM "
+						+ DBCredentials.STUDENT_TABLE + " WHERE `id`="
+						+ result.getInt("student_id");
+				Statement stmt = connection.createStatement();
+				ResultSet res = stmt.executeQuery(query);
+
+				if (res.next()) {
+					obj.put("student",
+							res.getString("lastName") + " "
+									+ res.getString("firstName"));
+				}
+
+				json.add(obj);
+				stmt.close();
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return json;
+	}
+
+	public static int rateHomework(DBConnection dbConnection, int homeworkId,
+			int graded, int grade, String feedback) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "UPDATE " + DBCredentials.HOMEWORK_RESULTS_TABLE
+				+ " SET `graded`=" + graded + ", `grade`=" + grade
+				+ ", `feedback`='" + feedback + "' WHERE `id`="
+				+ homeworkId;
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
 	}
 
 	/*
