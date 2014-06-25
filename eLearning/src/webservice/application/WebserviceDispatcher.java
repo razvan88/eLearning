@@ -52,6 +52,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getTeacherHomework", TeacherHomeworkResource.class);
 		router.attach("/getHomeworkNameAndMaxGrade", HomeworkNameAndMaxGradeResource.class);
 		router.attach("/getSubmittedHomework", SubmittedHomeworkResource.class);
+		router.attach("/getWeekResources", WeekResourcesResource.class);
 		
 		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/startMessage", StartMessageResource.class);
@@ -65,6 +66,9 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/updateTeacherHomework", UpdateTeacherHomeworkResource.class);
 		router.attach("/uploadTeacherHomeworkResources", UploadTeacherHomeworkResourcesResource.class);
 		router.attach("/rateHomework", RateHomeworkResource.class);
+		
+		router.attach("/uploadCourseWeekInfo", CourseWeekInfoResource.class);
+		router.attach("/uploadCourseResources", CourseResourcesResource.class);
 		
 		return router;
 	}

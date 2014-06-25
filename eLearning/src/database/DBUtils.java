@@ -1832,12 +1832,129 @@ public class DBUtils {
 		int rows = 0;
 		String query = "UPDATE " + DBCredentials.HOMEWORK_RESULTS_TABLE
 				+ " SET `graded`=" + graded + ", `grade`=" + grade
-				+ ", `feedback`='" + feedback + "' WHERE `id`="
-				+ homeworkId;
+				+ ", `feedback`='" + feedback + "' WHERE `id`=" + homeworkId;
 
 		try {
 			Statement statement = connection.createStatement();
 			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+
+	public static JSONObject getWeekResources(DBConnection dbConnection,
+			int tccId, int weekId) {
+		Connection connection = dbConnection.getConnection();
+
+		JSONObject resource = new JSONObject();
+		String query = "SELECT `content` FROM " + DBCredentials.RESOURCES_TABLE
+				+ " WHERE `teacher_course_class_id`=" + tccId;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				JSONArray array = JSONArray.fromObject(result
+						.getString("content"));
+				for (int i = 0; i < array.size(); i++) {
+					JSONObject obj = array.getJSONObject(i);
+					if (obj.getInt("id") == weekId) {
+						resource = obj;
+						break;
+					}
+				}
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return resource;
+	}
+
+	public static int uploadCourseWeekInfo(DBConnection dbConnection,
+			int tccId, int weekId, String description, String resources) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0, id = 0;
+		String query = "SELECT `id`, `content` FROM "
+				+ DBCredentials.RESOURCES_TABLE
+				+ " WHERE `teacher_course_class_id`=" + tccId;
+		JSONArray allResources = new JSONArray();
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				id = result.getInt("id");
+				allResources = JSONArray
+						.fromObject(result.getString("content"));
+				for (int i = 0; i < allResources.size(); i++) {
+					JSONObject obj = allResources.getJSONObject(i);
+					if (obj.getInt("id") == weekId) {
+						obj.put("description", description);
+						obj.put("resources", resources);
+						break;
+					}
+				}
+			}
+
+			query = "UPDATE " + DBCredentials.RESOURCES_TABLE
+					+ " SET `content`='" + allResources.toString()
+					+ "' WHERE `id`=" + id;
+			rows = statement.executeUpdate(query);
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+	
+	public static int uploadCourseWeekResources(DBConnection dbConnection,
+			int tccId, int weekId, JSONArray resources) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0, id = 0;
+		String query = "SELECT `id`, `content` FROM "
+				+ DBCredentials.RESOURCES_TABLE
+				+ " WHERE `teacher_course_class_id`=" + tccId;
+		JSONArray allResources = new JSONArray();
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				id = result.getInt("id");
+				allResources = JSONArray
+						.fromObject(result.getString("content"));
+				for (int i = 0; i < allResources.size(); i++) {
+					JSONObject obj = allResources.getJSONObject(i);
+					if (obj.getInt("id") == weekId) {
+						
+						JSONArray oldRes = JSONArray.fromObject(obj.getString("resources"));
+						for(int j = 0; j < oldRes.size(); j++) {
+							resources.add(oldRes.getJSONObject(j));
+						}
+						//remove old resources
+						obj.remove("resources");
+						//add new resources
+						obj.put("resources", resources);
+						break;
+					}
+				}
+			}
+
+			query = "UPDATE " + DBCredentials.RESOURCES_TABLE
+					+ " SET `content`='" + allResources.toString()
+					+ "' WHERE `id`=" + id;
+			rows = statement.executeUpdate(query);
+
 			statement.close();
 		} catch (Exception e) {
 		}
