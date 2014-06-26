@@ -809,7 +809,7 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 		String teacherQuery = "SELECT `id`, `firstName`, `lastName`, `photo`, `description`, `roles`, `courses` FROM "
 				+ DBCredentials.TEACHER_TABLE;
-		String auxiliaryQuery = "SELECT `id`, `firstName`, `lastName`, `photo`, `description`, `function` FROM "
+		String auxiliaryQuery = "SELECT `id`, `firstName`, `lastName`, `photo`, `description`, `function`, `timetable` FROM "
 				+ DBCredentials.AUXILIARY_TABLE;
 
 		// teachers
@@ -875,6 +875,7 @@ public class DBUtils {
 						+ resultSet.getString("lastName"));
 				member.put("photo", resultSet.getString("photo"));
 				member.put("description", resultSet.getString("description"));
+				member.put("timetable", resultSet.getString("timetable"));
 				member.put("table", DBCredentials.AUXILIARY_TABLE);
 
 				String[] functions = resultSet.getString("function").split(",");
@@ -1914,7 +1915,7 @@ public class DBUtils {
 
 		return rows;
 	}
-	
+
 	public static int uploadCourseWeekResources(DBConnection dbConnection,
 			int tccId, int weekId, JSONArray resources) {
 		Connection connection = dbConnection.getConnection();
@@ -1936,14 +1937,15 @@ public class DBUtils {
 				for (int i = 0; i < allResources.size(); i++) {
 					JSONObject obj = allResources.getJSONObject(i);
 					if (obj.getInt("id") == weekId) {
-						
-						JSONArray oldRes = JSONArray.fromObject(obj.getString("resources"));
-						for(int j = 0; j < oldRes.size(); j++) {
+
+						JSONArray oldRes = JSONArray.fromObject(obj
+								.getString("resources"));
+						for (int j = 0; j < oldRes.size(); j++) {
 							resources.add(oldRes.getJSONObject(j));
 						}
-						//remove old resources
+						// remove old resources
 						obj.remove("resources");
-						//add new resources
+						// add new resources
 						obj.put("resources", resources);
 						break;
 					}
@@ -1955,6 +1957,47 @@ public class DBUtils {
 					+ "' WHERE `id`=" + id;
 			rows = statement.executeUpdate(query);
 
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+
+	public static JSONArray getAuxTimetable(DBConnection dbConnection,
+			int userId) {
+		Connection connection = dbConnection.getConnection();
+
+		JSONArray timetable = new JSONArray();
+		String query = "SELECT `timetable` FROM "
+				+ DBCredentials.AUXILIARY_TABLE + " WHERE `id`=" + userId;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				timetable = JSONArray.fromObject(result.getString("timetable"));
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return timetable;
+	}
+
+	public static int uploadAuxTimetable(DBConnection dbConnection, int userId,
+			String timetable) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "UPDATE " + DBCredentials.AUXILIARY_TABLE
+				+ " SET `timetable`='" + timetable + "' WHERE `id`=" + userId;
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
 			statement.close();
 		} catch (Exception e) {
 		}
