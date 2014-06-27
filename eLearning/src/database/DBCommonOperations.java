@@ -132,6 +132,21 @@ public class DBCommonOperations {
 		return courses;
 	}
 	
+	public static JSONArray getAllClasses() {
+		JSONArray classes = new JSONArray();
+		
+		for(int key : sHighschoolGroups.keySet()) {
+			JSONObject aClass = new JSONObject();
+			
+			aClass.put("id", key);
+			aClass.put("name", sHighschoolGroups.get(key));
+			
+			classes.add(aClass);
+		}
+		
+		return classes;
+	}
+	
 	/**
 	 * @return json array with school objects, containing id, name, city and type
 	 */

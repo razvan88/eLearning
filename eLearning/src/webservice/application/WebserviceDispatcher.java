@@ -56,6 +56,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getAuxiliaryTimetable", AuxiliaryTimetableResource.class);
 		router.attach("/getTeacherList", TeacherListResource.class);
 		router.attach("/getAllCoursesList", AllCoursesListResource.class);
+		router.attach("/getClassList", AllClassListResource.class);
 		
 		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/startMessage", StartMessageResource.class);
