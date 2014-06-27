@@ -2005,6 +2005,81 @@ public class DBUtils {
 		return rows;
 	}
 
+	public static String getTeacherList(DBConnection dbConnection) {
+		Connection connection = dbConnection.getConnection();
+
+		StringBuffer list = new StringBuffer();
+		list.append("[");
+		boolean firstEntry = true;
+		String query = "SELECT `firstName`, `lastName` FROM " + DBCredentials.TEACHER_TABLE;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+			
+			while(result.next()) {
+				String teacherName = result.getString("lastName") + " " + result.getString("firstName");
+				
+				if(!firstEntry) {
+					list.append(",");
+				} else {
+					firstEntry = false;
+				}
+				
+				list.append("\"");
+				list.append(teacherName);
+				list.append("\"");
+			}
+			
+			statement.close();
+		} catch (Exception e) {
+		}
+		
+		list.append("]");
+
+		return list.toString();
+	}
+	
+	public static String getAllCoursesList(DBConnection dbConnection) {
+		StringBuffer list = new StringBuffer();
+		list.append("[");
+		boolean firstEntry = true;
+		
+		List<String> courses = DBCommonOperations.getAllCourses();
+		for(String course : courses) {
+			if(!firstEntry) {
+				list.append(",");
+			} else {
+				firstEntry = false;
+			}
+			
+			list.append("\"");
+			list.append(course);
+			list.append("\"");
+		}
+		
+		list.append("]");
+
+		return list.toString();
+	}
+	
+	public static int uploadClassTimetable(DBConnection dbConnection, int classId, String timetable) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "UPDATE " + DBCredentials.SCHOOL_TIMETABLE_TABLE
+				+ " SET `timetable`='" + timetable + "' WHERE `classId`=" + classId;
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+	
 	/*
 	 * public static void main(String[] args) { DBConnection conn =
 	 * DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");

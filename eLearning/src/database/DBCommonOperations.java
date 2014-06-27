@@ -122,6 +122,16 @@ public class DBCommonOperations {
 		}
 	}
 	
+	public static List<String> getAllCourses() {
+		List<String> courses = new ArrayList<String>();
+		
+		for(JSONObject course : sCourses.values()) {
+			courses.add(course.getString("name"));
+		}
+		
+		return courses;
+	}
+	
 	/**
 	 * @return json array with school objects, containing id, name, city and type
 	 */
