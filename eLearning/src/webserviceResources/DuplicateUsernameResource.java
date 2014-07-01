@@ -1,4 +1,4 @@
-package webserviceResources.getters;
+package webserviceResources;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -13,20 +13,22 @@ import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
 
-public class AllCoursesListResource extends ServerResource {
+public class DuplicateUsernameResource extends ServerResource {
 
 	@Post
-	public String getAllCourses(Representation entity) {
+	public String duplicateUser(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 
 		int schoolId = info.getInt("schoolId");
+		JSONArray usernames = JSONArray.fromObject(info.getString("usernames"));
+		
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
-		JSONArray coursesList = DBUtils.getAllCoursesList(dbConnection);
-		return coursesList.toString();
+		int duplicateIndex = DBUtils.checkForDuplicateUsernames(dbConnection, usernames);
+		return duplicateIndex + "";
 	}
 }

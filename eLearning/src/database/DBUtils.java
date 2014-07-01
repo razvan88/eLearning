@@ -2011,64 +2011,49 @@ public class DBUtils {
 		StringBuffer list = new StringBuffer();
 		list.append("[");
 		boolean firstEntry = true;
-		String query = "SELECT `firstName`, `lastName` FROM " + DBCredentials.TEACHER_TABLE;
+		String query = "SELECT `firstName`, `lastName` FROM "
+				+ DBCredentials.TEACHER_TABLE;
 
 		try {
 			Statement statement = connection.createStatement();
 			ResultSet result = statement.executeQuery(query);
-			
-			while(result.next()) {
-				String teacherName = result.getString("lastName") + " " + result.getString("firstName");
-				
-				if(!firstEntry) {
+
+			while (result.next()) {
+				String teacherName = result.getString("lastName") + " "
+						+ result.getString("firstName");
+
+				if (!firstEntry) {
 					list.append(",");
 				} else {
 					firstEntry = false;
 				}
-				
+
 				list.append("\"");
 				list.append(teacherName);
 				list.append("\"");
 			}
-			
+
 			statement.close();
 		} catch (Exception e) {
 		}
-		
+
 		list.append("]");
 
 		return list.toString();
 	}
-	
-	public static String getAllCoursesList(DBConnection dbConnection) {
-		StringBuffer list = new StringBuffer();
-		list.append("[");
-		boolean firstEntry = true;
-		
-		List<String> courses = DBCommonOperations.getAllCourses();
-		for(String course : courses) {
-			if(!firstEntry) {
-				list.append(",");
-			} else {
-				firstEntry = false;
-			}
-			
-			list.append("\"");
-			list.append(course);
-			list.append("\"");
-		}
-		
-		list.append("]");
 
-		return list.toString();
+	public static JSONArray getAllCoursesList(DBConnection dbConnection) {
+		return DBCommonOperations.getAllCourses();
 	}
-	
-	public static int uploadClassTimetable(DBConnection dbConnection, int classId, String timetable) {
+
+	public static int uploadClassTimetable(DBConnection dbConnection,
+			int classId, String timetable) {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0;
 		String query = "UPDATE " + DBCredentials.SCHOOL_TIMETABLE_TABLE
-				+ " SET `timetable`='" + timetable + "' WHERE `classId`=" + classId;
+				+ " SET `timetable`='" + timetable + "' WHERE `classId`="
+				+ classId;
 
 		try {
 			Statement statement = connection.createStatement();
@@ -2079,7 +2064,153 @@ public class DBUtils {
 
 		return rows;
 	}
-	
+
+	public static int uploadNewsArticle(DBConnection dbConnection, String date,
+			String title, String content) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "INSERT INTO " + DBCredentials.SCHOOL_NEWS_TABLE
+				+ " (`date`, `title`, `content`) VALUES ('" + date + "','"
+				+ title + "','" + content + "')";
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+
+	public static int checkForDuplicateUsernames(DBConnection dbConnection,
+			JSONArray usernames) {
+		Connection connection = dbConnection.getConnection();
+
+		int index = -1;
+		boolean duplicate = false;
+		String query = "SELECT `username` FROM ";
+		String[] tables = new String[] { DBCredentials.STUDENT_TABLE,
+				DBCredentials.TEACHER_TABLE, DBCredentials.AUXILIARY_TABLE };
+
+		try {
+			Statement statement = connection.createStatement();
+
+			for (String table : tables) {
+				String sql = query + table;
+				ResultSet result = statement.executeQuery(sql);
+
+				while (result.next()) {
+					for (int i = 0; i < usernames.size(); i++) {
+						if (usernames.getString(i).equals(
+								result.getString("username"))) {
+							index = i;
+							duplicate = true;
+							break;
+						}
+					}
+					if (duplicate) {
+						break;
+					}
+				}
+
+				if (duplicate) {
+					break;
+				}
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return index;
+	}
+
+	public static int checkClassExists(DBConnection dbConnection, int classId,
+			String className) {
+		boolean exists = DBCommonOperations.classExists(classId, className);
+		if (!exists) {
+			// add class
+			classId = DBCommonOperations.addClass(className);
+		}
+
+		return classId;
+	}
+
+	/**
+	 * 
+	 * @param dbConnection
+	 * @param groupId
+	 * @param students
+	 * @return the first index that was not added (0 based) if case
+	 */
+	public static int populateStudents(DBConnection dbConnection, int groupId,
+			JSONArray students) {
+		Connection connection = dbConnection.getConnection();
+
+		int i = 0;
+		String queryPart = "INSERT INTO "
+				+ DBCredentials.STUDENT_TABLE
+				+ " (`firstName`, `lastName`, `cnp`, `birthdate`, `photo`, `username`, `password`, `roles`, `group`) VALUES ";
+
+		try {
+			Statement statement = connection.createStatement();
+
+			for (i = 0; i < students.size(); i++) {
+				JSONObject student = students.getJSONObject(i);
+				String query = queryPart + "('"
+						+ student.getString("firstname") + "','"
+						+ student.getString("lastname") + "','"
+						+ student.getString("cnp") + "','"
+						+ student.getString("birthdate") + "','"
+						+ student.getString("photo") + "','"
+						+ student.getString("username") + "','"
+						+ student.getString("password") + "',4," + groupId
+						+ ")";
+				statement.executeUpdate(query);
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return i;
+	}
+
+	public static int populateTeachers(DBConnection dbConnection,
+			JSONArray teachers) {
+		Connection connection = dbConnection.getConnection();
+
+		int i = 0;
+		String queryPart = "INSERT INTO "
+				+ DBCredentials.TEACHER_TABLE
+				+ " (`firstName`, `lastName`, `cnp`, `birthdate`, `photo`, `username`, `password`, `roles`, `title`, `courses`) VALUES ";
+
+		try {
+			Statement statement = connection.createStatement();
+
+			for (i = 0; i < teachers.size(); i++) {
+				JSONObject teacher = teachers.getJSONObject(i);
+				String query = queryPart + "('"
+						+ teacher.getString("firstname") + "','"
+						+ teacher.getString("lastname") + "','"
+						+ teacher.getString("cnp") + "','"
+						+ teacher.getString("birthdate") + "','"
+						+ teacher.getString("photo") + "','"
+						+ teacher.getString("username") + "','"
+						+ teacher.getString("password") + "',2,"
+						+ teacher.getInt("title") + ",'')";
+				statement.executeUpdate(query);
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return i;
+	}
+
 	/*
 	 * public static void main(String[] args) { DBConnection conn =
 	 * DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");

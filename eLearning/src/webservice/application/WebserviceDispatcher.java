@@ -57,6 +57,8 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getTeacherList", TeacherListResource.class);
 		router.attach("/getAllCoursesList", AllCoursesListResource.class);
 		router.attach("/getClassList", AllClassListResource.class);
+		router.attach("/checkDuplicateUsername", DuplicateUsernameResource.class);
+		router.attach("/getTeacherTitles", TeacherTitlesResource.class);
 		
 		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/startMessage", StartMessageResource.class);
@@ -72,10 +74,12 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/rateHomework", RateHomeworkResource.class);
 		router.attach("/uploadAuxiliaryTimetable", UploadAuxiliaryTimetableResource.class);
 		router.attach("/uploadClassTimetable", UploadClassTimetableResource.class);
-		
+		router.attach("/uploadNewsArticle", UploadNewsArticleResource.class);
 		router.attach("/uploadCourseWeekInfo", CourseWeekInfoResource.class);
 		router.attach("/uploadCourseResources", CourseResourcesResource.class);
-		
+		router.attach("/uploadNewGroup", UploadNewGroupResource.class);
+		router.attach("/uploadNewTeachers", UploadNewTeachersResource.class);
+				
 		return router;
 	}
 }
