@@ -372,4 +372,19 @@ public class DBCommonOperations {
 
 		return functions;
 	}
+	
+	public static JSONArray getAuxiliaryFunctions() {
+		JSONArray functions = new JSONArray();
+
+		for (int key : sAuxiliaryFunctions.keySet()) {
+			JSONObject job = new JSONObject();
+			
+			job.put("id", key);
+			job.put("name", sAuxiliaryFunctions.get(key));
+			
+			functions.add(job);
+		}
+
+		return functions;
+	}
 }

@@ -2127,6 +2127,52 @@ public class DBUtils {
 		return index;
 	}
 
+	public static boolean checkForDuplicateUsernamesWithId(
+			DBConnection dbConnection, String username, int id, String table) {
+		Connection connection = dbConnection.getConnection();
+
+		int userId = -1;
+		String userTable = "";
+		boolean duplicate = false;
+		String query = "SELECT `id`, `username` FROM ";
+		String[] tables = new String[] { DBCredentials.STUDENT_TABLE,
+				DBCredentials.TEACHER_TABLE, DBCredentials.AUXILIARY_TABLE };
+
+		try {
+			Statement statement = connection.createStatement();
+
+			for (String tbl : tables) {
+				String sql = query + tbl;
+				ResultSet result = statement.executeQuery(sql);
+
+				while (result.next()) {
+					if (username.equals(result.getString("username"))) {
+						userId = result.getInt("id");
+						userTable = tbl;
+						duplicate = true;
+						break;
+					}
+					if (duplicate) {
+						break;
+					}
+				}
+
+				if (duplicate) {
+					break;
+				}
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		if (userId == -1 || (table.equals(userTable) && id == userId)) {
+			return false;
+		}
+
+		return true;
+	}
+
 	public static int checkClassExists(DBConnection dbConnection, int classId,
 			String className) {
 		boolean exists = DBCommonOperations.classExists(classId, className);
@@ -2200,7 +2246,8 @@ public class DBUtils {
 						+ teacher.getString("photo") + "','"
 						+ teacher.getString("username") + "','"
 						+ teacher.getString("password") + "',2,"
-						+ teacher.getInt("title") + ",'')";
+						+ teacher.getInt("title") + ",'"
+						+ teacher.getString("courses") + "')";
 				statement.executeUpdate(query);
 			}
 
@@ -2211,6 +2258,198 @@ public class DBUtils {
 		return i;
 	}
 
+	public static JSONArray getOtherJobs(DBConnection dbConnection) {
+		return DBCommonOperations.getAuxiliaryFunctions();
+	}
+
+	public static int populateAuxiliary(DBConnection dbConnection,
+			JSONArray auxiliary) {
+		Connection connection = dbConnection.getConnection();
+
+		int i = 0;
+		String queryPart = "INSERT INTO "
+				+ DBCredentials.AUXILIARY_TABLE
+				+ " (`firstName`, `lastName`, `cnp`, `birthdate`, `photo`, `username`, `password`, `function`) VALUES ";
+
+		try {
+			Statement statement = connection.createStatement();
+
+			for (i = 0; i < auxiliary.size(); i++) {
+				JSONObject aux = auxiliary.getJSONObject(i);
+				String query = queryPart + "('" + aux.getString("firstname")
+						+ "','" + aux.getString("lastname") + "','"
+						+ aux.getString("cnp") + "','"
+						+ aux.getString("birthdate") + "','"
+						+ aux.getString("photo") + "','"
+						+ aux.getString("username") + "','"
+						+ aux.getString("password") + "',"
+						+ aux.getInt("function") + ")";
+				statement.executeUpdate(query);
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return i;
+	}
+
+	public static JSONObject getTeacherByCnp(DBConnection dbConnection,
+			String cnp) {
+		JSONObject teacher = new JSONObject();
+		Connection connection = dbConnection.getConnection();
+
+		String query = "SELECT * FROM " + DBCredentials.TEACHER_TABLE
+				+ " WHERE `cnp`='" + cnp + "'";
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				teacher.put("id", result.getInt("id"));
+				teacher.put("firstname", result.getString("firstName"));
+				teacher.put("lastname", result.getString("lastName"));
+				teacher.put("cnp", result.getString("cnp"));
+				teacher.put("birthdate", result.getString("birthdate"));
+				teacher.put("username", result.getString("username"));
+				teacher.put("title", result.getInt("title"));
+				teacher.put("courses", result.getString("courses"));
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return teacher;
+	}
+
+	public static JSONObject getAuxiliaryByCnp(DBConnection dbConnection,
+			String cnp) {
+		JSONObject teacher = new JSONObject();
+		Connection connection = dbConnection.getConnection();
+
+		String query = "SELECT * FROM " + DBCredentials.AUXILIARY_TABLE
+				+ " WHERE `cnp`='" + cnp + "'";
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				teacher.put("id", result.getInt("id"));
+				teacher.put("firstname", result.getString("firstName"));
+				teacher.put("lastname", result.getString("lastName"));
+				teacher.put("cnp", result.getString("cnp"));
+				teacher.put("birthdate", result.getString("birthdate"));
+				teacher.put("username", result.getString("username"));
+				teacher.put("function", result.getInt("function"));
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return teacher;
+	}
+
+	public static int modifyTeacher(DBConnection dbConnection,
+			JSONObject teacher) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "UPDATE " + DBCredentials.TEACHER_TABLE
+				+ " SET `firstName`='" + teacher.getString("firstname")
+				+ "', `lastName`='" + teacher.getString("lastname")
+				+ "', `cnp`='" + teacher.getString("cnp") + "', `birthdate`='"
+				+ teacher.getString("birthdate") + "', `username`='"
+				+ teacher.getString("username") + "', `title`="
+				+ teacher.getInt("title") + ", `courses`='"
+				+ teacher.getString("courses") + "' WHERE `id`="
+				+ teacher.getInt("id");
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+
+	public static int modifyAuxiliary(DBConnection dbConnection,
+			JSONObject auxiliary) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "UPDATE " + DBCredentials.AUXILIARY_TABLE
+				+ " SET `firstName`='" + auxiliary.getString("firstname")
+				+ "', `lastName`='" + auxiliary.getString("lastname")
+				+ "', `cnp`='" + auxiliary.getString("cnp")
+				+ "', `birthdate`='" + auxiliary.getString("birthdate")
+				+ "', `username`='" + auxiliary.getString("username")
+				+ "', `function`=" + auxiliary.getInt("job")
+				+ " WHERE `id`=" + auxiliary.getInt("id");
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+
+	public static int removeUser(DBConnection dbConnection, int userId,
+			String table) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "DELETE FROM " + table + " WHERE `id`=" + userId;
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+
+			if (rows == 1) {
+				// successful delete
+
+				if (table.equals("teacher")) {
+					// get all tccIds for this teacher
+					query = "SELECT `id` FROM "
+							+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
+							+ " WHERE `teacherId`=" + userId;
+					List<Integer> tccIds = new ArrayList<Integer>();
+					ResultSet result = statement.executeQuery(query);
+					while (result.next()) {
+						tccIds.add(result.getInt("id"));
+					}
+					// remove all tccIds for a teacher removal
+					query = "DELETE FROM "
+							+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
+							+ " WHERE `teacherId`=" + userId;
+					statement.executeUpdate(query);
+					// also remove any feedback request
+					for (int tccId : tccIds) {
+						query = "DELETE FROM "
+								+ DBCredentials.FEEDBACK_REQUEST_TABLE
+								+ " WHERE `teacher_course_id`=" + tccId;
+						statement.executeUpdate(query);
+					}
+					// free to add other deletions, based on tccIds list
+				}
+				
+				//nothing to do for an auxiliary person
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
 	/*
 	 * public static void main(String[] args) { DBConnection conn =
 	 * DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
