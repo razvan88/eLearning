@@ -63,6 +63,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getTeacherByCnp", TeacherByCnpResource.class);
 		router.attach("/getAuxiliaryByCnp", AuxiliaryByCnpResource.class);
 		router.attach("/checkDuplicateUsernameWithId", DuplicateUsernameWithIdResource.class);
+		router.attach("/getStudentByCnp", StudentByCnpResource.class);
 		
 		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/startMessage", StartMessageResource.class);
@@ -87,6 +88,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/modifyTeacher", ModifyTeacherResource.class);
 		router.attach("/removeUser", RemoveUserResource.class);
 		router.attach("/modifyAuxiliary", ModifyAuxiliaryResource.class);
+		router.attach("/modifyStudent", ModifyStudentResource.class);
 				
 		return router;
 	}

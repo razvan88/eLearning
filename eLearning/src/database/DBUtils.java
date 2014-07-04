@@ -2353,6 +2353,35 @@ public class DBUtils {
 		return teacher;
 	}
 
+	public static JSONObject getStudentByCnp(DBConnection dbConnection,
+			String cnp) {
+		JSONObject student = new JSONObject();
+		Connection connection = dbConnection.getConnection();
+
+		String query = "SELECT * FROM " + DBCredentials.STUDENT_TABLE
+				+ " WHERE `cnp`='" + cnp + "'";
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+			
+			if (result.next()) {
+				student.put("id", result.getInt("id"));
+				student.put("firstname", result.getString("firstName"));
+				student.put("lastname", result.getString("lastName"));
+				student.put("cnp", result.getString("cnp"));
+				student.put("birthdate", result.getString("birthdate"));
+				student.put("username", result.getString("username"));
+				student.put("group", result.getInt("group"));
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return student;
+	}
+	
 	public static int modifyTeacher(DBConnection dbConnection,
 			JSONObject teacher) {
 		Connection connection = dbConnection.getConnection();
@@ -2450,6 +2479,31 @@ public class DBUtils {
 
 		return rows;
 	}
+	
+	public static int modifyStudent(DBConnection dbConnection,
+			JSONObject student) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "UPDATE " + DBCredentials.STUDENT_TABLE
+				+ " SET `firstName`='" + student.getString("firstname")
+				+ "', `lastName`='" + student.getString("lastname")
+				+ "', `cnp`='" + student.getString("cnp")
+				+ "', `birthdate`='" + student.getString("birthdate")
+				+ "', `username`='" + student.getString("username")
+				+ "', `group`=" + student.getInt("group")
+				+ " WHERE `id`=" + student.getInt("id");
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+	
 	/*
 	 * public static void main(String[] args) { DBConnection conn =
 	 * DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
