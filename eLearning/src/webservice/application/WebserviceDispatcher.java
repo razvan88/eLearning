@@ -90,6 +90,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/modifyAuxiliary", ModifyAuxiliaryResource.class);
 		router.attach("/modifyStudent", ModifyStudentResource.class);
 		router.attach("/uploadNewCourse", NewCourseResource.class);
+		router.attach("/uploadClassTransitions", ClassTransitionsResource.class);
 				
 		return router;
 	}

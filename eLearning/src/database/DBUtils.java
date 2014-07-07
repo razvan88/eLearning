@@ -2581,6 +2581,39 @@ public class DBUtils {
 			JSONArray courses) {
 		return DBCommonOperations.addCourses(courses);
 	}
+	
+	public static int doClassTransitions(DBConnection dbConnection, JSONArray classes) {
+		Connection connection = dbConnection.getConnection();
+
+		int ok = 0;
+		String preparedStudentsQuery = "UPDATE " + DBCredentials.STUDENT_TABLE + " SET `group`=? WHERE `group`=?";
+
+		try {
+			PreparedStatement statement = connection.prepareStatement(preparedStudentsQuery);
+			
+			for(int i = 0; i < classes.size(); i++) {
+				JSONObject cls = classes.getJSONObject(i);
+				int oldVal = cls.getInt("old");
+				int newVal = cls.getInt("new");
+				
+				if(oldVal < 0 || newVal < 0) {
+					continue;
+				}
+				
+				statement.setInt(1, newVal);
+				statement.setInt(2, oldVal);
+				
+				statement.executeUpdate();
+			}
+			
+			statement.close();
+			ok = 1;
+		} catch (Exception e) {
+		}
+
+		return ok;
+	}
+	
 
 	/*
 	 * public static void main(String[] args) { DBConnection conn =
