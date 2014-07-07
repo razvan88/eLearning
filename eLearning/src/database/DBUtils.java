@@ -399,22 +399,59 @@ public class DBUtils {
 		return -1;
 	}
 
+	public static int getTeacherIdFromTccTable(DBConnection dbConnection,
+			int classId, int courseId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `teacherId` FROM "
+				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
+				+ " WHERE `classId`=" + classId + " AND `courseId`=" + courseId;
+		int teacherId = 0;
+
+		try {
+			Statement statement = connection.createStatement();
+
+			ResultSet resultSet = statement.executeQuery(query);
+			if (resultSet.next()) {
+				teacherId = resultSet.getInt("teacherId");
+			}
+		} catch (Exception e) {
+		}
+
+		return teacherId;
+	}
+
 	public static JSONArray getCoursesList(DBConnection dbConnection, int userId) {
 		Connection connection = dbConnection.getConnection();
 		String coursesIdsQuery = "SELECT `courseIds` FROM "
 				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
 				+ userId;
+		String classIdQuery = "SELECT `group` FROM " + DBCredentials.STUDENT_TABLE + " WHERE `id`=" + userId;
 		JSONArray courses = new JSONArray();
-
+		
 		try {
 			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(coursesIdsQuery);
-
+			
+			int classId = 0;
+			ResultSet resultSet = statement.executeQuery(classIdQuery);
 			if (resultSet.next()) {
-				String[] coursesIds = resultSet.getString(1).split(",");
+				classId = resultSet.getInt("group");
+			}
+			
+			resultSet = statement.executeQuery(coursesIdsQuery);
+			if (resultSet.next()) {
+				String[] coursesIds = resultSet.getString("courseIds").split(",");
 				courses = DBCommonOperations.getCoursesInfo(coursesIds);
 			}
 
+			if(classId > 0) {
+				for(int i = 0; i < courses.size(); i++) {
+					JSONObject course = courses.getJSONObject(i);
+					int teacherId = getTeacherIdFromTccTable(dbConnection, classId, course.getInt("id"));
+					JSONObject teacher = getTeacher(dbConnection, teacherId);
+					course.put("teacher", teacher);
+				}
+			}
+			
 			statement.close();
 		} catch (Exception e) {
 		}
@@ -917,6 +954,42 @@ public class DBUtils {
 		}
 
 		return new JSONObject();
+	}
+
+	public static JSONObject getTeacher(DBConnection dbConnection, int teacherId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `firstName`, `lastName`,`title` FROM "
+				+ DBCredentials.TEACHER_TABLE + " WHERE `id`=" + teacherId;
+
+		JSONObject teacher = new JSONObject();
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+
+			if (resultSet.next()) {
+				teacher.put("firstname", resultSet.getString("firstName"));
+				teacher.put("lastname", resultSet.getString("lastName"));
+				teacher.put("id", teacherId);
+				JSONArray teacherTitles = new JSONArray();
+				
+				String[] titles = resultSet.getString("title").split(",");
+				JSONArray allTitles = DBCommonOperations.getTitles();
+				for(String title : titles) {
+					for(int i = 0; i < allTitles.size(); i++) {
+						JSONObject t = allTitles.getJSONObject(i);
+						if(t.getInt("id") == Integer.parseInt(title)) {
+							teacherTitles.add(t.getString("title"));
+						}
+					}
+				}
+				teacher.put("titles", teacherTitles);
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return teacher;
 	}
 
 	public static JSONArray getAvailableClasses(DBConnection dbConnection) {
@@ -2364,7 +2437,7 @@ public class DBUtils {
 		try {
 			Statement statement = connection.createStatement();
 			ResultSet result = statement.executeQuery(query);
-			
+
 			if (result.next()) {
 				student.put("id", result.getInt("id"));
 				student.put("firstname", result.getString("firstName"));
@@ -2381,7 +2454,7 @@ public class DBUtils {
 
 		return student;
 	}
-	
+
 	public static int modifyTeacher(DBConnection dbConnection,
 			JSONObject teacher) {
 		Connection connection = dbConnection.getConnection();
@@ -2418,8 +2491,8 @@ public class DBUtils {
 				+ "', `cnp`='" + auxiliary.getString("cnp")
 				+ "', `birthdate`='" + auxiliary.getString("birthdate")
 				+ "', `username`='" + auxiliary.getString("username")
-				+ "', `function`=" + auxiliary.getInt("job")
-				+ " WHERE `id`=" + auxiliary.getInt("id");
+				+ "', `function`=" + auxiliary.getInt("job") + " WHERE `id`="
+				+ auxiliary.getInt("id");
 
 		try {
 			Statement statement = connection.createStatement();
@@ -2469,8 +2542,8 @@ public class DBUtils {
 					}
 					// free to add other deletions, based on tccIds list
 				}
-				
-				//nothing to do for an auxiliary person
+
+				// nothing to do for an auxiliary person
 			}
 
 			statement.close();
@@ -2479,7 +2552,7 @@ public class DBUtils {
 
 		return rows;
 	}
-	
+
 	public static int modifyStudent(DBConnection dbConnection,
 			JSONObject student) {
 		Connection connection = dbConnection.getConnection();
@@ -2488,11 +2561,11 @@ public class DBUtils {
 		String query = "UPDATE " + DBCredentials.STUDENT_TABLE
 				+ " SET `firstName`='" + student.getString("firstname")
 				+ "', `lastName`='" + student.getString("lastname")
-				+ "', `cnp`='" + student.getString("cnp")
-				+ "', `birthdate`='" + student.getString("birthdate")
-				+ "', `username`='" + student.getString("username")
-				+ "', `group`=" + student.getInt("group")
-				+ " WHERE `id`=" + student.getInt("id");
+				+ "', `cnp`='" + student.getString("cnp") + "', `birthdate`='"
+				+ student.getString("birthdate") + "', `username`='"
+				+ student.getString("username") + "', `group`="
+				+ student.getInt("group") + " WHERE `id`="
+				+ student.getInt("id");
 
 		try {
 			Statement statement = connection.createStatement();
@@ -2503,7 +2576,12 @@ public class DBUtils {
 
 		return rows;
 	}
-	
+
+	public static int uploadNewCourses(DBConnection dbConnection,
+			JSONArray courses) {
+		return DBCommonOperations.addCourses(courses);
+	}
+
 	/*
 	 * public static void main(String[] args) { DBConnection conn =
 	 * DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
