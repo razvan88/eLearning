@@ -425,33 +425,36 @@ public class DBUtils {
 		String coursesIdsQuery = "SELECT `courseIds` FROM "
 				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
 				+ userId;
-		String classIdQuery = "SELECT `group` FROM " + DBCredentials.STUDENT_TABLE + " WHERE `id`=" + userId;
+		String classIdQuery = "SELECT `group` FROM "
+				+ DBCredentials.STUDENT_TABLE + " WHERE `id`=" + userId;
 		JSONArray courses = new JSONArray();
-		
+
 		try {
 			Statement statement = connection.createStatement();
-			
+
 			int classId = 0;
 			ResultSet resultSet = statement.executeQuery(classIdQuery);
 			if (resultSet.next()) {
 				classId = resultSet.getInt("group");
 			}
-			
+
 			resultSet = statement.executeQuery(coursesIdsQuery);
 			if (resultSet.next()) {
-				String[] coursesIds = resultSet.getString("courseIds").split(",");
+				String[] coursesIds = resultSet.getString("courseIds").split(
+						",");
 				courses = DBCommonOperations.getCoursesInfo(coursesIds);
 			}
 
-			if(classId > 0) {
-				for(int i = 0; i < courses.size(); i++) {
+			if (classId > 0) {
+				for (int i = 0; i < courses.size(); i++) {
 					JSONObject course = courses.getJSONObject(i);
-					int teacherId = getTeacherIdFromTccTable(dbConnection, classId, course.getInt("id"));
+					int teacherId = getTeacherIdFromTccTable(dbConnection,
+							classId, course.getInt("id"));
 					JSONObject teacher = getTeacher(dbConnection, teacherId);
 					course.put("teacher", teacher);
 				}
 			}
-			
+
 			statement.close();
 		} catch (Exception e) {
 		}
@@ -971,13 +974,13 @@ public class DBUtils {
 				teacher.put("lastname", resultSet.getString("lastName"));
 				teacher.put("id", teacherId);
 				JSONArray teacherTitles = new JSONArray();
-				
+
 				String[] titles = resultSet.getString("title").split(",");
 				JSONArray allTitles = DBCommonOperations.getTitles();
-				for(String title : titles) {
-					for(int i = 0; i < allTitles.size(); i++) {
+				for (String title : titles) {
+					for (int i = 0; i < allTitles.size(); i++) {
 						JSONObject t = allTitles.getJSONObject(i);
-						if(t.getInt("id") == Integer.parseInt(title)) {
+						if (t.getInt("id") == Integer.parseInt(title)) {
 							teacherTitles.add(t.getString("title"));
 						}
 					}
@@ -2078,41 +2081,33 @@ public class DBUtils {
 		return rows;
 	}
 
-	public static String getTeacherList(DBConnection dbConnection) {
+	public static JSONArray getTeacherList(DBConnection dbConnection) {
 		Connection connection = dbConnection.getConnection();
 
-		StringBuffer list = new StringBuffer();
-		list.append("[");
-		boolean firstEntry = true;
-		String query = "SELECT `firstName`, `lastName` FROM "
+		String query = "SELECT `id`, `firstName`, `lastName` FROM "
 				+ DBCredentials.TEACHER_TABLE;
+
+		JSONArray teachers = new JSONArray();
 
 		try {
 			Statement statement = connection.createStatement();
 			ResultSet result = statement.executeQuery(query);
 
 			while (result.next()) {
-				String teacherName = result.getString("lastName") + " "
-						+ result.getString("firstName");
+				JSONObject teacher = new JSONObject();
 
-				if (!firstEntry) {
-					list.append(",");
-				} else {
-					firstEntry = false;
-				}
+				teacher.put("firstname", result.getString("firstName"));
+				teacher.put("lastname", result.getString("lastName"));
+				teacher.put("id", result.getInt("id"));
 
-				list.append("\"");
-				list.append(teacherName);
-				list.append("\"");
+				teachers.add(teacher);
 			}
 
 			statement.close();
 		} catch (Exception e) {
 		}
 
-		list.append("]");
-
-		return list.toString();
+		return teachers;
 	}
 
 	public static JSONArray getAllCoursesList(DBConnection dbConnection) {
@@ -2581,31 +2576,34 @@ public class DBUtils {
 			JSONArray courses) {
 		return DBCommonOperations.addCourses(courses);
 	}
-	
-	public static int doClassTransitions(DBConnection dbConnection, JSONArray classes) {
+
+	public static int doClassTransitions(DBConnection dbConnection,
+			JSONArray classes) {
 		Connection connection = dbConnection.getConnection();
 
 		int ok = 0;
-		String preparedStudentsQuery = "UPDATE " + DBCredentials.STUDENT_TABLE + " SET `group`=? WHERE `group`=?";
+		String preparedStudentsQuery = "UPDATE " + DBCredentials.STUDENT_TABLE
+				+ " SET `group`=? WHERE `group`=?";
 
 		try {
-			PreparedStatement statement = connection.prepareStatement(preparedStudentsQuery);
-			
-			for(int i = 0; i < classes.size(); i++) {
+			PreparedStatement statement = connection
+					.prepareStatement(preparedStudentsQuery);
+
+			for (int i = 0; i < classes.size(); i++) {
 				JSONObject cls = classes.getJSONObject(i);
 				int oldVal = cls.getInt("old");
 				int newVal = cls.getInt("new");
-				
-				if(oldVal < 0 || newVal < 0) {
+
+				if (oldVal < 0 || newVal < 0) {
 					continue;
 				}
-				
+
 				statement.setInt(1, newVal);
 				statement.setInt(2, oldVal);
-				
+
 				statement.executeUpdate();
 			}
-			
+
 			statement.close();
 			ok = 1;
 		} catch (Exception e) {
@@ -2613,8 +2611,43 @@ public class DBUtils {
 
 		return ok;
 	}
-	
 
+	public static int modifyNews(DBConnection dbConnection, String date,
+			JSONObject news) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "UPDATE " + DBCredentials.SCHOOL_NEWS_TABLE
+				+ " SET `date`='" + date + "', `title`='"
+				+ news.getString("title") + "', `content`='"
+				+ news.getString("content") + "' WHERE `id`="
+				+ news.getInt("id");
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+
+	public static int removeNews(DBConnection dbConnection, int newsId) {
+		Connection connection = dbConnection.getConnection();
+
+		int rows = 0;
+		String query = "DELETE FROM " + DBCredentials.SCHOOL_NEWS_TABLE
+				+ " WHERE `id`=" + newsId;
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
 	/*
 	 * public static void main(String[] args) { DBConnection conn =
 	 * DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
