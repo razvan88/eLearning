@@ -422,7 +422,7 @@ public class DBUtils {
 
 	public static JSONArray getCoursesList(DBConnection dbConnection, int userId) {
 		Connection connection = dbConnection.getConnection();
-		String coursesIdsQuery = "SELECT `courseIds` FROM "
+		String coursesIdsQuery = "SELECT `teacher_course_class_ids` FROM "
 				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
 				+ userId;
 		String classIdQuery = "SELECT `group` FROM "
@@ -440,9 +440,10 @@ public class DBUtils {
 
 			resultSet = statement.executeQuery(coursesIdsQuery);
 			if (resultSet.next()) {
-				String[] coursesIds = resultSet.getString("courseIds").split(
-						",");
-				courses = DBCommonOperations.getCoursesInfo(coursesIds);
+				String tccIds = resultSet.getString("teacher_course_class_ids");
+				List<Integer> courseIdList = getCourseIdsFromTccIds(
+						dbConnection, tccIds);
+				courses = DBCommonOperations.getCoursesInfo(courseIdList);
 			}
 
 			if (classId > 0) {
@@ -525,7 +526,7 @@ public class DBUtils {
 				result.put("totalWeeks", weeksNo);
 
 				String[] holidayWeeks = resultSet.getString("holiday_weeks")
-						.split("#");
+						.split(",");
 				JSONArray dates = new JSONArray();
 				for (String week : holidayWeeks) {
 					dates.add(week);
@@ -1128,10 +1129,10 @@ public class DBUtils {
 
 	public static JSONArray getAllDeadlines(DBConnection dbConnection,
 			int userId) {
-		String coursesQuery = "SELECT `courseIds` FROM "
+		String coursesQuery = "SELECT `teacher_course_class_ids` FROM "
 				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
 				+ userId;
-		String courses[] = new String[0];
+
 		JSONArray deadlines = new JSONArray();
 
 		try {
@@ -1139,11 +1140,13 @@ public class DBUtils {
 			Statement statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(coursesQuery);
 
+			List<Integer> courseIds = new ArrayList<Integer>();
 			if (resultSet.next()) {
-				courses = resultSet.getString("courseIds").split(",");
+				courseIds = getCourseIdsFromTccIds(dbConnection,
+						resultSet.getString("teacher_course_class_ids"));
 			}
 
-			deadlines = getAllDeadlines(dbConnection, userId, courses);
+			deadlines = getAllDeadlines(dbConnection, userId, courseIds);
 
 			statement.close();
 		} catch (Exception e) {
@@ -1153,7 +1156,7 @@ public class DBUtils {
 	}
 
 	public static JSONArray getAllDeadlines(DBConnection dbConnection,
-			int userId, String[] courseIds) {
+			int userId, List<Integer> courseIds) {
 		JSONArray deadlines = new JSONArray();
 		Connection connection = dbConnection.getConnection();
 
@@ -1185,12 +1188,10 @@ public class DBUtils {
 			PreparedStatement simpleDeadlineStmt = connection
 					.prepareStatement(simpleDeadlineQuery);
 
-			for (int i = 0; i < courseIds.length; i++) {
-				int courseId = Integer.parseInt(courseIds[i]);
+			for (int courseId : courseIds) {
 				int tccId = -1;
-				String courseName = (String) ((JSONObject) (DBCommonOperations
-						.getCoursesInfo(new String[] { courseId + "" }).get(0)))
-						.get("name");
+				String courseName = DBCommonOperations.getCourseInfo(courseId)
+						.getString("name");
 
 				tccStmt.setInt(1, courseId);
 
@@ -1579,10 +1580,11 @@ public class DBUtils {
 						if (found)
 							continue;
 
-						String[] coursesIds = res.getString("courseIds").split(
-								",");
-						for (String courseId : coursesIds) {
-							if (Integer.parseInt(courseId) == id) {
+						List<Integer> coursesIds = getCourseIdsFromTccIds(
+								dbConnection,
+								res.getString("teacher_course_class_ids"));
+						for (int courseId : coursesIds) {
+							if (courseId == id) {
 								// class was not added, so add it
 								classesAlreadyAdded.add(classId);
 
@@ -2643,11 +2645,100 @@ public class DBUtils {
 		try {
 			Statement statement = connection.createStatement();
 			rows = statement.executeUpdate(query);
+			statement.close();
 		} catch (Exception e) {
 		}
 
 		return rows;
 	}
+
+	public static List<Integer> getCourseIdsFromTccIds(
+			DBConnection dbConnection, String tccIds) {
+		Connection connection = dbConnection.getConnection();
+		String[] tccIdList = tccIds.split(",");
+		List<Integer> courseIds = new ArrayList<Integer>();
+		String query = "SELECT `courseId` FROM "
+				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE + " WHERE `id`=?";
+
+		try {
+			PreparedStatement statement = connection.prepareStatement(query);
+			for (String tccId : tccIdList) {
+				statement.setInt(1, Integer.parseInt(tccId));
+				ResultSet result = statement.executeQuery();
+				if (result.next()) {
+					courseIds.add(result.getInt("courseId"));
+				}
+			}
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return courseIds;
+	}
+
+	public static int uploadSemesterStructure(DBConnection dbConnection,
+			String date1, String week1, String holiday1, String date2,
+			String week2, String holiday2) {
+
+		Connection connection = dbConnection.getConnection();
+		int rows = 0;
+		String query = "SELECT * FROM " + DBCredentials.HOLIDAYS_TABLE
+				+ " WHERE `semester`=?";
+		String addQuery = "INSERT INTO "
+				+ DBCredentials.HOLIDAYS_TABLE
+				+ " (`starting_date`, `total_weeks`, `holiday_weeks`, `semester`) VALUES (?, ?, ?, ?)";
+		String updateQuery = "UPDATE "
+				+ DBCredentials.HOLIDAYS_TABLE
+				+ " SET `starting_date`=?, `total_weeks`=?, `holiday_weeks`=? WHERE `semester`=?";
+
+		try {
+			PreparedStatement statement = connection.prepareStatement(query);
+			PreparedStatement addStmt = connection.prepareStatement(addQuery);
+			PreparedStatement updateStmt = connection.prepareStatement(updateQuery);
+			
+			statement.setInt(1, 1);
+			ResultSet result = statement.executeQuery();
+			if (result.next()) {
+				// update
+				updateStmt.setString(1, date1);
+				updateStmt.setInt(2, Integer.parseInt(week1));
+				updateStmt.setString(3, holiday1);
+				updateStmt.setInt(4, 1);
+				rows += updateStmt.executeUpdate();
+			} else {
+				// insert
+				addStmt.setString(1, date1);
+				addStmt.setInt(2, Integer.parseInt(week1));
+				addStmt.setString(3, holiday1);
+				addStmt.setInt(4, 1);
+				rows += addStmt.executeUpdate();
+			}
+
+			statement.setInt(1, 2);
+			result = statement.executeQuery();
+			if (result.next()) {
+				// update
+				updateStmt.setString(1, date2);
+				updateStmt.setInt(2, Integer.parseInt(week2));
+				updateStmt.setString(3, holiday2);
+				updateStmt.setInt(4, 2);
+				rows += updateStmt.executeUpdate();
+			} else {
+				// insert
+				addStmt.setString(1, date2);
+				addStmt.setInt(2, Integer.parseInt(week2));
+				addStmt.setString(3, holiday2);
+				addStmt.setInt(4, 2);
+				rows += addStmt.executeUpdate();
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+
 	/*
 	 * public static void main(String[] args) { DBConnection conn =
 	 * DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");

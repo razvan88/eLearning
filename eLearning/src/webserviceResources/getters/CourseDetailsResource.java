@@ -1,5 +1,8 @@
 package webserviceResources.getters;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -28,16 +31,18 @@ public class CourseDetailsResource extends ServerResource {
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		JSONArray courseInfo = DBCommonOperations.getCoursesInfo(new String[] {"" + courseId});
+		JSONObject courseInfo = DBCommonOperations.getCourseInfo(courseId);
+		List<Integer> courseIdList = new ArrayList<Integer>();
+		courseIdList.add(courseId);
 		
 		int classId = DBUtils.getClassIdForUser(dbConnection, userId);
 		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
-		JSONArray deadlines = DBUtils.getAllDeadlines(dbConnection, userId, new String[] {courseId + ""});
+		JSONArray deadlines = DBUtils.getAllDeadlines(dbConnection, userId, courseIdList);
 		JSONObject holidays = DBUtils.getHolidayDetails(dbConnection);
 		JSONArray resources = DBUtils.getResources(dbConnection, tccId);
 		
 		JSONObject courseDetails = new JSONObject();
-		courseDetails.put("name", ((JSONObject)(courseInfo.get(0))).getString("name"));
+		courseDetails.put("name", courseInfo.getString("name"));
 		courseDetails.put("holidays", holidays);
 		courseDetails.put("resources", resources);
 		

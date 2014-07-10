@@ -382,6 +382,28 @@ public class DBCommonOperations {
 		return null;
 	}
 
+	public static JSONObject getCourseInfo(Integer courseId) {
+		JSONObject course = new JSONObject();
+
+		if (sCourses.containsKey(courseId)) {
+			course = sCourses.get(courseId);
+		}
+
+		return course;
+	}
+	
+	public static JSONArray getCoursesInfo(List<Integer> coursesIds) {
+		JSONArray courses = new JSONArray();
+
+		for (int key : coursesIds) {
+			if (sCourses.containsKey(key)) {
+				courses.add(sCourses.get(key));
+			}
+		}
+
+		return courses;
+	}
+
 	public static JSONArray getCoursesInfo(String[] coursesIds) {
 		JSONArray courses = new JSONArray();
 
@@ -394,7 +416,7 @@ public class DBCommonOperations {
 
 		return courses;
 	}
-
+	
 	public static List<String> getRolesNames(String[] rolesIds) {
 		List<String> roles = new ArrayList<String>();
 
