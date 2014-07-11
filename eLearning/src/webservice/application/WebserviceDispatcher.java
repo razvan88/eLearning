@@ -64,6 +64,11 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getAuxiliaryByCnp", AuxiliaryByCnpResource.class);
 		router.attach("/checkDuplicateUsernameWithId", DuplicateUsernameWithIdResource.class);
 		router.attach("/getStudentByCnp", StudentByCnpResource.class);
+		router.attach("/getSemesterStructure", GetSemesterStructureResource.class);
+		router.attach("/getSemesterNo", GetSemesterNumberResource.class);
+		router.attach("/getAllTccAssocs", AllTccAssocsResource.class);
+		router.attach("/getTccAssoc", TccAssocResource.class);
+		router.attach("/getClassForStudent", ClassForStudentResource.class);
 		
 		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/startMessage", StartMessageResource.class);
@@ -93,8 +98,10 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/uploadClassTransitions", ClassTransitionsResource.class);
 		router.attach("/removeNews", RemoveNewsResource.class);
 		router.attach("/modifyNews", ModifyNewsResource.class);
-		router.attach("/uploadSemesterStructure", SemesterStructure.class);
-				
+		router.attach("/uploadSemesterStructure", SemesterStructureResource.class);
+		router.attach("/setSemesterNo", SetSemesterNumberResource.class);
+		router.attach("/createTccAssoc", CreateTccAssocResource.class);
+		
 		return router;
 	}
 }

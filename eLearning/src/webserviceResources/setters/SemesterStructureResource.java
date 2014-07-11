@@ -12,7 +12,7 @@ import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
 
-public class SemesterStructure extends ServerResource {
+public class SemesterStructureResource extends ServerResource {
 
 	@Post
 	public String uploadSemesterStructure(Representation entity) {
