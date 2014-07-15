@@ -23,12 +23,14 @@ public class TccAssocResource extends ServerResource {
 		int classId = info.getInt("classId");
 		int courseId = info.getInt("courseId");
 		int semester = info.getInt("semester");
+		boolean isOptional = info.getInt("optional") == 1;
+		int studentId = info.getInt("studentId");
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
-		JSONObject assoc = DBUtils.getTccAssoc(dbConnection, classId, courseId, semester);
+		JSONObject assoc = DBUtils.getTccAssoc(dbConnection, classId, courseId, semester, isOptional, studentId);
 		return assoc.toString();
 	}
 }

@@ -41,9 +41,11 @@ public class DBCredentials {
 	public static final String SCHOOL_TIMETABLE_TABLE = "timetable";
 	public static final String COURSES_LIST_TABLE = "course_list";
 	public static final String TEACHER_COURSE_CLASS_TABLE = "teacher_course_class";
+	public static final String TEACHER_COURSE_TABLE = "teacher_course";
 	public static final String DEADLINES_TABLE = "deadlines";
 	public static final String HOLIDAYS_TABLE = "holiday";
-	public static final String RESOURCES_TABLE = "resources";
+	public static final String COURSE_RESOURCES_TABLE = "course_resources";
+	public static final String OPTIONAL_RESOURCES_TABLE = "optional_resources";
 	public static final String HOMEWORK_TABLE = "homework";
 	public static final String HOMEWORK_RESULTS_TABLE = "homework_results";
 	public static final String COURSE_CLASSBOOK_TABLE = "classbook_detailed";

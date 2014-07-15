@@ -69,6 +69,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getAllTccAssocs", AllTccAssocsResource.class);
 		router.attach("/getTccAssoc", TccAssocResource.class);
 		router.attach("/getClassForStudent", ClassForStudentResource.class);
+		router.attach("/getOldTccId", OldTccIdResource.class);
 		
 		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/startMessage", StartMessageResource.class);

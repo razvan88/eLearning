@@ -1,4 +1,4 @@
-package webserviceResources.setters;
+package webserviceResources.getters;
 
 import net.sf.json.JSONObject;
 
@@ -12,28 +12,25 @@ import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
 
-public class CreateTccAssocResource extends ServerResource {
+public class OldTccIdResource extends ServerResource {
 
 	@Post
-	public String getTccAssocs(Representation entity) {
+	public String getClassForStudent(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 
 		int schoolId = info.getInt("schoolId");
+		int semester = info.getInt("semester");
+		int courseId = info.getInt("courseId");
+		boolean isOptional = info.getInt("optional") == 1;
 		int classId = info.getInt("classId");
 		int studentId = info.getInt("studentId");
-		int courseId = info.getInt("courseId");
-		int semester = info.getInt("semester");
-		int teacherId = info.getInt("teacherId");
-		int oldTcc = info.getInt("oldTcc");
-		boolean isOptional = info.getInt("optional") == 1;
-
+		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
-		int row = isOptional ? DBUtils.createTccAssocForStudent(dbConnection, courseId, teacherId, semester, studentId, oldTcc) : 
-					DBUtils.createTccAssocForGroups(dbConnection, classId, courseId, teacherId, semester, oldTcc);
-		return row + "";
+		int id = DBUtils.getOldTccId(dbConnection, courseId, classId, studentId, semester, isOptional);
+		return id + "";
 	}
 }

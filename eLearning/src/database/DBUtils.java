@@ -496,7 +496,8 @@ public class DBUtils {
 	public static JSONArray getResources(DBConnection dbConnection,
 			int teacherCourseClassId) {
 		Connection connection = dbConnection.getConnection();
-		String query = "SELECT `content` FROM " + DBCredentials.RESOURCES_TABLE
+		String query = "SELECT `content` FROM "
+				+ DBCredentials.COURSE_RESOURCES_TABLE
 				+ " WHERE `teacher_course_class_id`=" + teacherCourseClassId;
 		JSONArray resources = new JSONArray();
 
@@ -1935,7 +1936,8 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		JSONObject resource = new JSONObject();
-		String query = "SELECT `content` FROM " + DBCredentials.RESOURCES_TABLE
+		String query = "SELECT `content` FROM "
+				+ DBCredentials.COURSE_RESOURCES_TABLE
 				+ " WHERE `teacher_course_class_id`=" + tccId;
 
 		try {
@@ -1967,7 +1969,7 @@ public class DBUtils {
 
 		int rows = 0, id = 0;
 		String query = "SELECT `id`, `content` FROM "
-				+ DBCredentials.RESOURCES_TABLE
+				+ DBCredentials.COURSE_RESOURCES_TABLE
 				+ " WHERE `teacher_course_class_id`=" + tccId;
 		JSONArray allResources = new JSONArray();
 
@@ -1989,7 +1991,7 @@ public class DBUtils {
 				}
 			}
 
-			query = "UPDATE " + DBCredentials.RESOURCES_TABLE
+			query = "UPDATE " + DBCredentials.COURSE_RESOURCES_TABLE
 					+ " SET `content`='" + allResources.toString()
 					+ "' WHERE `id`=" + id;
 			rows = statement.executeUpdate(query);
@@ -2007,7 +2009,7 @@ public class DBUtils {
 
 		int rows = 0, id = 0;
 		String query = "SELECT `id`, `content` FROM "
-				+ DBCredentials.RESOURCES_TABLE
+				+ DBCredentials.COURSE_RESOURCES_TABLE
 				+ " WHERE `teacher_course_class_id`=" + tccId;
 		JSONArray allResources = new JSONArray();
 
@@ -2037,7 +2039,7 @@ public class DBUtils {
 				}
 			}
 
-			query = "UPDATE " + DBCredentials.RESOURCES_TABLE
+			query = "UPDATE " + DBCredentials.COURSE_RESOURCES_TABLE
 					+ " SET `content`='" + allResources.toString()
 					+ "' WHERE `id`=" + id;
 			rows = statement.executeUpdate(query);
@@ -2819,24 +2821,53 @@ public class DBUtils {
 	}
 
 	public static JSONArray getTccAssocs(DBConnection dbConnection,
-			int classId, int semester) {
+			int classId, int semester, boolean isOptional, int studentId) {
 		JSONArray assocs = new JSONArray();
 		Connection connection = dbConnection.getConnection();
-		String query = "SELECT `teacherId`, `courseId` FROM "
+		String courseQuery = "SELECT `teacherId`, `courseId` FROM "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
 				+ " WHERE `semester`=" + semester + " AND `classId`=" + classId;
+		String optionalQuery = "SELECT `teacher_course_ids` FROM "
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
+				+ studentId;
+		String tcQuery = "SELECT `teacherId`, `courseId` FROM "
+				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `id`=?";
 
 		try {
 			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			ResultSet result = statement.executeQuery(courseQuery);
 
 			while (result.next()) {
 				JSONObject assoc = new JSONObject();
 
 				assoc.put("teacherId", result.getInt("teacherId"));
 				assoc.put("courseId", result.getInt("courseId"));
+				assoc.put("optional", 0);
 
 				assocs.add(assoc);
+			}
+
+			if (isOptional) {
+				result = statement.executeQuery(optionalQuery);
+
+				if(result.next()) {
+					String[] tcIds = result.getString("teacher_course_ids").split(",");
+					PreparedStatement prepStmt = connection.prepareStatement(tcQuery);
+					for(String tcId : tcIds) {
+						prepStmt.setInt(1, Integer.parseInt(tcId));
+						ResultSet res = prepStmt.executeQuery();
+						if(res.next()) {
+							JSONObject assoc = new JSONObject();
+
+							assoc.put("teacherId", res.getInt("teacherId"));
+							assoc.put("courseId", res.getInt("courseId"));
+							assoc.put("optional", 1);
+
+							assocs.add(assoc);
+						}
+					}
+					prepStmt.close();
+				}
 			}
 
 			statement.close();
@@ -2847,13 +2878,18 @@ public class DBUtils {
 	}
 
 	public static JSONObject getTccAssoc(DBConnection dbConnection,
-			int classId, int courseId, int semester) {
+			int classId, int courseId, int semester, boolean isOptional, int studentId) {
 		JSONObject assoc = new JSONObject();
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `teacherId` FROM "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
 				+ " WHERE `semester`=" + semester + " AND `classId`=" + classId
 				+ " AND `courseId`=" + courseId;
+		String optionalQuery = "SELECT `teacher_course_ids` FROM "
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
+				+ studentId;
+		String tcQuery = "SELECT `teacherId`, `courseId` FROM "
+				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `id`=?";
 
 		try {
 			Statement statement = connection.createStatement();
@@ -2862,6 +2898,27 @@ public class DBUtils {
 			if (result.next()) {
 				assoc.put("teacherId", result.getInt("teacherId"));
 				assoc.put("courseId", courseId);
+				assoc.put("optional", 0);
+			} else {
+				result = statement.executeQuery(optionalQuery);
+				if(result.next()) {
+					PreparedStatement prepStmt = connection.prepareStatement(tcQuery);
+					String[] optIds = result.getString("teacher_course_ids").split(",");
+					for(String optId : optIds) {
+						prepStmt.setInt(1, Integer.parseInt(optId));
+						ResultSet res = prepStmt.executeQuery();
+						
+						if(res.next()) {
+							if(res.getInt("courseId") == courseId) {
+								assoc.put("courseId", courseId);
+								assoc.put("teacherId", res.getInt("teacherId"));
+								assoc.put("optional", 1);
+								break;
+							}
+						}
+					}
+					prepStmt.close();
+				}
 			}
 
 			statement.close();
@@ -2871,22 +2928,295 @@ public class DBUtils {
 		return assoc;
 	}
 
-	public static int createTccAssocForGroups(DBConnection dbConnection, int classId,
-			int courseId, int teacherId, int semester) {
+	public static int getOldTccId(DBConnection dbConnection, int courseId,
+			int classId, int studentId, int semester, boolean isOptional) {
+		Connection connection = dbConnection.getConnection();
+		int id = -1;
+		String tccQuery = "SELECT `id` FROM "
+				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
+				+ " WHERE `semester`=" + semester + " AND `classId`=" + classId
+				+ " AND `courseId`=" + courseId;
+		String tcQuery = "SELECT `id` FROM "
+				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `semester`="
+				+ semester + " AND `courseId`=" + courseId;
+		String optionalsQuery = "SELECT `teacher_course_ids` FROM "
+				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `studentId`="
+				+ studentId;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(optionalsQuery);
+
+			String optionals = "";
+			if (result.next()) {
+				optionals = result.getString("`teacher_course_ids`");
+			}
+			if (optionals == null) {
+				optionals = "";
+			}
+			String[] optionalList = optionals.split(",");
+
+			result = statement.executeQuery(isOptional ? tcQuery : tccQuery);
+
+			while (result.next()) {
+				boolean found = false;
+				id = result.getInt("id");
+
+				/*
+				 * check the id to see if it exists in user's optionals list, as
+				 * the optional may be teached by multiple teachers
+				 */
+
+				for (String optId : optionalList) {
+					if (id == Integer.parseInt(optId)) {
+						found = true;
+						break;
+					}
+				}
+
+				if (found) {
+					break;
+				} else {
+					id = -1;
+				}
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return id;
+	}
+
+	private static List<Integer> studentsFromGrupList(
+			DBConnection dbConnection, int classId) {
+		Connection connection = dbConnection.getConnection();
+		List<Integer> ids = new ArrayList<Integer>();
+
+		String studentsQuery = "SELECT `id` FROM "
+				+ DBCredentials.STUDENT_TABLE + " WHERE `group`=" + classId;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(studentsQuery);
+
+			while (result.next()) {
+				ids.add(result.getInt("id"));
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return ids;
+	}
+
+	private static boolean tokenAlreadyAdded(String valuesList, int tccId) {
+		String[] courses = valuesList.split(",");
+		for (String id : courses) {
+			if (Integer.parseInt(id) == tccId) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static String removeFromList(String valuesList, int oldTccId) {
+		StringBuffer newCourses = new StringBuffer();
+		int index = 0;
+
+		String[] courses = valuesList.split(",");
+		for (int i = 0; i < courses.length; i++) {
+			if (Integer.parseInt(courses[i]) != oldTccId) {
+				if (index > 0) {
+					newCourses.append(",");
+				}
+				newCourses.append(courses[i]);
+				index++;
+			}
+		}
+
+		return newCourses.toString();
+	}
+
+	private static void updateStudentCourses(DBConnection dbConnection,
+			int studentId, int tccId, int oldTccId) {
+		Connection connection = dbConnection.getConnection();
+
+		String getCurrentCoursesQuery = "SELECT `teacher_course_class_ids` FROM "
+				+ DBCredentials.COURSES_LIST_TABLE
+				+ " WHERE `studentId`="
+				+ studentId;
+		String updateCoursesQuery = "UPDATE "
+				+ DBCredentials.COURSES_LIST_TABLE
+				+ " SET `teacher_course_class_ids`=? WHERE `studentId`="
+				+ studentId;
+		String addCoursesQuery = "INSERT INTO "
+				+ DBCredentials.COURSES_LIST_TABLE
+				+ " (`studentId`,`teacher_course_class_ids`) VALUES ("
+				+ studentId + ",'" + tccId + "')";
+
+		try {
+			Statement currCoursesStmt = connection.createStatement();
+			PreparedStatement updtCoursesStmt = connection
+					.prepareStatement(updateCoursesQuery);
+			Statement addCoursesStmt = connection.createStatement();
+
+			ResultSet currCour = currCoursesStmt
+					.executeQuery(getCurrentCoursesQuery);
+			boolean studentIsAdded = currCour.next();
+			if (!studentIsAdded) {
+				// add the student
+				addCoursesStmt.executeUpdate(addCoursesQuery);
+				addCoursesStmt.close();
+			} else {
+				// update course list
+				String allCourses = currCour
+						.getString("teacher_course_class_ids");
+				if (allCourses == null) {
+					allCourses = "";
+				}
+
+				if (tokenAlreadyAdded(allCourses, tccId)) {
+					return;
+				}
+
+				allCourses = removeFromList(allCourses, oldTccId);
+
+				allCourses += allCourses.isEmpty() ? "" : ",";
+				allCourses += tccId;
+
+				updtCoursesStmt.setString(1, allCourses);
+				updtCoursesStmt.executeUpdate();
+
+				updtCoursesStmt.close();
+			}
+
+			currCoursesStmt.close();
+		} catch (Exception e) {
+		}
+	}
+
+	private static void updateStudentOptionals(DBConnection dbConnection,
+			int studentId, int tccId, int oldTccId) {
+		Connection connection = dbConnection.getConnection();
+
+		String getCurrentOptionalsQuery = "SELECT `teacher_course_ids` FROM "
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
+				+ studentId;
+		String updateOptionalsQuery = "UPDATE "
+				+ DBCredentials.COURSES_LIST_TABLE
+				+ " SET `teacher_course_ids`=? WHERE `studentId`=" + studentId;
+		String addOptionalsQuery = "INSERT INTO "
+				+ DBCredentials.COURSES_LIST_TABLE
+				+ " (`studentId`,`teacher_course_ids`) VALUES (" + studentId
+				+ ",'" + tccId + "')";
+
+		try {
+			Statement currOptionalsStmt = connection.createStatement();
+			PreparedStatement updtOptionalsStmt = connection
+					.prepareStatement(updateOptionalsQuery);
+			Statement addCoursesStmt = connection.createStatement();
+
+			ResultSet currOpts = currOptionalsStmt
+					.executeQuery(getCurrentOptionalsQuery);
+			boolean studentIsAdded = currOpts.next();
+			if (!studentIsAdded) {
+				// add the student
+				addCoursesStmt.executeUpdate(addOptionalsQuery);
+				addCoursesStmt.close();
+			} else {
+				// update course list
+				String allOptionals = currOpts.getString("teacher_course_ids");
+				if (allOptionals == null) {
+					allOptionals = "";
+				}
+
+				if (tokenAlreadyAdded(allOptionals, tccId)) {
+					return;
+				}
+
+				allOptionals = removeFromList(allOptionals, oldTccId);
+
+				allOptionals += allOptionals.isEmpty() ? "" : ",";
+				allOptionals += tccId;
+
+				updtOptionalsStmt.setString(1, allOptionals);
+				updtOptionalsStmt.executeUpdate();
+
+				updtOptionalsStmt.close();
+			}
+
+			currOptionalsStmt.close();
+		} catch (Exception e) {
+		}
+	}
+
+	private static boolean setEmptyResources(DBConnection dbConnection,
+			int semester, int tccId, boolean isCourse) {
+		Connection connection = dbConnection.getConnection();
+		boolean added = false;
+		String weeksQuery = "SELECT `total_weeks` FROM "
+				+ DBCredentials.HOLIDAYS_TABLE + " WHERE `semester`="
+				+ semester;
+
+		try {
+			Statement statement = connection.createStatement();
+			// get the number of weeks of semester
+			ResultSet result = statement.executeQuery(weeksQuery);
+			if (result.next()) {
+				int weeksNo = result.getInt("total_weeks");
+				// also create the empty resources for course
+				StringBuilder content = new StringBuilder("[");
+				for (int i = 1; i <= weeksNo; i++) {
+					content.append("{");
+					content.append("\"id\":");
+					content.append(i);
+					content.append("}");
+
+					if (i + 1 <= weeksNo) {
+						content.append(",");
+					}
+				}
+				content.append("]");
+
+				String courseResourcesQuery = "INSERT INTO "
+						+ DBCredentials.COURSE_RESOURCES_TABLE
+						+ " (`teacher_course_class_id`,`content`) VALUES ("
+						+ tccId + ",'" + content.toString() + "')";
+				String optionalResourcesQuery = "INSERT INTO "
+						+ DBCredentials.OPTIONAL_RESOURCES_TABLE
+						+ " (`teacher_course_id`,`content`) VALUES (" + tccId
+						+ ",'" + content.toString() + "')";
+				// add the empty resources into table
+				added = statement.executeUpdate(isCourse ? courseResourcesQuery
+						: optionalResourcesQuery) == 1;
+
+				statement.close();
+			}
+		} catch (Exception e) {
+		}
+
+		return added;
+	}
+
+	public static int createTccAssocForGroups(DBConnection dbConnection,
+			int classId, int courseId, int teacherId, int semester, int oldTccId) {
 		Connection connection = dbConnection.getConnection();
 		int row = 0;
 		String selectQuery = "SELECT `id` FROM "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
 				+ " WHERE `courseId`=" + courseId + " AND `classId`=" + classId
-				+ " AND `semester`=" + semester;
-		String updateQuery = "UPDATE "
-				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " SET `teacherId`=" + teacherId + " WHERE `id`=";
+				+ " AND `semester`=" + semester + " AND `teacherId`="
+				+ teacherId;
 		String insertQuery = "INSERT INTO "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
 				+ " (`courseId`,`classId`,`teacherId`,`semester`) VALUES ("
 				+ courseId + "," + classId + "," + teacherId + "," + semester
 				+ ")";
+		// get students ids from class
+		List<Integer> studentIds = studentsFromGrupList(dbConnection, classId);
 
 		try {
 			Statement statement = connection.createStatement();
@@ -2894,105 +3224,29 @@ public class DBUtils {
 			boolean exists = result.next();
 
 			if (exists) {
-				// update the association
-				int id = result.getInt("id");
-				row = statement.executeUpdate(updateQuery + id);
+				// tccId exists, so add it in the users' list of courses
+				int tccId = result.getInt("id");
+				for (int studentId : studentIds) {
+					updateStudentCourses(dbConnection, studentId, tccId,
+							oldTccId);
+				}
 			} else {
 				// insert
 				row = statement.executeUpdate(insertQuery);
 				if (row == 1) {
 					// get the id
-					result = statement.executeQuery(selectQuery
-							+ " AND `teacherId`=" + teacherId);
+					result = statement.executeQuery(selectQuery);
 					int tccId = -1;
 					if (result.next()) {
 						tccId = result.getInt("id");
 					}
 					if (tccId > 0) {
-						// get the number of weeks of semester
-						String weeksQuery = "SELECT `total_weeks` FROM "
-								+ DBCredentials.HOLIDAYS_TABLE
-								+ " WHERE `semester`=" + semester;
-						result = statement.executeQuery(weeksQuery);
-						if (result.next()) {
-							int weeksNo = result.getInt("total_weeks");
-							// also create the empty resources for course
-							StringBuilder content = new StringBuilder("[");
-							for (int i = 1; i <= weeksNo; i++) {
-								content.append("{");
-								content.append("\"id\":");
-								content.append(i);
-								content.append("}");
-
-								if (i + 1 <= weeksNo) {
-									content.append(",");
-								}
-							}
-							content.append("]");
-
-							String resourcesQuery = "INSERT INTO "
-									+ DBCredentials.RESOURCES_TABLE
-									+ " (`teacher_course_class_id`,`content`) VALUES ("
-									+ tccId + ",'" + content.toString() + "')";
-							// add the empty resources into table
-							boolean added = statement
-									.executeUpdate(resourcesQuery) == 1;
-							if (added) {
-								// get students ids from class
-								String studentsQuery = "SELECT `id` FROM "
-										+ DBCredentials.STUDENT_TABLE
-										+ " WHERE `group`=" + classId;
-
-								String getCurrentCoursesQuery = "SELECT `teacher_course_class_ids` FROM "
-										+ DBCredentials.COURSES_LIST_TABLE
-										+ " WHERE `studentId`=?";
-								String updateCoursesQuery = "UPDATE "
-										+ DBCredentials.COURSES_LIST_TABLE
-										+ " SET `teacher_course_class_ids`=? WHERE `studentId`=?";
-								String addCoursesQuery = "INSERT INTO "
-										+ DBCredentials.COURSES_LIST_TABLE
-										+ " (`studentId`,`teacher_course_class_ids`) VALUES (?,?)";
-
-								PreparedStatement currCoursesStmt = connection
-										.prepareStatement(getCurrentCoursesQuery);
-								PreparedStatement updtCoursesStmt = connection
-										.prepareStatement(updateCoursesQuery);
-								PreparedStatement addCoursesStmt = connection
-										.prepareStatement(addCoursesQuery);
-
-								result = statement.executeQuery(studentsQuery);
-								while (result.next()) {
-									// and add the tccId to students
-									int studentId = result.getInt("id");
-
-									// create the prepared statements
-									currCoursesStmt.setInt(1, studentId);
-									updtCoursesStmt.setInt(2, studentId);
-									addCoursesStmt.setInt(1, studentId);
-									addCoursesStmt.setString(2, tccId + "");
-
-									ResultSet currCour = currCoursesStmt
-											.executeQuery();
-									boolean studentIsAdded = currCour.next();
-									if (!studentIsAdded) {
-										// add the student
-										addCoursesStmt.executeUpdate();
-									} else {
-										// update course list
-										String allCourses = currCour
-												.getString("teacher_course_class_ids");
-										if (allCourses == null) {
-											allCourses = "";
-										}
-										allCourses += allCourses.isEmpty() ? ""
-												: ",";
-										allCourses += tccId;
-
-										updtCoursesStmt
-												.setString(1, allCourses);
-										updtCoursesStmt.executeUpdate();
-									}
-								}
+						boolean added = setEmptyResources(dbConnection,
+								semester, tccId, true);
+						if (added) {
+							for (int studentId : studentIds) {
+								updateStudentCourses(dbConnection, studentId,
+										tccId, oldTccId);
 							}
 						}
 					}
@@ -3005,23 +3259,20 @@ public class DBUtils {
 
 		return row;
 	}
-	
-	public static int createTccAssocForStudent(DBConnection dbConnection, int classId,
-			int courseId, int teacherId, int semester, int studentId) {
+
+	public static int createTccAssocForStudent(DBConnection dbConnection,
+			int courseId, int teacherId, int semester, int studentId,
+			int oldTccId) {
 		Connection connection = dbConnection.getConnection();
 		int row = 0;
 		String selectQuery = "SELECT `id` FROM "
-				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " WHERE `courseId`=" + courseId + " AND `classId`=" + classId
-				+ " AND `semester`=" + semester;
-		String updateQuery = "UPDATE "
-				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " SET `teacherId`=" + teacherId + " WHERE `id`=";
+				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `courseId`="
+				+ courseId + " AND `semester`=" + semester
+				+ " AND `teacherId`=" + teacherId;
 		String insertQuery = "INSERT INTO "
-				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " (`courseId`,`classId`,`teacherId`,`semester`) VALUES ("
-				+ courseId + "," + classId + "," + teacherId + "," + semester
-				+ ")";
+				+ DBCredentials.TEACHER_COURSE_TABLE
+				+ " (`courseId`,`teacherId`,`semester`) VALUES (" + courseId
+				+ "," + "," + teacherId + "," + semester + ")";
 
 		try {
 			Statement statement = connection.createStatement();
@@ -3029,95 +3280,25 @@ public class DBUtils {
 			boolean exists = result.next();
 
 			if (exists) {
-				// update the association
-				int id = result.getInt("id");
-				row = statement.executeUpdate(updateQuery + id);
+				// tccId exists, so add it in the users' list of courses
+				int tccId = result.getInt("id");
+				updateStudentOptionals(dbConnection, studentId, tccId, oldTccId);
 			} else {
 				// insert
 				row = statement.executeUpdate(insertQuery);
 				if (row == 1) {
 					// get the id
-					result = statement.executeQuery(selectQuery
-							+ " AND `teacherId`=" + teacherId);
+					result = statement.executeQuery(selectQuery);
 					int tccId = -1;
 					if (result.next()) {
 						tccId = result.getInt("id");
 					}
 					if (tccId > 0) {
-						// get the number of weeks of semester
-						String weeksQuery = "SELECT `total_weeks` FROM "
-								+ DBCredentials.HOLIDAYS_TABLE
-								+ " WHERE `semester`=" + semester;
-						result = statement.executeQuery(weeksQuery);
-						if (result.next()) {
-							int weeksNo = result.getInt("total_weeks");
-							// also create the empty resources for course
-							StringBuilder content = new StringBuilder("[");
-							for (int i = 1; i <= weeksNo; i++) {
-								content.append("{");
-								content.append("\"id\":");
-								content.append(i);
-								content.append("}");
-
-								if (i + 1 <= weeksNo) {
-									content.append(",");
-								}
-							}
-							content.append("]");
-
-							String resourcesQuery = "INSERT INTO "
-									+ DBCredentials.RESOURCES_TABLE
-									+ " (`teacher_course_class_id`,`content`) VALUES ("
-									+ tccId + ",'" + content.toString() + "')";
-							// add the empty resources into table
-							boolean added = statement
-									.executeUpdate(resourcesQuery) == 1;
-							if (added) {
-								String getCurrentCoursesQuery = "SELECT `teacher_course_class_ids` FROM "
-										+ DBCredentials.COURSES_LIST_TABLE
-										+ " WHERE `studentId`=" + studentId;
-								String updateCoursesQuery = "UPDATE "
-										+ DBCredentials.COURSES_LIST_TABLE
-										+ " SET `teacher_course_class_ids`=? WHERE `studentId`=" + studentId;
-								String addCoursesQuery = "INSERT INTO "
-										+ DBCredentials.COURSES_LIST_TABLE
-										+ " (`studentId`,`teacher_course_class_ids`) VALUES (" + studentId + ",?)";
-
-								Statement currCoursesStmt = connection
-										.createStatement();
-								PreparedStatement updtCoursesStmt = connection
-										.prepareStatement(updateCoursesQuery);
-								PreparedStatement addCoursesStmt = connection
-										.prepareStatement(addCoursesQuery);
-
-									// and add the tccId to student
-
-									// create the prepared statements
-									addCoursesStmt.setString(1, tccId + "");
-
-									ResultSet currCour = currCoursesStmt
-											.executeQuery(getCurrentCoursesQuery);
-									boolean studentIsAdded = currCour.next();
-									if (!studentIsAdded) {
-										// add the student
-										addCoursesStmt.executeUpdate();
-									} else {
-										// update course list
-										String allCourses = currCour
-												.getString("teacher_course_class_ids");
-										if (allCourses == null) {
-											allCourses = "";
-										}
-										allCourses += allCourses.isEmpty() ? ""
-												: ",";
-										allCourses += tccId;
-
-										updtCoursesStmt
-												.setString(1, allCourses);
-										updtCoursesStmt.executeUpdate();
-									}
-								
-							}
+						boolean added = setEmptyResources(dbConnection,
+								semester, tccId, false);
+						if (added) {
+							updateStudentOptionals(dbConnection, studentId,
+									tccId, oldTccId);
 						}
 					}
 				}
