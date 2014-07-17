@@ -22,13 +22,15 @@ public class FeedbackRequestResource extends ServerResource {
 		int schoolId = info.getInt("schoolId");
 		int userId = info.getInt("userId");
 		int courseId = info.getInt("courseId");
+		int semester = info.getInt("semester");
+		boolean isOptional = info.getInt("optional") == 1;
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		int classId = DBUtils.getClassIdForUser(dbConnection, userId);
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
+		int assocId = DBUtils.getAssocId(dbConnection, userId, true, courseId, classId, semester, isOptional);
 		
-		JSONObject feedback = DBUtils.getFeedbackRequest(dbConnection, tccId);
+		JSONObject feedback = DBUtils.getFeedbackRequest(dbConnection, assocId, isOptional ? 2 : 1);
 		
 		return feedback.toString();
 	}

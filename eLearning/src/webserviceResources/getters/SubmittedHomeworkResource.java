@@ -22,16 +22,12 @@ public class SubmittedHomeworkResource extends ServerResource {
 
 		int schoolId = info.getInt("schoolId");
 		int homeworkId = info.getInt("homeworkId");
-		int classId = info.getInt("classId");
-		int courseId = info.getInt("courseId");
-		
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
-		JSONArray obj = DBUtils.getSubmittedHomework(dbConnection, homeworkId, tccId);
+		JSONArray obj = DBUtils.getSubmittedHomework(dbConnection, homeworkId);
 		
 		return obj.toString();
 	}

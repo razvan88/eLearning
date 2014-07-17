@@ -23,13 +23,15 @@ public class TeacherHomeworkListResource extends ServerResource {
 		int schoolId = info.getInt("schoolId");
 		int classId = info.getInt("classId");
 		int courseId = info.getInt("courseId");
+		int semester = info.getInt("semester");
+		boolean isOptional = info.getInt("optional") == 1;
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
-		JSONArray homeworkList = DBUtils.getHomeworkListForTeacher(dbConnection, tccId);
+		int assocId = DBUtils.getAssocId(dbConnection, 0 /*not used*/, false, courseId, classId, semester, isOptional);
+		JSONArray homeworkList = DBUtils.getHomeworkListForTeacher(dbConnection, assocId, isOptional ? 2 : 1);
 		
 		return homeworkList.toString();
 	}

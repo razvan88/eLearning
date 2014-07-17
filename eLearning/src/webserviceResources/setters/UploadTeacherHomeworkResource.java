@@ -22,7 +22,9 @@ public class UploadTeacherHomeworkResource extends ServerResource {
 		int schoolId = info.getInt("schoolId");
 		int courseId = info.getInt("courseId");
 		int classId = info.getInt("classId");
-		//int userId = info.getInt("userId");
+		int userId = info.getInt("userId");
+		int semester = info.getInt("semester");
+		boolean isOptional = info.getInt("optional") == 1;
 		
 		String title = info.getString("name");
 		String content = info.getString("text");
@@ -34,9 +36,8 @@ public class UploadTeacherHomeworkResource extends ServerResource {
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId,
-				courseId);
-		int id = DBUtils.uploadTeacherHomework(dbConnection, tccId,
+		int assocId = DBUtils.getAssocId(dbConnection, userId, false, courseId, classId, semester, isOptional);
+		int id = DBUtils.uploadTeacherHomework(dbConnection, assocId, isOptional ? 2 : 1,
 				title, content, deadline, resources, (float)maxGrade);
 		
 		return id + "";

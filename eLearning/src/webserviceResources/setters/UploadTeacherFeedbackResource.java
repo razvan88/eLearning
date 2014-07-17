@@ -23,6 +23,10 @@ public class UploadTeacherFeedbackResource extends ServerResource {
 		int schoolId = info.getInt("schoolId");
 		int courseId = info.getInt("courseId");
 		int classId = info.getInt("classId");
+		boolean isStudent = info.getInt("student") == 1;
+		boolean isOptional = info.getInt("optional") == 1;
+		int semester = info.getInt("semester");
+		int userId = info.getInt("userId");
 		int isAvailable = info.getInt("isAvailable");
 		JSONArray jsonAspects = JSONArray.fromObject(info.getString("aspects"));
 		StringBuffer stringAspects = new StringBuffer();
@@ -42,15 +46,15 @@ public class UploadTeacherFeedbackResource extends ServerResource {
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId,
-				courseId);
+		int assocId = DBUtils.getAssocId(dbConnection, userId, isStudent, courseId, classId, semester, isOptional);
+		int assocTableId = isOptional ? 2 : 1;
 		boolean success = false;
 
 		// check if it exists
-		int feedbackId = DBUtils.getTeacherFeedbackId(dbConnection, tccId);
+		int feedbackId = DBUtils.getTeacherFeedbackId(dbConnection, assocId, assocTableId);
 		if (feedbackId < 0) {
 			// insert
-			success = DBUtils.uploadTeacherFeedback(dbConnection, tccId,
+			success = DBUtils.uploadTeacherFeedback(dbConnection, assocId, assocTableId,
 					isAvailable, stringAspects.toString());
 		} else {
 			// update

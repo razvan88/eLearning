@@ -1,8 +1,5 @@
 package webserviceResources.getters;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -27,19 +24,23 @@ public class CourseDetailsResource extends ServerResource {
 		int schoolId = info.getInt("schoolId");
 		int userId = info.getInt("userId");
 		int courseId = info.getInt("courseId");
+		int semester = info.getInt("semester");
+		boolean isOptional = info.getInt("optional") == 1;
+		boolean isStudent = info.getInt("student") == 1;
+		
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
 		JSONObject courseInfo = DBCommonOperations.getCourseInfo(courseId);
-		List<Integer> courseIdList = new ArrayList<Integer>();
-		courseIdList.add(courseId);
 		
-		int classId = DBUtils.getClassIdForUser(dbConnection, userId);
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
-		JSONArray deadlines = DBUtils.getAllDeadlines(dbConnection, userId, courseIdList);
-		JSONObject holidays = DBUtils.getHolidayDetails(dbConnection);
-		JSONArray resources = DBUtils.getResources(dbConnection, tccId);
+		int classId = isStudent ? DBUtils.getClassIdForUser(dbConnection, userId) : info.getInt("classId");
+		int assocId = DBUtils.getAssocId(dbConnection, userId, isStudent, courseId, classId, semester, isOptional);
+		int assocTableId = isOptional ? 2 : 1;
+		
+		JSONArray deadlines = DBUtils.getAllDeadlines(dbConnection, userId, courseId, assocId, assocTableId);
+		JSONObject holidays = DBUtils.getHolidayDetails(dbConnection, semester);
+		JSONArray resources = DBUtils.getResources(dbConnection, assocId, assocTableId);
 		
 		JSONObject courseDetails = new JSONObject();
 		courseDetails.put("name", courseInfo.getString("name"));

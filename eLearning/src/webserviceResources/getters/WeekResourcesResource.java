@@ -20,16 +20,20 @@ public class WeekResourcesResource extends ServerResource {
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 
 		int schoolId = info.getInt("schoolId");
+		int userId = info.getInt("userId");
 		int courseId = info.getInt("courseId");
 		int classId = info.getInt("classId");
 		int weekId = info.getInt("weekId");
+		int semester = info.getInt("semester");
+		boolean isOptional = info.getInt("optional") == 1;
+		boolean isStudent = info.getInt("student") == 1;
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
-		JSONObject weekRes = DBUtils.getWeekResources(dbConnection, tccId, weekId);
+		int assocId = DBUtils.getAssocId(dbConnection, userId, isStudent, courseId, classId, semester, isOptional);
+		JSONObject weekRes = DBUtils.getWeekResources(dbConnection, assocId, isOptional ? 2 : 1, weekId);
 		
 		return weekRes.toString();
 	}

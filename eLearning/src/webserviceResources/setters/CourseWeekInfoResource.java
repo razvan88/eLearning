@@ -25,13 +25,18 @@ public class CourseWeekInfoResource extends ServerResource {
 		int weekId = info.getInt("weekId");
 		String description = info.getString("description");
 		String resources = info.getString("resources");
+		boolean isOptional = info.getInt("optional") == 1;
+		boolean isStudent = info.getInt("student") == 1;
+		int userId = info.getInt("userId");
+		int semester = info.getInt("semester");
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
-		int rows = DBUtils.uploadCourseWeekInfo(dbConnection, tccId, weekId, description, resources);
+		int assocId = DBUtils.getAssocId(dbConnection, userId, isStudent, courseId, classId, semester, isOptional);
+		int assocTableId = isOptional ? 2 : 1;
+		int rows = DBUtils.uploadCourseWeekInfo(dbConnection, assocId, assocTableId, weekId, description, resources);
 		
 		return rows + "";
 	}

@@ -24,14 +24,20 @@ public class CourseResourcesResource extends ServerResource {
 		int courseId = info.getInt("courseId");
 		int classId = info.getInt("classId");
 		int weekId = info.getInt("weekId");
+		int userId = info.getInt("userId");
+		int semester = info.getInt("semester");
+		boolean isStudent = info.getInt("student") == 1;
+		boolean isOptional = info.getInt("optional") == 1;
+		
 		JSONArray resources = JSONArray.fromObject(info.getString("resources"));
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
-		int rows = DBUtils.uploadCourseWeekResources(dbConnection, tccId, weekId, resources);
+		int assocId = DBUtils.getAssocId(dbConnection, userId, isStudent, courseId, classId, semester, isOptional);
+		int assocTableId = isOptional ? 2 : 1;
+		int rows = DBUtils.uploadCourseWeekResources(dbConnection, assocId, assocTableId, weekId, resources);
 		
 		return rows + "";
 	}

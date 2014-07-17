@@ -16,12 +16,15 @@ import database.DBUtils;
 public class UploadCourseForumTopicResource extends ServerResource {
 
 	@Post
-	public String uploadFourumSubject(Representation entity) {
+	public String uploadForumSubject(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 
 		int schoolId = info.getInt("schoolId");
 		int courseId = info.getInt("courseId");
+		int classId = info.getInt("classId");
+		boolean isOptional = info.getInt("optional") == 1;
+		int semester = info.getInt("semester");
 		String subject = info.getString("subject");
 		int initiatorId = info.getInt("initiatorId");
 		int lastPostById = info.getInt("lastPostById");
@@ -36,21 +39,36 @@ public class UploadCourseForumTopicResource extends ServerResource {
 				database);
 
 		String sqlDate = Date.getSQLDateNow();
-		int primaryKey = DBUtils.uploadForumTopic(dbConnection, courseId,
-				isAnnouncement, subject, initiatorId, initiatorTable,
-				totalPosts, sqlDate, lastPostById, lastPostByTable);
+		
+		int assocId = -1;
+		int assocTableId = -1;
+		boolean isStudent = initiatorTable.equals("teacher");
+		
+		if (courseId > -1) {
+			if(classId == -1 && initiatorTable.equals("student")) {
+				classId = DBUtils.getClassIdForUser(dbConnection, initiatorId);
+			}
+			
+			assocId = DBUtils.getAssocId(dbConnection, initiatorId, isStudent, courseId, classId, semester, isOptional);
+			assocTableId = isOptional ? 2 : 1;
+		}
 
-		if(primaryKey < 0) {
+		int primaryKey = DBUtils.uploadForumTopic(dbConnection, assocId,
+				assocTableId, isAnnouncement, subject, initiatorId,
+				initiatorTable, totalPosts, sqlDate, lastPostById,
+				lastPostByTable);
+
+		if (primaryKey < 0) {
 			return "0";
 		}
-		
+
 		boolean added = DBUtils.uploadFirstEntryForumSubject(dbConnection,
 				primaryKey, initiatorId, initiatorTable, sqlDate, content);
-		if(!added) {
+		if (!added) {
 			DBUtils.removeForumTopic(dbConnection, primaryKey);
 			return "0";
 		}
-		
+
 		return "1";
 	}
 }

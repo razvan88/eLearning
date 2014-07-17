@@ -26,7 +26,7 @@ public class TeacherCoursesAndClassesResource extends ServerResource {
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		JSONArray coursesClasses = DBUtils.getTeacherCoursesAndClasses(dbConnection, teacherId);
+		JSONArray coursesClasses = DBUtils.getTeacherCoursesAssoc(dbConnection, teacherId);
 		return coursesClasses.toString();
 	}
 }

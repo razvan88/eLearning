@@ -23,13 +23,17 @@ public class UploadFeedbackResource extends ServerResource {
 		int studentId = info.getInt("userId");
 		int courseId = info.getInt("courseId");
 		String opinion = info.getString("feedback");
+		int semester = info.getInt("semester");
+		boolean isOptional = info.getInt("optional") == 1;
+		boolean isStudent = info.getInt("student") == 1;
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
-		int classId = DBUtils.getClassIdForUser(dbConnection, studentId);
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
+		int classId = isStudent ? DBUtils.getClassIdForUser(dbConnection, studentId) : -1;
 		
-		int feedbackId = DBUtils.getFeedbackId(dbConnection, tccId);
+		int assocId = DBUtils.getAssocId(dbConnection, studentId, isStudent, courseId, classId, semester, isOptional);
+		int assocTableId = isOptional ? 2 : 1;
+		int feedbackId = DBUtils.getFeedbackId(dbConnection, assocId, assocTableId);
 		boolean added = DBUtils.uploadFeedback(dbConnection, feedbackId, studentId, opinion);
 		
 		return added ? "1" : "0";

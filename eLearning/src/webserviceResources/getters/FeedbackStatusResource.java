@@ -20,16 +20,19 @@ public class FeedbackStatusResource extends ServerResource {
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		
 		int schoolId = info.getInt("schoolId");
-		int studentId = info.getInt("userId");
+		int userId = info.getInt("userId");
 		int courseId = info.getInt("courseId");
+		int semester = info.getInt("semester");
+		boolean isStudent = info.getInt("student") == 1;
+		boolean isOptional = info.getInt("optional") == 1;
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
-		int classId = DBUtils.getClassIdForUser(dbConnection, studentId);
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
-		
-		int feedbackId = DBUtils.getFeedbackId(dbConnection, tccId);
-		boolean given = DBUtils.getFeedbackStatus(dbConnection, feedbackId, studentId);
+		int classId = isStudent ? DBUtils.getClassIdForUser(dbConnection, userId) : -1;
+		int assocId = DBUtils.getAssocId(dbConnection, userId, isStudent, courseId, classId, semester, isOptional);
+		int assocTableId = isOptional ? 2 : 1;
+		int feedbackId = DBUtils.getFeedbackId(dbConnection, assocId, assocTableId);
+		boolean given = DBUtils.getFeedbackStatus(dbConnection, feedbackId, userId);
 		
 		return given ? "1" : "0";
 	}

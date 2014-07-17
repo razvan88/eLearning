@@ -23,11 +23,24 @@ public class ForumSummaryResource extends ServerResource {
 		int schoolId = info.getInt("schoolId");
 		int courseId = info.getInt("courseId");
 		int isAnnouncement = info.getInt("isAnnouncement");
+		int userId = info.getInt("userId");
+		int semester = info.getInt("semester");
+		boolean isOptional = info.getInt("optional") == 1;
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		JSONArray forumSummary = DBUtils.getForumSummary(dbConnection, courseId, isAnnouncement);
+		int classId = DBUtils.getClassIdForUser(dbConnection, userId);
+		JSONArray forumSummary = new JSONArray();
+		
+		int assocId = -1;
+		int assocTableId = -1;
+		if(courseId > -1) {
+			boolean isStudent = info.getInt("student") == 1;
+			assocId = DBUtils.getAssocId(dbConnection, userId, isStudent, courseId, classId, semester, isOptional);
+			assocTableId = isOptional ? 2 : 1;
+		}
+		forumSummary = DBUtils.getForumSummary(dbConnection, assocId, assocTableId, isAnnouncement);
 		
 		return forumSummary.toString();
 	}

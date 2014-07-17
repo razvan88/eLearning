@@ -406,61 +406,74 @@ public class DBUtils {
 		return -1;
 	}
 
-	public static int getTeacherIdFromTccTable(DBConnection dbConnection,
-			int classId, int courseId) {
-		Connection connection = dbConnection.getConnection();
-		String query = "SELECT `teacherId` FROM "
-				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " WHERE `classId`=" + classId + " AND `courseId`=" + courseId;
-		int teacherId = 0;
-
-		try {
-			Statement statement = connection.createStatement();
-
-			ResultSet resultSet = statement.executeQuery(query);
-			if (resultSet.next()) {
-				teacherId = resultSet.getInt("teacherId");
-			}
-		} catch (Exception e) {
-		}
-
-		return teacherId;
-	}
-
 	public static JSONArray getCoursesList(DBConnection dbConnection, int userId) {
 		Connection connection = dbConnection.getConnection();
 		String coursesIdsQuery = "SELECT `teacher_course_class_ids` FROM "
 				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
 				+ userId;
-		String classIdQuery = "SELECT `group` FROM "
-				+ DBCredentials.STUDENT_TABLE + " WHERE `id`=" + userId;
+		String optionalIdsQuery = "SELECT `teacher_course_ids` FROM "
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
+				+ userId;
+		String courseInfoQuery = "SELECT `teacherId`, `courseId`, `semester` FROM "
+				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE + " WHERE `id`=?";
+		String optionalInfoQuery = "SELECT `teacherId`, `courseId`, `semester` FROM "
+				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `id`=?";
 		JSONArray courses = new JSONArray();
 
 		try {
 			Statement statement = connection.createStatement();
 
-			int classId = 0;
-			ResultSet resultSet = statement.executeQuery(classIdQuery);
+			// get courses
+			ResultSet resultSet = statement.executeQuery(coursesIdsQuery);
 			if (resultSet.next()) {
-				classId = resultSet.getInt("group");
-			}
+				PreparedStatement prepStmt = connection
+						.prepareStatement(courseInfoQuery);
+				String[] tccIds = resultSet.getString(
+						"teacher_course_class_ids").split(",");
 
-			resultSet = statement.executeQuery(coursesIdsQuery);
-			if (resultSet.next()) {
-				String tccIds = resultSet.getString("teacher_course_class_ids");
-				List<Integer> courseIdList = getCourseIdsFromTccIds(
-						dbConnection, tccIds);
-				courses = DBCommonOperations.getCoursesInfo(courseIdList);
-			}
+				for (String tccId : tccIds) {
+					int tcc = Integer.parseInt(tccId);
+					prepStmt.setInt(1, tcc);
+					ResultSet res = prepStmt.executeQuery();
 
-			if (classId > 0) {
-				for (int i = 0; i < courses.size(); i++) {
-					JSONObject course = courses.getJSONObject(i);
-					int teacherId = getTeacherIdFromTccTable(dbConnection,
-							classId, course.getInt("id"));
-					JSONObject teacher = getTeacher(dbConnection, teacherId);
-					course.put("teacher", teacher);
+					if (res.next()) {
+						JSONObject course = DBCommonOperations
+								.getCourseInfo(res.getInt("courseId"));
+						course.put(
+								"teacher",
+								getTeacher(dbConnection,
+										res.getInt("teacherId")));
+						course.put("semester", res.getInt("semester"));
+						course.put("optional", 0);
+						courses.add(course);
+					}
 				}
+				prepStmt.close();
+			}
+
+			// get optionals
+			resultSet = statement.executeQuery(optionalIdsQuery);
+			if (resultSet.next()) {
+				PreparedStatement prepStmt = connection
+						.prepareStatement(optionalInfoQuery);
+				String[] tcIds = resultSet.getString("teacher_course_ids")
+						.split(",");
+				for (String tcId : tcIds) {
+					int tc = Integer.parseInt(tcId);
+					prepStmt.setInt(1, tc);
+					ResultSet res = prepStmt.executeQuery();
+					if (res.next()) {
+						JSONObject opt = DBCommonOperations.getCourseInfo(res
+								.getInt("courseId"));
+						opt.put("teacher",
+								getTeacher(dbConnection,
+										res.getInt("teacherId")));
+						opt.put("semester", res.getInt("semester"));
+						opt.put("optional", 1);
+						courses.add(opt);
+					}
+				}
+				prepStmt.close();
 			}
 
 			statement.close();
@@ -470,12 +483,13 @@ public class DBUtils {
 		return courses;
 	}
 
-	public static int getTeachClassCourseId(DBConnection dbConnection,
-			int classId, int courseId) {
+	public static int getTeacherCourseClassId(DBConnection dbConnection,
+			int classId, int courseId, int semester) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `id` FROM "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " WHERE `courseId`=" + courseId + " AND `classId`=" + classId;
+				+ " WHERE `courseId`=" + courseId + " AND `classId`=" + classId
+				+ " AND `semester`=" + semester;
 		int id = 0;
 
 		try {
@@ -483,7 +497,7 @@ public class DBUtils {
 			ResultSet resultSet = statement.executeQuery(query);
 
 			if (resultSet.next()) {
-				id = resultSet.getInt(1);
+				id = resultSet.getInt("id");
 			}
 
 			statement.close();
@@ -493,12 +507,103 @@ public class DBUtils {
 		return id;
 	}
 
+	public static int getTeacherCourseId(DBConnection dbConnection, int userId,
+			boolean isStudent, int courseId, int semester) {
+		Connection connection = dbConnection.getConnection();
+		String tcIdsQuery = "SELECT `teacher_course_ids` FROM "
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
+				+ userId;
+		String tcQuery = "SELECT `id` FROM "
+				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `courseId`="
+				+ courseId + " AND `semester`=" + semester;
+		String teacherTcQuery = tcQuery + " AND `teacherId`=" + userId;
+		int id = 0;
+
+		try {
+			Statement statement = connection.createStatement();
+
+			if (!isStudent) {
+				ResultSet resultSet = statement.executeQuery(teacherTcQuery);
+				int tcId = -1;
+				if (resultSet.next()) {
+					tcId = resultSet.getInt("id");
+				}
+				statement.close();
+				return tcId;
+			}
+
+			ResultSet resultSet = statement.executeQuery(tcIdsQuery);
+
+			String tcIdsVal = "";
+			if (resultSet.next()) {
+				tcIdsVal = resultSet.getString("teacher_course_ids");
+			}
+			String[] tcIdsArray = tcIdsVal.split(",");
+			List<Integer> tcIds = new ArrayList<Integer>();
+			for (String tcId : tcIdsArray) {
+				tcIds.add(Integer.parseInt(tcId));
+			}
+			resultSet = statement.executeQuery(tcQuery);
+
+			boolean found = false;
+			while (resultSet.next()) {
+				id = resultSet.getInt("id");
+				for (int tcId : tcIds) {
+					if (tcId == id) {
+						found = true;
+						break;
+					}
+				}
+				if (found) {
+					break;
+				} else {
+					id = 0;
+				}
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return id;
+	}
+
+	public static int getAssocId(DBConnection dbConnection, int userId,
+			boolean isStudent, int courseId, int classId, int semester,
+			boolean isOptional) {
+		return isOptional ? DBUtils.getTeacherCourseId(dbConnection, userId,
+				isStudent, courseId, semester) : DBUtils
+				.getTeacherCourseClassId(dbConnection, classId, courseId,
+						semester);
+	}
+
+	public static String getAssocTableName(DBConnection dbConnection,
+			int assocTableId) {
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `table` FROM " + DBCredentials.ASSOC_TABLE
+				+ " WHERE `id`=" + assocTableId;
+		String table = "";
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet resultSet = statement.executeQuery(query);
+
+			if (resultSet.next()) {
+				table = resultSet.getString("table");
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return table;
+	}
+
 	public static JSONArray getResources(DBConnection dbConnection,
-			int teacherCourseClassId) {
+			int assocId, int assocTableId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `content` FROM "
-				+ DBCredentials.COURSE_RESOURCES_TABLE
-				+ " WHERE `teacher_course_class_id`=" + teacherCourseClassId;
+				+ DBCredentials.COURSE_RESOURCES_TABLE + " WHERE `assoc_id`="
+				+ assocId + " AND `assoc_table_id`=" + assocTableId;
 		JSONArray resources = new JSONArray();
 
 		try {
@@ -517,9 +622,11 @@ public class DBUtils {
 		return resources;
 	}
 
-	public static JSONObject getHolidayDetails(DBConnection dbConnection) {
+	public static JSONObject getHolidayDetails(DBConnection dbConnection,
+			int semester) {
 		Connection connection = dbConnection.getConnection();
-		String query = "SELECT * FROM " + DBCredentials.HOLIDAYS_TABLE;
+		String query = "SELECT * FROM " + DBCredentials.HOLIDAYS_TABLE
+				+ " WHERE `semester`=" + semester;
 		JSONObject result = new JSONObject();
 
 		try {
@@ -549,16 +656,16 @@ public class DBUtils {
 		return result;
 	}
 
-	public static JSONArray getHomework(DBConnection dbConnection, int tccId,
-			int studentId) {
+	public static JSONArray getHomework(DBConnection dbConnection,
+			int studentId, int assocId, int assocTableId) {
 		Connection connection = dbConnection.getConnection();
 
 		String homeworkQuery = "SELECT * FROM " + DBCredentials.HOMEWORK_TABLE
-				+ " WHERE `teacher_course_class_id`=" + tccId;
+				+ " WHERE `assoc_id`=" + assocId + " AND `assoc_table_id`="
+				+ assocTableId;
 		String homeworkResultQuery = "SELECT * FROM "
-				+ DBCredentials.HOMEWORK_RESULTS_TABLE
-				+ " WHERE `teacher_course_class_id`=" + tccId
-				+ " AND `student_id`=" + studentId + " AND `homework_id`=?";
+				+ DBCredentials.HOMEWORK_RESULTS_TABLE + " WHERE `student_id`="
+				+ studentId + " AND `homework_id`=?";
 		JSONArray result = new JSONArray();
 
 		try {
@@ -613,11 +720,11 @@ public class DBUtils {
 	}
 
 	public static JSONArray getCourseClassbook(DBConnection dbConnection,
-			int tccId, int studentId) {
+			int assocId, int assocTableId, int studentId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT * FROM " + DBCredentials.COURSE_CLASSBOOK_TABLE
-				+ " WHERE `teacher_course_class_id`=" + tccId
-				+ " AND `student_id`=" + studentId;
+				+ " WHERE `assoc_id`=" + assocId + " AND `assoc_table_id`="
+				+ assocTableId + " AND `student_id`=" + studentId;
 		JSONArray result = new JSONArray();
 
 		try {
@@ -644,11 +751,11 @@ public class DBUtils {
 	}
 
 	public static JSONObject getFeedbackRequest(DBConnection dbConnection,
-			int tccId) {
+			int assocId, int assocTableId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `available`, `aspects` FROM "
-				+ DBCredentials.FEEDBACK_REQUEST_TABLE
-				+ " WHERE `teacher_course_class_id`=" + tccId;
+				+ DBCredentials.FEEDBACK_REQUEST_TABLE + " WHERE `assoc_id`="
+				+ assocId + " AND `assoc_table_id`=" + assocTableId;
 		JSONObject feedback = new JSONObject();
 
 		try {
@@ -668,11 +775,11 @@ public class DBUtils {
 	}
 
 	public static JSONArray getForumSummary(DBConnection dbConnection,
-			int courseId, int isAnnouncement) {
+			int assocId, int assocTableId, int isAnnouncement) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT * FROM " + DBCredentials.FORUM_SUMMARY_TABLE
-				+ " WHERE `course_id`=" + courseId + " AND `is_announcement`="
-				+ isAnnouncement;
+				+ " WHERE `assoc_id`=" + assocId + " AND `assoc_table_id`="
+				+ assocTableId + " AND `is_announcement`=" + isAnnouncement;
 		JSONArray forum = new JSONArray();
 
 		try {
@@ -1059,7 +1166,11 @@ public class DBUtils {
 			JSONObject newStudent = new JSONObject();
 			newStudent.put("label", student.getString("firstName") + " "
 					+ student.getString("lastName"));
-			newStudent.put("description", student.getString("description"));
+
+			String description = student.containsKey("description") ? student
+					.getString("description") : "";
+			newStudent.put("description", description);
+
 			newStudent.put("photo", student.getString("photo"));
 			newStudent.put("id", student.getInt("id"));
 
@@ -1137,24 +1248,50 @@ public class DBUtils {
 
 	public static JSONArray getAllDeadlines(DBConnection dbConnection,
 			int userId) {
-		String coursesQuery = "SELECT `teacher_course_class_ids` FROM "
-				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
+		Connection connection = dbConnection.getConnection();
+		String coursesQuery = "SELECT `teacher_course_class_ids`, `teacher_course_ids` FROM "
+				+ DBCredentials.COURSES_LIST_TABLE
+				+ " WHERE `studentId`="
 				+ userId;
-
 		JSONArray deadlines = new JSONArray();
 
 		try {
-			Connection connection = dbConnection.getConnection();
 			Statement statement = connection.createStatement();
 			ResultSet resultSet = statement.executeQuery(coursesQuery);
 
 			List<Integer> courseIds = new ArrayList<Integer>();
 			if (resultSet.next()) {
-				courseIds = getCourseIdsFromTccIds(dbConnection,
-						resultSet.getString("teacher_course_class_ids"));
-			}
+				// add course deadlines
+				String tccIdsVal = resultSet
+						.getString("teacher_course_class_ids");
+				String[] tccIds = tccIdsVal.split(",");
+				courseIds = getCourseIdsFromAssocIds(dbConnection, tccIdsVal,
+						DBCredentials.TEACHER_COURSE_CLASS_TABLE);
+				for (int i = 0; i < courseIds.size(); i++) {
+					JSONArray courseDeadlines = getAllDeadlines(dbConnection,
+							userId, courseIds.get(i),
+							Integer.parseInt(tccIds[i]), 1);
 
-			deadlines = getAllDeadlines(dbConnection, userId, courseIds);
+					for (int j = 0; j < courseDeadlines.size(); j++) {
+						deadlines.add(courseDeadlines.get(j));
+					}
+				}
+
+				// add optionals deadlines
+				String tcIdsVal = resultSet.getString("teacher_course_ids");
+				String[] tcIds = tcIdsVal.split(",");
+				courseIds = getCourseIdsFromAssocIds(dbConnection, tcIdsVal,
+						DBCredentials.TEACHER_COURSE_TABLE);
+				for (int i = 0; i < courseIds.size(); i++) {
+					JSONArray courseDeadlines = getAllDeadlines(dbConnection,
+							userId, courseIds.get(i),
+							Integer.parseInt(tcIds[i]), 2);
+
+					for (int j = 0; j < courseDeadlines.size(); j++) {
+						deadlines.add(courseDeadlines.get(j));
+					}
+				}
+			}
 
 			statement.close();
 		} catch (Exception e) {
@@ -1164,79 +1301,41 @@ public class DBUtils {
 	}
 
 	public static JSONArray getAllDeadlines(DBConnection dbConnection,
-			int userId, List<Integer> courseIds) {
+			int userId, int courseId, int assocId, int assocTableId) {
 		JSONArray deadlines = new JSONArray();
 		Connection connection = dbConnection.getConnection();
 
-		int classId = -1;
-
-		String classQuery = "SELECT `group` FROM "
-				+ DBCredentials.STUDENT_TABLE + " WHERE `id`=" + userId;
 		String homeworkDeadlineQuery = "SELECT `name`, `deadline` FROM "
-				+ DBCredentials.HOMEWORK_TABLE
-				+ " WHERE `teacher_course_class_id`=?";
+				+ DBCredentials.HOMEWORK_TABLE + " WHERE `assoc_id`=" + assocId
+				+ " AND `assoc_table_id`=" + assocTableId;
 		String simpleDeadlineQuery = "SELECT `date`, `name` FROM "
-				+ DBCredentials.DEADLINES_TABLE
-				+ " WHERE `teacher_course_class_id`=?";
+				+ DBCredentials.DEADLINES_TABLE + " WHERE `assoc_id`="
+				+ assocId + " AND `assoc_table_id`=" + assocTableId;
+		String courseName = DBCommonOperations.getCourseInfo(courseId)
+				.getString("name");
 
 		try {
 			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(classQuery);
-			if (resultSet.next()) {
-				classId = resultSet.getInt("group");
+			ResultSet resultSet = statement.executeQuery(homeworkDeadlineQuery);
+			while (resultSet.next()) {
+				JSONObject deadline = new JSONObject();
+
+				deadline.put("name", resultSet.getString("name"));
+				deadline.put("deadline", resultSet.getString("deadline"));
+				deadline.put("course", courseName);
+
+				deadlines.add(deadline);
 			}
 
-			String tccQuery = "SELECT `id` FROM "
-					+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-					+ " WHERE `courseId`=? AND `classId`=" + classId;
+			resultSet = statement.executeQuery(simpleDeadlineQuery);
+			while (resultSet.next()) {
+				JSONObject deadline = new JSONObject();
 
-			PreparedStatement tccStmt = connection.prepareStatement(tccQuery);
-			PreparedStatement homeworkDeadlineStmt = connection
-					.prepareStatement(homeworkDeadlineQuery);
-			PreparedStatement simpleDeadlineStmt = connection
-					.prepareStatement(simpleDeadlineQuery);
+				deadline.put("name", resultSet.getString("name"));
+				deadline.put("deadline", resultSet.getString("date"));
+				deadline.put("course", courseName);
 
-			for (int courseId : courseIds) {
-				int tccId = -1;
-				String courseName = DBCommonOperations.getCourseInfo(courseId)
-						.getString("name");
-
-				tccStmt.setInt(1, courseId);
-
-				ResultSet res = tccStmt.executeQuery();
-				if (res.next()) {
-					tccId = res.getInt("id");
-				}
-
-				if (tccId == -1) {
-					continue;
-				}
-
-				homeworkDeadlineStmt.setInt(1, tccId);
-				res = homeworkDeadlineStmt.executeQuery();
-				while (res.next()) {
-					JSONObject deadline = new JSONObject();
-
-					deadline.put("name", res.getString("name"));
-					deadline.put("deadline", res.getString("deadline"));
-					deadline.put("course", courseName);
-
-					deadlines.add(deadline);
-				}
-
-				simpleDeadlineStmt.setInt(1, tccId);
-				res = simpleDeadlineStmt.executeQuery();
-				while (res.next()) {
-					JSONObject deadline = new JSONObject();
-
-					deadline.put("name", res.getString("name"));
-					deadline.put("deadline", res.getString("date"));
-					deadline.put("course", courseName);
-
-					deadlines.add(deadline);
-				}
-
-				res.close();
+				deadlines.add(deadline);
 			}
 
 			statement.close();
@@ -1259,18 +1358,18 @@ public class DBUtils {
 	 * @param lastPostByTable
 	 * @return the primary key given to inserted row
 	 */
-	public static int uploadForumTopic(DBConnection dbConnection, int courseId,
-			int isAnnouncement, String subject, int initiatorId,
-			String initiatorTable, int totalPosts, String lastPostDate,
-			int lastPostById, String lastPostByTable) {
+	public static int uploadForumTopic(DBConnection dbConnection, int assocId,
+			int assocTableId, int isAnnouncement, String subject,
+			int initiatorId, String initiatorTable, int totalPosts,
+			String lastPostDate, int lastPostById, String lastPostByTable) {
 		Connection connection = dbConnection.getConnection();
 		int primaryKey = -1;
 		String query = "INSERT INTO "
 				+ DBCredentials.FORUM_SUMMARY_TABLE
-				+ " (`course_id`, `is_announcement`, `subject`, `initiator_id`, `initiator_table`, `total_posts`, `last_post_date`, `last_post_by_id`, `last_post_by_table`) VALUES ("
-				+ courseId + "," + isAnnouncement + ",'" + subject + "',"
-				+ initiatorId + ",'" + initiatorTable + "'," + totalPosts
-				+ ",'" + lastPostDate + "'," + lastPostById + ",'"
+				+ " (`assoc_id`, `assoc_table_id`,`is_announcement`, `subject`, `initiator_id`, `initiator_table`, `total_posts`, `last_post_date`, `last_post_by_id`, `last_post_by_table`) VALUES ("
+				+ assocId + "," + assocTableId + "," + isAnnouncement + ",'"
+				+ subject + "'," + initiatorId + ",'" + initiatorTable + "',"
+				+ totalPosts + ",'" + lastPostDate + "'," + lastPostById + ",'"
 				+ lastPostByTable + "')";
 
 		try {
@@ -1280,7 +1379,8 @@ public class DBUtils {
 			if (rows == 1) {
 				// added row, so get the primary key
 				query = "SELECT `id` FROM " + DBCredentials.FORUM_SUMMARY_TABLE
-						+ " WHERE `course_id`=" + courseId
+						+ " WHERE `assoc_id`=" + assocId
+						+ " AND `assoc_table_id`=" + assocTableId
 						+ " AND `is_announcement`=" + isAnnouncement
 						+ " AND `subject`='" + subject + "'"
 						+ " AND `last_post_date`='" + lastPostDate + "'"
@@ -1451,16 +1551,15 @@ public class DBUtils {
 	}
 
 	public static boolean uploadHomework(DBConnection dbConnection,
-			int homeworkId, int tccId, int studentId, String archivePath,
-			String date) {
+			int homeworkId, int studentId, String archivePath, String date) {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0;
 		String query = "INSERT INTO "
 				+ DBCredentials.HOMEWORK_RESULTS_TABLE
-				+ " (`homework_id`, `teacher_course_class_id`, `student_id`, `uploaded`, `graded`, `archive`, `upload_time`) VALUES ("
-				+ homeworkId + "," + tccId + "," + studentId + ",1,0,'"
-				+ archivePath + "','" + date + "')";
+				+ " (`homework_id`, `student_id`, `uploaded`, `graded`, `archive`, `upload_time`) VALUES ("
+				+ homeworkId + "," + studentId + ",1,0,'" + archivePath + "','"
+				+ date + "')";
 
 		try {
 			Statement statement = connection.createStatement();
@@ -1472,13 +1571,14 @@ public class DBUtils {
 		return rows == 1;
 	}
 
-	public static int getFeedbackId(DBConnection dbConnection, int tccId) {
+	public static int getFeedbackId(DBConnection dbConnection, int assocId,
+			int assocTableId) {
 		Connection connection = dbConnection.getConnection();
 
 		int id = 0;
 		String query = "SELECT `id` FROM "
-				+ DBCredentials.FEEDBACK_REQUEST_TABLE
-				+ " WHERE `teacher_course_class_id`=" + tccId;
+				+ DBCredentials.FEEDBACK_REQUEST_TABLE + " WHERE `assoc_id`="
+				+ assocId + " AND `assoc_table_id`=" + assocTableId;
 
 		try {
 			Statement statement = connection.createStatement();
@@ -1520,7 +1620,7 @@ public class DBUtils {
 
 		boolean given = false;
 		String query = "SELECT `id` FROM " + DBCredentials.FEEDBACK_TABLE
-				+ " WHERE `feedback_Id`=" + feedbackId + " AND `student_id`="
+				+ " WHERE `feedback_id`=" + feedbackId + " AND `student_id`="
 				+ studentId;
 
 		try {
@@ -1536,97 +1636,146 @@ public class DBUtils {
 		return given;
 	}
 
-	public static JSONArray getTeacherCoursesAndClasses(
-			DBConnection dbConnection, int teacherId) {
+	public static JSONArray getTeacherCoursesAssoc(DBConnection dbConnection,
+			int teacherId) {
 		Connection connection = dbConnection.getConnection();
-		JSONArray coursesClasses = new JSONArray();
-		String query = "SELECT `courses` FROM " + DBCredentials.TEACHER_TABLE
-				+ " WHERE `id`=" + teacherId;
-		String sql = "SELECT * FROM " + DBCredentials.COURSES_LIST_TABLE;
-		List<Integer> classesAlreadyAdded = new ArrayList<Integer>();
+
+		String tccQuery = "SELECT `courseId`, `classId`, `semester` FROM "
+				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
+				+ " WHERE `teacherId`=" + teacherId;
+		String tcQuery = "SELECT `courseId`, `semester` FROM "
+				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `teacherId`="
+				+ teacherId;
+
+		JSONArray semesterAssocs = new JSONArray();
+
+		JSONObject sem1 = new JSONObject();
+		sem1.put("semester", 1);
+		sem1.put("assocs", new JSONArray());
+		semesterAssocs.add(sem1);
+
+		JSONObject sem2 = new JSONObject();
+		sem2.put("semester", 2);
+		sem2.put("assocs", new JSONArray());
+		semesterAssocs.add(sem2);
 
 		try {
 			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			ResultSet result = statement.executeQuery(tccQuery);
 
-			if (result.next()) {
-				Statement stmt = connection.createStatement();
-				ResultSet res = stmt.executeQuery(sql);
+			// add all courses
+			while (result.next()) {
+				int classId = result.getInt("classId");
+				int courseId = result.getInt("courseId");
+				int semester = result.getInt("semester");
 
-				String[] courses = result.getString("courses").split(",");
-				JSONArray coursesInfo = DBCommonOperations
-						.getCoursesInfo(courses);
-				for (int i = 0; i < coursesInfo.size(); i++) {
-					classesAlreadyAdded.clear();
+				JSONObject obj = new JSONObject();
+				obj.put("course", new JSONObject());
+				obj.put("class", new JSONObject());
 
-					JSONObject course = (JSONObject) coursesInfo.get(i);
-					JSONObject courseClassObject = new JSONObject();
+				obj.getJSONObject("course").put("id", courseId);
+				obj.getJSONObject("course").put(
+						"name",
+						DBCommonOperations.getCourseInfo(courseId).getString(
+								"name"));
 
-					int id = course.getInt("id");
-					String name = course.getString("name");
-					courseClassObject.put("id", id);
-					courseClassObject.put("course", name);
+				obj.getJSONObject("class").put("id", classId);
+				obj.getJSONObject("class").put("name",
+						DBCommonOperations.getGroupName(classId));
 
-					JSONArray courseClassesArray = new JSONArray();
-
-					while (res.next()) {
-						int studentId = res.getInt("studentId");
-
-						// check student's class
-						int classId = DBUtils.getClassIdForUser(dbConnection,
-								studentId);
-						boolean found = false;
-						// check if his class was already added
-						for (int addedClass : classesAlreadyAdded) {
-							if (addedClass == classId) {
-								found = true;
-								break;
-							}
-						}
-
-						// class already added, skip
-						if (found)
-							continue;
-
-						List<Integer> coursesIds = getCourseIdsFromTccIds(
-								dbConnection,
-								res.getString("teacher_course_class_ids"));
-						for (int courseId : coursesIds) {
-							if (courseId == id) {
-								// class was not added, so add it
-								classesAlreadyAdded.add(classId);
-
-								JSONObject teachedClass = new JSONObject();
-								teachedClass.put("id", classId);
-								String className = DBCommonOperations
-										.getGroupName(classId);
-								teachedClass.put("className", className);
-
-								courseClassesArray.add(teachedClass);
-							}
-						}
+				// check if this course was added
+				boolean found = false;
+				int index = -1;
+				JSONArray assocs = semesterAssocs.getJSONObject(semester - 1)
+						.getJSONArray("assocs");
+				for (int i = 0; i < assocs.size(); i++) {
+					int id = assocs.getJSONObject(i).getJSONObject("course")
+							.getInt("id");
+					if (id == courseId) {
+						found = true;
+						index = i;
+						break;
 					}
-
-					courseClassObject.put("classes", courseClassesArray);
-					coursesClasses.add(courseClassObject);
 				}
+				if (!found) {
+					// add the course and the class
+					JSONObject formattedObj = new JSONObject();
+					formattedObj.put("course", obj.getJSONObject("course"));
+					formattedObj.put("classes", new JSONArray());
+					formattedObj.getJSONArray("classes").add(
+							obj.getJSONObject("class"));
+					assocs.add(formattedObj);
+				} else {
+					// add only the class
+					assocs.getJSONObject(index).getJSONArray("classes")
+							.add(obj.getJSONObject("class"));
+				}
+			}
 
+			// add all optionals
+			result = statement.executeQuery(tcQuery);
+
+			while (result.next()) {
+				int courseId = result.getInt("courseId");
+				int semester = result.getInt("semester");
+
+				JSONObject obj = new JSONObject();
+				obj.put("course", new JSONObject());
+				obj.put("class", new JSONObject());
+
+				obj.getJSONObject("course").put("id", courseId);
+				obj.getJSONObject("course").put(
+						"name",
+						DBCommonOperations.getCourseInfo(courseId).getString(
+								"name"));
+
+				obj.getJSONObject("class").put("id", -1);
+				obj.getJSONObject("class").put("name", "Optional");
+
+				// check if this course was added
+				boolean found = false;
+				int index = -1;
+				JSONArray assocs = semesterAssocs.getJSONObject(semester - 1)
+						.getJSONArray("assocs");
+				for (int i = 0; i < assocs.size(); i++) {
+					int id = assocs.getJSONObject(i).getJSONObject("course")
+							.getInt("id");
+					if (id == courseId) {
+						found = true;
+						index = i;
+						break;
+					}
+				}
+				if (!found) {
+					// add the course and the class
+					JSONObject formattedObj = new JSONObject();
+					formattedObj.put("course", obj.getJSONObject("course"));
+					formattedObj.put("classes", new JSONArray());
+					formattedObj.getJSONArray("classes").add(
+							obj.getJSONObject("class"));
+					assocs.add(formattedObj);
+				} else {
+					// add only the class
+					assocs.getJSONObject(index).getJSONArray("classes")
+							.add(obj.getJSONObject("class"));
+				}
 			}
 
 			statement.close();
 		} catch (Exception e) {
 		}
 
-		return coursesClasses;
+		return semesterAssocs;
 	}
 
-	public static int getTeacherFeedbackId(DBConnection dbConnection, int tccId) {
+	public static int getTeacherFeedbackId(DBConnection dbConnection,
+			int assocId, int assocTableId) {
 		Connection connection = dbConnection.getConnection();
 
 		int id = -1;
 		String query = "SELECT `id` FROM "
-				+ DBCredentials.FEEDBACK_REQUEST_TABLE
-				+ " WHERE `teacher_course_class_id`=" + tccId;
+				+ DBCredentials.FEEDBACK_REQUEST_TABLE + " WHERE `assoc_id`="
+				+ assocId + " AND `assoc_table_id`=" + assocTableId;
 
 		try {
 			Statement statement = connection.createStatement();
@@ -1663,14 +1812,14 @@ public class DBUtils {
 	}
 
 	public static boolean uploadTeacherFeedback(DBConnection dbConnection,
-			int tccId, int available, String aspects) {
+			int assocId, int assocTableId, int available, String aspects) {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0;
 		String query = "INSERT INTO "
 				+ DBCredentials.FEEDBACK_REQUEST_TABLE
-				+ " (`teacher_course_class_id`, `available`, `aspects`) VALUES ("
-				+ tccId + "," + available + ",'" + aspects + "')";
+				+ " (`assoc_id`, `assoc_table_id`, `available`, `aspects`) VALUES ("
+				+ assocId + "," + assocTableId + "," + available + ",'" + aspects + "')";
 
 		try {
 			Statement statement = connection.createStatement();
@@ -1683,16 +1832,16 @@ public class DBUtils {
 	}
 
 	public static int uploadTeacherHomework(DBConnection dbConnection,
-			int tccId, String name, String content, String deadline,
-			String resources, float maxGrade) {
+			int assocId, int assocTableId, String name, String content,
+			String deadline, String resources, float maxGrade) {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0, id = -1;
 		String query = "INSERT INTO "
 				+ DBCredentials.HOMEWORK_TABLE
-				+ " (`teacher_course_class_id`, `name`, `content`, `deadline`, `resources`, `maxGrade`) VALUES ("
-				+ tccId + ",'" + name + "','" + content + "','" + deadline
-				+ "','" + resources + "'," + maxGrade + ")";
+				+ " (`assoc_id`, `assoc_table_id`, `content`, `deadline`, `resources`, `maxGrade`) VALUES ("
+				+ assocId + "," + assocTableId + ",'" + name + "','" + content
+				+ "','" + deadline + "','" + resources + "'," + maxGrade + ")";
 
 		try {
 			Statement statement = connection.createStatement();
@@ -1700,7 +1849,8 @@ public class DBUtils {
 
 			if (rows == 1) {
 				query = "SELECT `id` FROM " + DBCredentials.HOMEWORK_TABLE
-						+ " WHERE `teacher_course_class_id`=" + tccId
+						+ " WHERE `assoc_id`=" + assocId
+						+ " AND `assoc_table_id`=" + assocTableId
 						+ " AND `name`='" + name + "' and `deadline`='"
 						+ deadline + "'";
 				ResultSet result = statement.executeQuery(query);
@@ -1752,12 +1902,12 @@ public class DBUtils {
 	}
 
 	public static JSONArray getHomeworkListForTeacher(
-			DBConnection dbConnection, int tccId) {
+			DBConnection dbConnection, int assocId, int assocTableId) {
 		JSONArray homework = new JSONArray();
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `id`, `name` FROM "
-				+ DBCredentials.HOMEWORK_TABLE
-				+ " WHERE `teacher_course_class_id`=" + tccId;
+				+ DBCredentials.HOMEWORK_TABLE + " WHERE `assoc_id`=" + assocId
+				+ " AND `assoc_table_id`=" + assocTableId;
 
 		try {
 			Statement statement = connection.createStatement();
@@ -1852,15 +2002,13 @@ public class DBUtils {
 	}
 
 	public static JSONArray getSubmittedHomework(DBConnection dbConnection,
-			int homeworkId, int tccId) {
+			int homeworkId) {
 		Connection connection = dbConnection.getConnection();
 
 		JSONArray json = new JSONArray();
 		String query = "SELECT `id`, `student_id`, `uploaded`, `graded`, `grade`, `feedback`, `archive`, `upload_time` FROM "
 				+ DBCredentials.HOMEWORK_RESULTS_TABLE
-				+ " WHERE `homework_id`="
-				+ homeworkId
-				+ " AND `teacher_course_class_id`=" + tccId;
+				+ " WHERE `homework_id`=" + homeworkId;
 
 		try {
 			Statement statement = connection.createStatement();
@@ -1919,7 +2067,8 @@ public class DBUtils {
 		int rows = 0;
 		String query = "UPDATE " + DBCredentials.HOMEWORK_RESULTS_TABLE
 				+ " SET `graded`=" + graded + ", `grade`=" + grade
-				+ ", `feedback`='" + feedback + "' WHERE `id`=" + homeworkId;
+				+ ", `feedback`='" + feedback + "' WHERE `homework_id`="
+				+ homeworkId;
 
 		try {
 			Statement statement = connection.createStatement();
@@ -1932,13 +2081,13 @@ public class DBUtils {
 	}
 
 	public static JSONObject getWeekResources(DBConnection dbConnection,
-			int tccId, int weekId) {
+			int assocId, int assocTableId, int weekId) {
 		Connection connection = dbConnection.getConnection();
 
 		JSONObject resource = new JSONObject();
 		String query = "SELECT `content` FROM "
-				+ DBCredentials.COURSE_RESOURCES_TABLE
-				+ " WHERE `teacher_course_class_id`=" + tccId;
+				+ DBCredentials.COURSE_RESOURCES_TABLE + " WHERE `assoc_id`="
+				+ assocId + " AND `assoc_table_id`=" + assocTableId;
 
 		try {
 			Statement statement = connection.createStatement();
@@ -1964,13 +2113,14 @@ public class DBUtils {
 	}
 
 	public static int uploadCourseWeekInfo(DBConnection dbConnection,
-			int tccId, int weekId, String description, String resources) {
+			int assocId, int assocTableId, int weekId, String description,
+			String resources) {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0, id = 0;
 		String query = "SELECT `id`, `content` FROM "
-				+ DBCredentials.COURSE_RESOURCES_TABLE
-				+ " WHERE `teacher_course_class_id`=" + tccId;
+				+ DBCredentials.COURSE_RESOURCES_TABLE + " WHERE `assoc_id`="
+				+ assocId + " AND `assoc_table_id`=" + assocTableId;
 		JSONArray allResources = new JSONArray();
 
 		try {
@@ -2004,13 +2154,13 @@ public class DBUtils {
 	}
 
 	public static int uploadCourseWeekResources(DBConnection dbConnection,
-			int tccId, int weekId, JSONArray resources) {
+			int assocId, int assocTableId, int weekId, JSONArray resources) {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0, id = 0;
 		String query = "SELECT `id`, `content` FROM "
-				+ DBCredentials.COURSE_RESOURCES_TABLE
-				+ " WHERE `teacher_course_class_id`=" + tccId;
+				+ DBCredentials.COURSE_RESOURCES_TABLE + " WHERE `assoc_id`="
+				+ assocId + " AND `assoc_table_id`=" + assocTableId;
 		JSONArray allResources = new JSONArray();
 
 		try {
@@ -2661,13 +2811,12 @@ public class DBUtils {
 		return rows;
 	}
 
-	public static List<Integer> getCourseIdsFromTccIds(
-			DBConnection dbConnection, String tccIds) {
+	public static List<Integer> getCourseIdsFromAssocIds(
+			DBConnection dbConnection, String ids, String table) {
 		Connection connection = dbConnection.getConnection();
-		String[] tccIdList = tccIds.split(",");
+		String[] tccIdList = ids.split(",");
 		List<Integer> courseIds = new ArrayList<Integer>();
-		String query = "SELECT `courseId` FROM "
-				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE + " WHERE `id`=?";
+		String query = "SELECT `courseId` FROM " + table + " WHERE `id`=?";
 
 		try {
 			PreparedStatement statement = connection.prepareStatement(query);
@@ -2850,13 +2999,15 @@ public class DBUtils {
 			if (isOptional) {
 				result = statement.executeQuery(optionalQuery);
 
-				if(result.next()) {
-					String[] tcIds = result.getString("teacher_course_ids").split(",");
-					PreparedStatement prepStmt = connection.prepareStatement(tcQuery);
-					for(String tcId : tcIds) {
+				if (result.next()) {
+					String[] tcIds = result.getString("teacher_course_ids")
+							.split(",");
+					PreparedStatement prepStmt = connection
+							.prepareStatement(tcQuery);
+					for (String tcId : tcIds) {
 						prepStmt.setInt(1, Integer.parseInt(tcId));
 						ResultSet res = prepStmt.executeQuery();
-						if(res.next()) {
+						if (res.next()) {
 							JSONObject assoc = new JSONObject();
 
 							assoc.put("teacherId", res.getInt("teacherId"));
@@ -2878,7 +3029,8 @@ public class DBUtils {
 	}
 
 	public static JSONObject getTccAssoc(DBConnection dbConnection,
-			int classId, int courseId, int semester, boolean isOptional, int studentId) {
+			int classId, int courseId, int semester, boolean isOptional,
+			int studentId) {
 		JSONObject assoc = new JSONObject();
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `teacherId` FROM "
@@ -2901,15 +3053,17 @@ public class DBUtils {
 				assoc.put("optional", 0);
 			} else {
 				result = statement.executeQuery(optionalQuery);
-				if(result.next()) {
-					PreparedStatement prepStmt = connection.prepareStatement(tcQuery);
-					String[] optIds = result.getString("teacher_course_ids").split(",");
-					for(String optId : optIds) {
+				if (result.next()) {
+					PreparedStatement prepStmt = connection
+							.prepareStatement(tcQuery);
+					String[] optIds = result.getString("teacher_course_ids")
+							.split(",");
+					for (String optId : optIds) {
 						prepStmt.setInt(1, Integer.parseInt(optId));
 						ResultSet res = prepStmt.executeQuery();
-						
-						if(res.next()) {
-							if(res.getInt("courseId") == courseId) {
+
+						if (res.next()) {
+							if (res.getInt("courseId") == courseId) {
 								assoc.put("courseId", courseId);
 								assoc.put("teacherId", res.getInt("teacherId"));
 								assoc.put("optional", 1);
@@ -3154,7 +3308,7 @@ public class DBUtils {
 	}
 
 	private static boolean setEmptyResources(DBConnection dbConnection,
-			int semester, int tccId, boolean isCourse) {
+			int semester, int assocId, boolean isCourse) {
 		Connection connection = dbConnection.getConnection();
 		boolean added = false;
 		String weeksQuery = "SELECT `total_weeks` FROM "
@@ -3184,10 +3338,10 @@ public class DBUtils {
 				String courseResourcesQuery = "INSERT INTO "
 						+ DBCredentials.COURSE_RESOURCES_TABLE
 						+ " (`teacher_course_class_id`,`content`) VALUES ("
-						+ tccId + ",'" + content.toString() + "')";
+						+ assocId + ",'" + content.toString() + "')";
 				String optionalResourcesQuery = "INSERT INTO "
 						+ DBCredentials.OPTIONAL_RESOURCES_TABLE
-						+ " (`teacher_course_id`,`content`) VALUES (" + tccId
+						+ " (`teacher_course_id`,`content`) VALUES (" + assocId
 						+ ",'" + content.toString() + "')";
 				// add the empty resources into table
 				added = statement.executeUpdate(isCourse ? courseResourcesQuery

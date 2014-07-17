@@ -29,6 +29,7 @@ public class AllDeadlinesResource extends ServerResource {
 
 		int schoolId = info.getInt("schoolId");
 		int userId = info.getInt("userId");
+		int semester = info.getInt("semester");
 
 		String database = ConfigurationSettings
 				.getSchoolDatabaseName(schoolId);

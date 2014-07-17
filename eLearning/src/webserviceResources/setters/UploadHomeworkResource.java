@@ -23,19 +23,21 @@ public class UploadHomeworkResource extends ServerResource {
 		int schoolId = info.getInt("schoolId");
 		int userId = info.getInt("userId");
 		int homeworkId = info.getInt("homeworkId");
-		int courseId = info.getInt("courseId");
+		//int courseId = info.getInt("courseId");
 		String homeworkPath = info.getString("homeworkPath");
 		String homeworkName = info.getString("homeworkName");
+		//int semester = info.getInt("semester");
+		//boolean isOptional = info.getInt("optional") == 1;
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
 		String sqlDate = Date.getSQLDateNow();
-		int classId = DBUtils.getClassIdForUser(dbConnection, userId);
-		int tccId = DBUtils.getTeachClassCourseId(dbConnection, classId, courseId);
+		//int classId = DBUtils.getClassIdForUser(dbConnection, userId);
+		//int assocId = DBUtils.getAssocId(dbConnection, userId, courseId, classId, semester, isOptional);
 		String archive = "{\"name\":\"" + homeworkName + "\",\"location\":\"" + homeworkPath + "\"}";
-		boolean added = DBUtils.uploadHomework(dbConnection, homeworkId, tccId, userId, archive, sqlDate);
+		boolean added = DBUtils.uploadHomework(dbConnection, homeworkId, userId, archive, sqlDate);
 
 		return added ? "1" : "0";
 	}
