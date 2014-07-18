@@ -1819,7 +1819,8 @@ public class DBUtils {
 		String query = "INSERT INTO "
 				+ DBCredentials.FEEDBACK_REQUEST_TABLE
 				+ " (`assoc_id`, `assoc_table_id`, `available`, `aspects`) VALUES ("
-				+ assocId + "," + assocTableId + "," + available + ",'" + aspects + "')";
+				+ assocId + "," + assocTableId + "," + available + ",'"
+				+ aspects + "')";
 
 		try {
 			Statement statement = connection.createStatement();
@@ -3463,6 +3464,42 @@ public class DBUtils {
 		}
 
 		return row;
+	}
+
+	public static JSONObject getStudentActivities(DBConnection dbConnection,
+			int studentId, int assocId, int assocTableId) {
+		JSONObject activities = new JSONObject();
+		Connection connection = dbConnection.getConnection();
+		String query = "SELECT `id`,`activities`,`grades`,`absences` FROM "
+				+ DBCredentials.ACTIVITY_TABLE
+				+ " WHERE `assoc_id`="
+				+ assocId
+				+ " AND `assoc_table_id`="
+				+ assocTableId
+				+ " AND `student_id`=" + studentId;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+			
+			if(result.next()) {
+				activities.put("id", result.getInt("id"));
+				
+				String acts = result.getString("activities");
+				activities.put("activities", acts == null ? new JSONArray() : JSONArray.fromObject(acts));
+				
+				String grds = result.getString("grades");
+				activities.put("grades", grds == null ? new JSONArray() : JSONArray.fromObject(grds));
+				
+				String abs = result.getString("absences");
+				activities.put("absences", abs == null ? new JSONArray() : JSONArray.fromObject(abs));
+			}
+			
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return activities;
 	}
 
 	/*
