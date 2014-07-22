@@ -3471,35 +3471,108 @@ public class DBUtils {
 		JSONObject activities = new JSONObject();
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `id`,`activities`,`grades`,`absences` FROM "
-				+ DBCredentials.ACTIVITY_TABLE
-				+ " WHERE `assoc_id`="
-				+ assocId
-				+ " AND `assoc_table_id`="
-				+ assocTableId
+				+ DBCredentials.ACTIVITY_TABLE + " WHERE `assoc_id`=" + assocId
+				+ " AND `assoc_table_id`=" + assocTableId
 				+ " AND `student_id`=" + studentId;
 
 		try {
 			Statement statement = connection.createStatement();
 			ResultSet result = statement.executeQuery(query);
-			
-			if(result.next()) {
+
+			if (result.next()) {
 				activities.put("id", result.getInt("id"));
-				
+
 				String acts = result.getString("activities");
-				activities.put("activities", acts == null ? new JSONArray() : JSONArray.fromObject(acts));
-				
+				activities.put("activities", acts == null ? new JSONArray()
+						: JSONArray.fromObject(acts));
+
 				String grds = result.getString("grades");
-				activities.put("grades", grds == null ? new JSONArray() : JSONArray.fromObject(grds));
-				
+				activities.put("grades", grds == null ? new JSONArray()
+						: JSONArray.fromObject(grds));
+
 				String abs = result.getString("absences");
-				activities.put("absences", abs == null ? new JSONArray() : JSONArray.fromObject(abs));
+				activities.put("absences", abs == null ? new JSONArray()
+						: JSONArray.fromObject(abs));
 			}
-			
+
 			statement.close();
 		} catch (Exception e) {
 		}
 
 		return activities;
+	}
+
+	public static void updateSemestrialPaper(DBConnection dbConnection,
+			int activityPK, int oldSemPaperId, int newSemPaperId) {
+		Connection connection = dbConnection.getConnection();
+		String selectQuery = "SELECT `grades` FROM " + DBCredentials.ACTIVITY_TABLE
+				+ " WHERE `id`=" + activityPK;
+		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE + " SET `grades`= ? WHERE `id`=" + activityPK;
+
+		try {
+			JSONArray grades = new JSONArray();
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(selectQuery);
+
+			//modify grades
+			if (result.next()) {
+				grades = JSONArray.fromObject(result.getString("grades"));
+
+				for(int i = 0; i < grades.size(); i++) {
+					JSONObject grade = grades.getJSONObject(i);
+					if(grade.getInt("id") == oldSemPaperId) {
+						grade.put("isSemestrialPaper", 0);
+					}
+					if(grade.getInt("id") == newSemPaperId) {
+						grade.put("isSemestrialPaper", 1);
+					}
+				}
+			}
+			statement.close();
+			
+			//update grades
+			PreparedStatement prepStmt = connection.prepareStatement(updateQuery);
+			prepStmt.setString(1, grades.toString());
+			prepStmt.executeUpdate();
+
+			prepStmt.close();
+		} catch (Exception e) {
+		}
+	}
+	
+	public static void updateAbsenceMotivation(DBConnection dbConnection, int activityPK, int absenceId, int isMotivated) {
+		Connection connection = dbConnection.getConnection();
+		String selectQuery = "SELECT `absences` FROM " + DBCredentials.ACTIVITY_TABLE
+				+ " WHERE `id`=" + activityPK;
+		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE + " SET `absences`= ? WHERE `id`=" + activityPK;
+
+		try {
+			JSONArray absences = new JSONArray();
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(selectQuery);
+
+			//modify absence
+			if (result.next()) {
+				absences = JSONArray.fromObject(result.getString("absences"));
+
+				for(int i = 0; i < absences.size(); i++) {
+					JSONObject absence = absences.getJSONObject(i);
+					if(absence.getInt("id") == absenceId) {
+						absence.put("isMotivated", isMotivated);
+						break;
+					}
+				}
+			}
+			statement.close();
+			
+			//update grades
+			PreparedStatement prepStmt = connection.prepareStatement(updateQuery);
+			prepStmt.setString(1, absences.toString());
+			prepStmt.executeUpdate();
+
+			prepStmt.close();
+		} catch (Exception e) {
+		}
 	}
 
 	/*
