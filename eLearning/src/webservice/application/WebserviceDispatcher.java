@@ -105,6 +105,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/createTccAssoc", CreateTccAssocResource.class);
 		router.attach("/updateSemestrialPaper", UpdateSemestrialPaperResource.class);
 		router.attach("/updateAbsence", UpdateAbsenceResource.class);
+		router.attach("/addNewActivity", AddNewActivityResource.class);
 		
 		return router;
 	}

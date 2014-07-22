@@ -3505,33 +3505,35 @@ public class DBUtils {
 	public static void updateSemestrialPaper(DBConnection dbConnection,
 			int activityPK, int oldSemPaperId, int newSemPaperId) {
 		Connection connection = dbConnection.getConnection();
-		String selectQuery = "SELECT `grades` FROM " + DBCredentials.ACTIVITY_TABLE
-				+ " WHERE `id`=" + activityPK;
-		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE + " SET `grades`= ? WHERE `id`=" + activityPK;
+		String selectQuery = "SELECT `grades` FROM "
+				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
+		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
+				+ " SET `grades`= ? WHERE `id`=" + activityPK;
 
 		try {
 			JSONArray grades = new JSONArray();
 			Statement statement = connection.createStatement();
 			ResultSet result = statement.executeQuery(selectQuery);
 
-			//modify grades
+			// modify grades
 			if (result.next()) {
 				grades = JSONArray.fromObject(result.getString("grades"));
 
-				for(int i = 0; i < grades.size(); i++) {
+				for (int i = 0; i < grades.size(); i++) {
 					JSONObject grade = grades.getJSONObject(i);
-					if(grade.getInt("id") == oldSemPaperId) {
+					if (grade.getInt("id") == oldSemPaperId) {
 						grade.put("isSemestrialPaper", 0);
 					}
-					if(grade.getInt("id") == newSemPaperId) {
+					if (grade.getInt("id") == newSemPaperId) {
 						grade.put("isSemestrialPaper", 1);
 					}
 				}
 			}
 			statement.close();
-			
-			//update grades
-			PreparedStatement prepStmt = connection.prepareStatement(updateQuery);
+
+			// update grades
+			PreparedStatement prepStmt = connection
+					.prepareStatement(updateQuery);
 			prepStmt.setString(1, grades.toString());
 			prepStmt.executeUpdate();
 
@@ -3539,40 +3541,111 @@ public class DBUtils {
 		} catch (Exception e) {
 		}
 	}
-	
-	public static void updateAbsenceMotivation(DBConnection dbConnection, int activityPK, int absenceId, int isMotivated) {
+
+	public static void updateAbsenceMotivation(DBConnection dbConnection,
+			int activityPK, int absenceId, int isMotivated) {
 		Connection connection = dbConnection.getConnection();
-		String selectQuery = "SELECT `absences` FROM " + DBCredentials.ACTIVITY_TABLE
-				+ " WHERE `id`=" + activityPK;
-		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE + " SET `absences`= ? WHERE `id`=" + activityPK;
+		String selectQuery = "SELECT `absences` FROM "
+				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
+		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
+				+ " SET `absences`= ? WHERE `id`=" + activityPK;
 
 		try {
 			JSONArray absences = new JSONArray();
 			Statement statement = connection.createStatement();
 			ResultSet result = statement.executeQuery(selectQuery);
 
-			//modify absence
+			// modify absence
 			if (result.next()) {
 				absences = JSONArray.fromObject(result.getString("absences"));
 
-				for(int i = 0; i < absences.size(); i++) {
+				for (int i = 0; i < absences.size(); i++) {
 					JSONObject absence = absences.getJSONObject(i);
-					if(absence.getInt("id") == absenceId) {
+					if (absence.getInt("id") == absenceId) {
 						absence.put("isMotivated", isMotivated);
 						break;
 					}
 				}
 			}
 			statement.close();
-			
-			//update grades
-			PreparedStatement prepStmt = connection.prepareStatement(updateQuery);
+
+			// update grades
+			PreparedStatement prepStmt = connection
+					.prepareStatement(updateQuery);
 			prepStmt.setString(1, absences.toString());
 			prepStmt.executeUpdate();
 
 			prepStmt.close();
 		} catch (Exception e) {
 		}
+	}
+
+	/**
+	 * adds an entry in the activities jsonArray
+	 * 
+	 * @param dbConnection
+	 * @param activityPK
+	 * @param activity
+	 * @return
+	 */
+	public static int addNewActivity(DBConnection dbConnection, int activityPK,
+			JSONObject activity) {
+		Connection connection = dbConnection.getConnection();
+		String selectQuery = "SELECT `activities` FROM "
+				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
+		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
+				+ " SET `activities`=? WHERE `id`=" + activityPK;
+		int rows = 0;
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(selectQuery);
+
+			if (result.next()) {
+				JSONArray activities = new JSONArray();
+				String activs = result.getString("activities");
+				if (activs != null) {
+					activities = JSONArray.fromObject(activs);
+				}
+				activities.add(activity);
+
+				PreparedStatement stmt = connection
+						.prepareStatement(updateQuery);
+				stmt.setString(1, activities.toString());
+				rows = stmt.executeUpdate();
+				stmt.close();
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+
+	/**
+	 * adds a row in activity table
+	 * 
+	 * @param dbConnection
+	 * @param activity
+	 * @return
+	 */
+	public static int insertNewActivity(DBConnection dbConnection, int assocId,
+			int assocTableId, int studentId, JSONObject activity) {
+		Connection connection = dbConnection.getConnection();
+		String query = "INSERT INTO "
+				+ DBCredentials.ACTIVITY_TABLE
+				+ " (`assoc_id`,`assoc_table_id`,`student_id`,`activities`) VALUES ("
+				+ assocId + "," + assocTableId + "," + studentId + ",'["
+				+ activity.toString() + "]')";
+		int rows = 0;
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
 	}
 
 	/*
