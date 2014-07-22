@@ -3648,6 +3648,81 @@ public class DBUtils {
 		return rows;
 	}
 
+	public static int removeActivity(DBConnection dbConnection, int activityPK,
+			int activityId) {
+		Connection connection = dbConnection.getConnection();
+		String selectQuery = "SELECT `activities` FROM "
+				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
+		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
+				+ " SET `activities`=? WHERE `id`=" + activityPK;
+		int rows = 0;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(selectQuery);
+			if (result.next()) {
+				JSONArray activities = JSONArray.fromObject(result
+						.getString("activities"));
+
+				for (int i = 0; i < activities.size(); i++) {
+					if (activities.getJSONObject(i).getInt("id") == activityId) {
+						activities.remove(i);
+						break;
+					}
+				}
+
+				PreparedStatement stmt = connection
+						.prepareStatement(updateQuery);
+				stmt.setString(1, activities.toString());
+				rows = stmt.executeUpdate();
+				stmt.close();
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+
+	public static int updateActivity(DBConnection dbConnection, int activityPK,
+			JSONObject activity) {
+		Connection connection = dbConnection.getConnection();
+		String selectQuery = "SELECT `activities` FROM "
+				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
+		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
+				+ " SET `activities`=? WHERE `id`=" + activityPK;
+		int rows = 0;
+
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(selectQuery);
+			if (result.next()) {
+				JSONArray activities = JSONArray.fromObject(result
+						.getString("activities"));
+				int activityId = activity.getInt("id");
+				for (int i = 0; i < activities.size(); i++) {
+					if (activities.getJSONObject(i).getInt("id") == activityId) {
+						activities.remove(i);
+						activities.add(i, activity);
+						break;
+					}
+				}
+
+				PreparedStatement stmt = connection
+						.prepareStatement(updateQuery);
+				stmt.setString(1, activities.toString());
+				rows = stmt.executeUpdate();
+				stmt.close();
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+
 	/*
 	 * public static void main(String[] args) { DBConnection conn =
 	 * DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");

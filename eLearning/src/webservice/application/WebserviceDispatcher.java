@@ -106,6 +106,8 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/updateSemestrialPaper", UpdateSemestrialPaperResource.class);
 		router.attach("/updateAbsence", UpdateAbsenceResource.class);
 		router.attach("/addNewActivity", AddNewActivityResource.class);
+		router.attach("/removeActivity", RemoveActivityResource.class);
+		router.attach("/updateActivity", UpdateActivityResource.class);
 		
 		return router;
 	}
