@@ -29,13 +29,15 @@ public class AddNewActivityResource extends ServerResource {
 		int activityPK = info.getInt("activityPK");
 		boolean noEntry = info.getInt("noEntry") == 1;
 		String column = info.getString("columnType");
+		int newId = info.getInt("newEntryId");
+		String newDate = info.getString("date");
 		
 		JSONObject activity = new JSONObject();
 		String dbColumnName = "";
 		
 		if(column.equals("activity")) {			
-			activity.put("id", info.getInt("newActivityId"));
-			activity.put("date", info.getString("date"));
+			activity.put("id", newId);
+			activity.put("date", newDate);
 			activity.put("name", info.getString("name"));
 			activity.put("max", info.getDouble("max"));
 			activity.put("grade", info.getDouble("grade"));
@@ -44,8 +46,8 @@ public class AddNewActivityResource extends ServerResource {
 			dbColumnName = "activities";
 		}
 		if(column.equals("grade")) {			
-			activity.put("id", info.getInt("newActivityId"));
-			activity.put("date", info.getString("date"));
+			activity.put("id", newId);
+			activity.put("date", newDate);
 			activity.put("name", info.getString("name"));
 			activity.put("isSemestrialPaper", info.getInt("isSemestrialPaper"));
 			activity.put("grade", info.getDouble("grade"));
@@ -54,14 +56,13 @@ public class AddNewActivityResource extends ServerResource {
 			dbColumnName = "grades";
 		}
 		if(column.equals("absence")) {			
-			activity.put("id", info.getInt("newActivityId"));
-			activity.put("date", info.getString("date"));
+			activity.put("id", newId);
+			activity.put("date", newDate);
 			activity.put("motivation", info.getString("motivation"));
 			activity.put("isMotivated", info.getInt("isMotivated"));
 			
 			dbColumnName = "absences";
 		}
-		
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
@@ -71,7 +72,7 @@ public class AddNewActivityResource extends ServerResource {
 		if(noEntry) {
 			int assocId = DBUtils.getAssocId(dbConnection, studentId, isStudent, courseId, classId, semester, isOptional);
 			int assocTableId = isOptional ? 2 : 1;
-			
+			//row will be the new id
 			row = DBUtils.insertNewActivity(dbConnection, assocId, assocTableId, studentId, dbColumnName, activity);
 		} else {
 			row = DBUtils.addNewActivity(dbConnection, activityPK, dbColumnName, activity);

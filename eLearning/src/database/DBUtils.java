@@ -3604,7 +3604,8 @@ public class DBUtils {
 				JSONArray allGenericActivities = new JSONArray();
 				String currGenericActivities = result.getString(columnName);
 				if (currGenericActivities != null) {
-					allGenericActivities = JSONArray.fromObject(currGenericActivities);
+					allGenericActivities = JSONArray
+							.fromObject(currGenericActivities);
 				}
 				allGenericActivities.add(activity);
 
@@ -3633,14 +3634,26 @@ public class DBUtils {
 			int assocTableId, int studentId, String columnName,
 			JSONObject activity) {
 		Connection connection = dbConnection.getConnection();
-		String query = "INSERT INTO " + DBCredentials.ACTIVITY_TABLE
+		String insertQuery = "INSERT INTO " + DBCredentials.ACTIVITY_TABLE
 				+ " (`assoc_id`,`assoc_table_id`,`student_id`,`" + columnName
 				+ "`) VALUES (" + assocId + "," + assocTableId + ","
 				+ studentId + ",'[" + activity.toString() + "]')";
+		String selectQuery = "SELECT `id` FROM " + DBCredentials.ACTIVITY_TABLE
+				+ " WHERE `assoc_id`=" + assocId + " AND `assoc_table_id`="
+				+ assocTableId + " AND `student_id`=" + studentId;
 		int rows = 0;
 		try {
 			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
+			rows = statement.executeUpdate(insertQuery);
+			
+			if(rows == 1) {
+				//added
+				ResultSet result = statement.executeQuery(selectQuery);
+				if(result.next()) {
+					//overwrite rows with id
+					rows = result.getInt("id");
+				}
+			}
 			statement.close();
 		} catch (Exception e) {
 		}
