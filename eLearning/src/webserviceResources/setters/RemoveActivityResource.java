@@ -21,12 +21,24 @@ public class RemoveActivityResource extends ServerResource {
 		
 		int schoolId = info.getInt("schoolId");
 		int activityPK = info.getInt("activityPK");
-		int activityId = info.getInt("activityId");
+		int entryId = info.getInt("entryId");
+		String column = info.getString("columnType");
+		
+		String dbColumnName = "";
+		if(column.equals("activity")) {
+			dbColumnName = "activities";
+		}
+		if(column.equals("grade")) {
+			dbColumnName = "grades";
+		}
+		if(column.equals("absence")) {
+			dbColumnName = "absences";
+		}
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		int row = DBUtils.removeActivity(dbConnection, activityPK, activityId);
+		int row = DBUtils.removeActivity(dbConnection, activityPK, dbColumnName, entryId);
 		return row + "";
 	}
 }

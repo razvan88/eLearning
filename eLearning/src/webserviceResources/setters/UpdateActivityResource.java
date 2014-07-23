@@ -21,25 +21,50 @@ public class UpdateActivityResource extends ServerResource {
 		
 		int schoolId = info.getInt("schoolId");
 		int activityPK = info.getInt("activityPK");
-		int activityId = info.getInt("activityId");
-		String date = info.getString("date");
-		String name = info.getString("name");
-		String note = info.getString("note");
-		double max = info.getDouble("max");
-		double grade = info.getDouble("grade");
+		int entryId = info.getInt("entryId");
+		String column = info.getString("columnType");
+		String dbColumnName = "";
 		
 		JSONObject activity = new JSONObject();
-		activity.put("id", activityId);
-		activity.put("date", date);
-		activity.put("name", name);
-		activity.put("max", max);
-		activity.put("grade", grade);
-		activity.put("note", note);
+		
+		//create activity object
+		if(column.equals("activity")) {
+			activity.put("id", entryId);
+			activity.put("date", info.getString("date"));
+			activity.put("name", info.getString("name"));
+			activity.put("max", info.getDouble("max"));
+			activity.put("grade", info.getDouble("grade"));
+			activity.put("note", info.getString("note"));
+			
+			dbColumnName = "activities";
+		}
+		
+		//create grade object
+		if(column.equals("grade")) {
+			activity.put("id", entryId);
+			activity.put("date", info.getString("date"));
+			activity.put("name", info.getString("name"));
+			activity.put("grade", info.getDouble("grade"));
+			activity.put("note", info.getString("note"));
+			activity.put("isSemestrialPaper", info.getInt("isSemestrialPaper"));
+			
+			dbColumnName = "grades";
+		}
+		
+		//create absence object
+		if(column.equals("absence")) {
+			activity.put("id", entryId);
+			activity.put("date", info.getString("date"));
+			activity.put("motivation", info.getString("motivation"));
+			activity.put("isMotivated", info.getDouble("isMotivated"));
+			
+			dbColumnName = "absences";
+		}
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		int row = DBUtils.updateActivity(dbConnection, activityPK, activity);
+		int row = DBUtils.updateActivity(dbConnection, activityPK, dbColumnName, activity);
 		return row + "";
 	}
 }

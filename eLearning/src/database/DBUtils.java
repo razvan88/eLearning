@@ -3589,28 +3589,28 @@ public class DBUtils {
 	 * @return
 	 */
 	public static int addNewActivity(DBConnection dbConnection, int activityPK,
-			JSONObject activity) {
+			String columnName, JSONObject activity) {
 		Connection connection = dbConnection.getConnection();
-		String selectQuery = "SELECT `activities` FROM "
+		String selectQuery = "SELECT `" + columnName + "` FROM "
 				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
 		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
-				+ " SET `activities`=? WHERE `id`=" + activityPK;
+				+ " SET `" + columnName + "`=? WHERE `id`=" + activityPK;
 		int rows = 0;
 		try {
 			Statement statement = connection.createStatement();
 			ResultSet result = statement.executeQuery(selectQuery);
 
 			if (result.next()) {
-				JSONArray activities = new JSONArray();
-				String activs = result.getString("activities");
-				if (activs != null) {
-					activities = JSONArray.fromObject(activs);
+				JSONArray allGenericActivities = new JSONArray();
+				String currGenericActivities = result.getString(columnName);
+				if (currGenericActivities != null) {
+					allGenericActivities = JSONArray.fromObject(currGenericActivities);
 				}
-				activities.add(activity);
+				allGenericActivities.add(activity);
 
 				PreparedStatement stmt = connection
 						.prepareStatement(updateQuery);
-				stmt.setString(1, activities.toString());
+				stmt.setString(1, allGenericActivities.toString());
 				rows = stmt.executeUpdate();
 				stmt.close();
 			}
@@ -3630,13 +3630,13 @@ public class DBUtils {
 	 * @return
 	 */
 	public static int insertNewActivity(DBConnection dbConnection, int assocId,
-			int assocTableId, int studentId, JSONObject activity) {
+			int assocTableId, int studentId, String columnName,
+			JSONObject activity) {
 		Connection connection = dbConnection.getConnection();
-		String query = "INSERT INTO "
-				+ DBCredentials.ACTIVITY_TABLE
-				+ " (`assoc_id`,`assoc_table_id`,`student_id`,`activities`) VALUES ("
-				+ assocId + "," + assocTableId + "," + studentId + ",'["
-				+ activity.toString() + "]')";
+		String query = "INSERT INTO " + DBCredentials.ACTIVITY_TABLE
+				+ " (`assoc_id`,`assoc_table_id`,`student_id`,`" + columnName
+				+ "`) VALUES (" + assocId + "," + assocTableId + ","
+				+ studentId + ",'[" + activity.toString() + "]')";
 		int rows = 0;
 		try {
 			Statement statement = connection.createStatement();
@@ -3649,31 +3649,31 @@ public class DBUtils {
 	}
 
 	public static int removeActivity(DBConnection dbConnection, int activityPK,
-			int activityId) {
+			String columnName, int activityId) {
 		Connection connection = dbConnection.getConnection();
-		String selectQuery = "SELECT `activities` FROM "
+		String selectQuery = "SELECT `" + columnName + "` FROM "
 				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
 		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
-				+ " SET `activities`=? WHERE `id`=" + activityPK;
+				+ " SET `" + columnName + "`=? WHERE `id`=" + activityPK;
 		int rows = 0;
 
 		try {
 			Statement statement = connection.createStatement();
 			ResultSet result = statement.executeQuery(selectQuery);
 			if (result.next()) {
-				JSONArray activities = JSONArray.fromObject(result
-						.getString("activities"));
+				JSONArray genericActivities = JSONArray.fromObject(result
+						.getString(columnName));
 
-				for (int i = 0; i < activities.size(); i++) {
-					if (activities.getJSONObject(i).getInt("id") == activityId) {
-						activities.remove(i);
+				for (int i = 0; i < genericActivities.size(); i++) {
+					if (genericActivities.getJSONObject(i).getInt("id") == activityId) {
+						genericActivities.remove(i);
 						break;
 					}
 				}
 
 				PreparedStatement stmt = connection
 						.prepareStatement(updateQuery);
-				stmt.setString(1, activities.toString());
+				stmt.setString(1, genericActivities.toString());
 				rows = stmt.executeUpdate();
 				stmt.close();
 			}
@@ -3686,32 +3686,47 @@ public class DBUtils {
 	}
 
 	public static int updateActivity(DBConnection dbConnection, int activityPK,
-			JSONObject activity) {
+			String column, JSONObject activity) {
 		Connection connection = dbConnection.getConnection();
-		String selectQuery = "SELECT `activities` FROM "
+		String selectQuery = "SELECT `" + column + "` FROM "
 				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
 		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
-				+ " SET `activities`=? WHERE `id`=" + activityPK;
+				+ " SET `" + column + "`=? WHERE `id`=" + activityPK;
 		int rows = 0;
+
+		boolean doExclusiveCheck = false;
+		final String SENSIBLE_KEY = "isSemestrialPaper";
+		if (activity.containsKey(SENSIBLE_KEY)
+				&& activity.getInt(SENSIBLE_KEY) == 1) {
+			doExclusiveCheck = true;
+		}
 
 		try {
 			Statement statement = connection.createStatement();
 			ResultSet result = statement.executeQuery(selectQuery);
 			if (result.next()) {
-				JSONArray activities = JSONArray.fromObject(result
-						.getString("activities"));
+				JSONArray genericActivities = JSONArray.fromObject(result
+						.getString(column));
 				int activityId = activity.getInt("id");
-				for (int i = 0; i < activities.size(); i++) {
-					if (activities.getJSONObject(i).getInt("id") == activityId) {
-						activities.remove(i);
-						activities.add(i, activity);
-						break;
+				for (int i = 0; i < genericActivities.size(); i++) {
+					JSONObject currGenericActivity = genericActivities
+							.getJSONObject(i);
+					int currGenericActivityId = currGenericActivity
+							.getInt("id");
+					if (doExclusiveCheck && currGenericActivityId != activityId) {
+						if (currGenericActivity.getInt(SENSIBLE_KEY) == 1) {
+							currGenericActivity.put(SENSIBLE_KEY, 0);
+						}
+					}
+					if (currGenericActivityId == activityId) {
+						genericActivities.remove(i);
+						genericActivities.add(i, activity);
 					}
 				}
 
 				PreparedStatement stmt = connection
 						.prepareStatement(updateQuery);
-				stmt.setString(1, activities.toString());
+				stmt.setString(1, genericActivities.toString());
 				rows = stmt.executeUpdate();
 				stmt.close();
 			}
