@@ -14,7 +14,6 @@ import database.DBUtils;
 
 public class AddNewActivityResource extends ServerResource {
 
-	@SuppressWarnings("unused")
 	@Post
 	public String addNewActivity(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
