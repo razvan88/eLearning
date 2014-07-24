@@ -3576,6 +3576,17 @@ public class DBUtils {
 					allGenericActivities = JSONArray
 							.fromObject(currGenericActivities);
 				}
+				//remove other semestrial papers, if exist
+				if (activity.containsKey("isSemestrialPaper")
+						&& activity.getInt("isSemestrialPaper") == 1) {
+					for (int i = 0; i < allGenericActivities.size(); i++) {
+						JSONObject act = allGenericActivities.getJSONObject(i);
+						if (act.getInt("isSemestrialPaper") == 1) {
+							act.put("isSemestrialPaper", 0);
+							break;
+						}
+					}
+				}
 				allGenericActivities.add(activity);
 
 				PreparedStatement stmt = connection
@@ -3614,12 +3625,12 @@ public class DBUtils {
 		try {
 			Statement statement = connection.createStatement();
 			rows = statement.executeUpdate(insertQuery);
-			
-			if(rows == 1) {
-				//added
+
+			if (rows == 1) {
+				// added
 				ResultSet result = statement.executeQuery(selectQuery);
-				if(result.next()) {
-					//overwrite rows with id
+				if (result.next()) {
+					// overwrite rows with id
 					rows = result.getInt("id");
 				}
 			}
