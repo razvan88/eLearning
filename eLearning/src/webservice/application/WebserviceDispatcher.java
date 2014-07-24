@@ -32,7 +32,6 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getCoursesList", CoursesListResource.class);
 		router.attach("/getCourseDetails", CourseDetailsResource.class);
 		router.attach("/getHomework", HomeworkResource.class);
-		router.attach("/getCourseClassbook", CourseClassbookResource.class);
 		router.attach("/getFeedbackRequest", FeedbackRequestResource.class);
 		router.attach("/getTeacherFeedbackRequest", TeacherFeedbackRequestResource.class);
 		router.attach("/getForumSummary", ForumSummaryResource.class);

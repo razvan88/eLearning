@@ -24,17 +24,25 @@ public class StudentActivitiesResource extends ServerResource {
 		int courseId = info.getInt("courseId");
 		boolean isOptional = info.getInt("optional") == 1;
 		boolean isStudent = info.getInt("student") == 1;
-		int classId = info.getInt("classId");
 		int userId = info.getInt("userId");
-		
+		int classId = 0;
+
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
-		int assocId = DBUtils.getAssocId(dbConnection, userId, isStudent, courseId, classId, semester, isOptional);
+		if (info.containsKey("classId")) {
+			classId = info.getInt("classId");
+		} else {
+			classId = DBUtils.getClassIdForUser(dbConnection, userId);
+		}
+
+		int assocId = DBUtils.getAssocId(dbConnection, userId, isStudent,
+				courseId, classId, semester, isOptional);
 		int assocTableId = isOptional ? 2 : 1;
-		
-		JSONObject activities = DBUtils.getStudentActivities(dbConnection, userId, assocId, assocTableId);
+
+		JSONObject activities = DBUtils.getStudentActivities(dbConnection,
+				userId, assocId, assocTableId);
 		return activities.toString();
 	}
 }

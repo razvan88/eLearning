@@ -719,37 +719,6 @@ public class DBUtils {
 		return result;
 	}
 
-	public static JSONArray getCourseClassbook(DBConnection dbConnection,
-			int assocId, int assocTableId, int studentId) {
-		Connection connection = dbConnection.getConnection();
-		String query = "SELECT * FROM " + DBCredentials.COURSE_CLASSBOOK_TABLE
-				+ " WHERE `assoc_id`=" + assocId + " AND `assoc_table_id`="
-				+ assocTableId + " AND `student_id`=" + studentId;
-		JSONArray result = new JSONArray();
-
-		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
-
-			while (resultSet.next()) {
-				JSONObject grade = new JSONObject();
-
-				grade.put("date", resultSet.getString("date"));
-				grade.put("activity", resultSet.getString("activity"));
-				grade.put("max", resultSet.getFloat("max"));
-				grade.put("grade", resultSet.getFloat("grade"));
-				grade.put("notes", resultSet.getString("notes"));
-
-				result.add(grade);
-			}
-
-			statement.close();
-		} catch (Exception e) {
-		}
-
-		return result;
-	}
-
 	public static JSONObject getFeedbackRequest(DBConnection dbConnection,
 			int assocId, int assocTableId) {
 		Connection connection = dbConnection.getConnection();
