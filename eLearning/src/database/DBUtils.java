@@ -3576,7 +3576,7 @@ public class DBUtils {
 					allGenericActivities = JSONArray
 							.fromObject(currGenericActivities);
 				}
-				//remove other semestrial papers, if exist
+				// remove other semestrial papers, if exist
 				if (activity.containsKey("isSemestrialPaper")
 						&& activity.getInt("isSemestrialPaper") == 1) {
 					for (int i = 0; i < allGenericActivities.size(); i++) {
@@ -3729,6 +3729,33 @@ public class DBUtils {
 		}
 
 		return rows;
+	}
+
+	public static JSONArray getFeedbackResponses(DBConnection dbConnection,
+			int assocId, int assocTableId) {
+		JSONArray responses = new JSONArray();
+		String selectIdQuery = "SELECT `id` FROM "
+				+ DBCredentials.FEEDBACK_REQUEST_TABLE + " WHERE `assoc_id`="
+				+ assocId + " AND `assoc_table_id`=" + assocTableId;
+		String responsesQuery = "SELECT `opinion` FROM " + DBCredentials.FEEDBACK_TABLE + " WHERE `feedback_id`=";
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(selectIdQuery);
+			
+			if(result.next()) {
+				int id = result.getInt("id");
+				ResultSet resp = statement.executeQuery(responsesQuery + id);
+				while(resp.next()) {
+					String response = resp.getString("opinion");
+					responses.add(response);
+				}
+			}
+			
+			statement.close();
+		}catch(Exception e) { }
+		
+		return responses;
 	}
 
 	/*

@@ -70,6 +70,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getClassForStudent", ClassForStudentResource.class);
 		router.attach("/getOldTccId", OldTccIdResource.class);
 		router.attach("/getStudentActivities", StudentActivitiesResource.class);
+		router.attach("/getFeedbackResponses", FeedbackResponsesResource.class);
 		
 		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/startMessage", StartMessageResource.class);
