@@ -56,4 +56,5 @@ public class DBCredentials {
 	public static final String FORUM_SUBJECT_TABLE = "forum_subject";
 	public static final String MESSAGES_TABLE = "message";
 	public static final String SEMESTER_TABLE = "semester";
+	public static final String GRADES_ARCHIVE_TABLE = "grades_archive";
 }

@@ -3737,25 +3737,52 @@ public class DBUtils {
 		String selectIdQuery = "SELECT `id` FROM "
 				+ DBCredentials.FEEDBACK_REQUEST_TABLE + " WHERE `assoc_id`="
 				+ assocId + " AND `assoc_table_id`=" + assocTableId;
-		String responsesQuery = "SELECT `opinion` FROM " + DBCredentials.FEEDBACK_TABLE + " WHERE `feedback_id`=";
+		String responsesQuery = "SELECT `opinion` FROM "
+				+ DBCredentials.FEEDBACK_TABLE + " WHERE `feedback_id`=";
 		Connection connection = dbConnection.getConnection();
 		try {
 			Statement statement = connection.createStatement();
 			ResultSet result = statement.executeQuery(selectIdQuery);
-			
-			if(result.next()) {
+
+			if (result.next()) {
 				int id = result.getInt("id");
 				ResultSet resp = statement.executeQuery(responsesQuery + id);
-				while(resp.next()) {
+				while (resp.next()) {
 					String response = resp.getString("opinion");
 					responses.add(response);
 				}
 			}
-			
+
 			statement.close();
-		}catch(Exception e) { }
-		
+		} catch (Exception e) {
+		}
+
 		return responses;
+	}
+
+	public static JSONArray getGradesArchive(DBConnection dbConnection,
+			int studentId) {
+		JSONArray archive = new JSONArray();
+		String query = "SELECT `archive` FROM "
+				+ DBCredentials.GRADES_ARCHIVE_TABLE + " WHERE `student_id`="
+				+ studentId;
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				String rawGrades = result.getString("archive");
+				if(rawGrades != null) {
+					archive = JSONArray.fromObject(rawGrades);
+				}
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return archive;
 	}
 
 	/*
