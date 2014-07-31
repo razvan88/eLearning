@@ -1,6 +1,4 @@
-package webserviceResources;
-
-import java.io.IOException;
+package webserviceResources.setters;
 
 import net.sf.json.JSONObject;
 
@@ -12,25 +10,27 @@ import org.restlet.resource.ServerResource;
 import utils.ConfigurationSettings;
 import database.DBConnection;
 import database.DBConnectionManager;
+import database.DBUtils;
 
-public class AllGradesResource extends ServerResource{
+public class FinalizeSemesterResource extends ServerResource {
 
 	@Post
-	public String getInforamtion(Representation entity) throws IOException {
+	public String finalizeSemester(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
-		
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
-		int userId = info.getInt("userId");
-		int schoolId = info.getInt("schoolId");
-		String table = info.getString("table");
 		
+		int schoolId = info.getInt("schoolId");
+		boolean removeTimetables = info.getInt("removeTimetables") == 1;
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		// TODO
+		//finalize semester
+		DBUtils.computeAverage(dbConnection);
 		
-		return null;
+		//change semester
+		boolean changed = DBUtils.cheangeSemester(dbConnection);
+		
+		return "";
 	}
-	
 }

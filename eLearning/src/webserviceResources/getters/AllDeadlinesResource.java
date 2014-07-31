@@ -22,6 +22,7 @@ import database.DBUtils;
 
 public class AllDeadlinesResource extends ServerResource {
 
+	@SuppressWarnings("unused")
 	@Post
 	public String getAllDeadlines(Representation entity) {
 		Form request = new Form(this.getRequestEntity());

@@ -15,6 +15,7 @@ import database.DBConnectionManager;
 
 public class AllClassListResource extends ServerResource {
 
+	@SuppressWarnings("unused")
 	@Post
 	public String getAllClasses(Representation entity) {
 		Form request = new Form(this.getRequestEntity());

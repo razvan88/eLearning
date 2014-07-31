@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import utils.Grades;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -3773,7 +3774,7 @@ public class DBUtils {
 
 			if (result.next()) {
 				String rawGrades = result.getString("archive");
-				if(rawGrades != null) {
+				if (rawGrades != null) {
 					archive = JSONArray.fromObject(rawGrades);
 				}
 			}
@@ -3783,6 +3784,424 @@ public class DBUtils {
 		}
 
 		return archive;
+	}
+
+	public static boolean cheangeSemester(DBConnection dbConnection) {
+		String selectQuery = "SELECT `semester` FROM "
+				+ DBCredentials.SEMESTER_TABLE + " WHERE `id`=1";
+		int rows = 0;
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(selectQuery);
+
+			if (result.next()) {
+				int semester = result.getInt("semester");
+				rows = statement.executeUpdate("UPDATE "
+						+ DBCredentials.SEMESTER_TABLE + " SET `semester`="
+						+ ((semester % 2) + 1) + " WHERE `id`=1");
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows == 1;
+	}
+
+	public static String getCourseNameFromAssocId(DBConnection dbConnection,
+			int assocId, int assocTableId) {
+		String table = getAssocTableName(dbConnection, assocTableId);
+		String query = "SELECT `courseId` FROM " + table + " WHERE `id`="
+				+ assocId;
+		String courseName = "";
+
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				int courseId = result.getInt("courseId");
+				JSONObject course = DBCommonOperations.getCourseInfo(courseId);
+				courseName = course.getString("name");
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return courseName;
+	}
+
+	public static void computeAverage(DBConnection dbConnection) {
+		String studentsQuery = "SELECT `id` FROM "
+				+ DBCredentials.STUDENT_TABLE;
+		String coursesQuery = "SELECT `teacher_course_class_ids`, `teacher_course_ids` WHERE `studentId`=";
+		String activitiesQuery = "SELECT `id`, `grades`, `absences` FROM "
+				+ DBCredentials.ACTIVITY_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=? AND `student_id`=?";
+		String removeQuery = "DELETE FROM " + DBCredentials.ACTIVITY_TABLE
+				+ " WHERE `student_id`=";
+
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet studentIdsResult = statement.executeQuery(studentsQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(activitiesQuery);
+
+			while (studentIdsResult.next()) {
+				int studentId = studentIdsResult.getInt("id");
+				ResultSet coursesResult = statement.executeQuery(coursesQuery
+						+ studentId);
+				if (coursesResult.next()) {
+					String rawTccIds = coursesResult
+							.getString("teacher_course_class_ids");
+					String rawTcIds = coursesResult
+							.getString("teacher_course_ids");
+					JSONObject semester = new JSONObject();
+					JSONArray courses = new JSONArray();
+					List<String> absencesDays = new ArrayList<String>();
+					List<Integer> motivatedAbsences = new ArrayList<Integer>();
+					List<Integer> unmotivatedAbsences = new ArrayList<Integer>();
+
+					if (rawTccIds != null) {
+						// courses
+						String[] tccIds = rawTccIds.split(",");
+						for (String tccId : tccIds) {
+							// each course
+							int tccPk = Integer.parseInt(tccId);
+
+							prepStmt.setInt(1, tccPk);
+							prepStmt.setInt(2, 1);
+							prepStmt.setInt(3, studentId);
+
+							ResultSet allActivities = prepStmt.executeQuery();
+							if (allActivities.next()) {
+								String grades = allActivities
+										.getString("grades");
+								String absences = allActivities
+										.getString("absences");
+								if (grades != null) {
+									JSONArray gradesJson = JSONArray
+											.fromObject(grades);
+									JSONObject course = new JSONObject();
+									course.put(
+											"title",
+											getCourseNameFromAssocId(
+													dbConnection, tccPk, 1));
+									course.put("grades", gradesJson);
+									// compute the average
+									double avg = 0;
+									if (gradesJson.size() == 1) {
+										avg = gradesJson.getJSONObject(0)
+												.getInt("grade");
+									} else {
+										boolean hasSemestrialPaper = false;
+										int semestrialPaperIndex = -1;
+										for (int i = 0; i < gradesJson.size(); i++) {
+											JSONObject g = gradesJson
+													.getJSONObject(i);
+
+											if (g.getInt("isSemestrialPaper") == 1) {
+												semestrialPaperIndex = i;
+												hasSemestrialPaper = true;
+												continue;
+											}
+
+											avg += g.getInt("grade");
+										}
+
+										if (!hasSemestrialPaper) {
+											avg = avg / gradesJson.size();
+										} else {
+											int semestrialPaperGrade = gradesJson
+													.getJSONObject(
+															semestrialPaperIndex)
+													.getInt("grade");
+											avg = (((avg / (gradesJson.size() - 1)) * 3) + semestrialPaperGrade) / 4;
+										}
+									}
+									course.put("average", Grades.round(avg));
+
+									courses.add(course);
+								}
+								if (absences != null) {
+									JSONArray absencesJson = JSONArray
+											.fromObject(absences);
+									for (int i = 0; i < absencesJson.size(); i++) {
+										JSONObject absence = absencesJson
+												.getJSONObject(i);
+										boolean found = false;
+										for (int j = 0; j < absencesDays.size(); j++) {
+											if (absencesDays.get(j).equals(
+													absence.getString("date"))) {
+												found = true;
+
+												if (absence
+														.getInt("isMotivated") == 1) {
+													Integer noAbs = motivatedAbsences
+															.get(j);
+													motivatedAbsences.remove(j);
+													motivatedAbsences.add(j,
+															noAbs + 1);
+												} else {
+													Integer noAbs = unmotivatedAbsences
+															.get(j);
+													unmotivatedAbsences
+															.remove(j);
+													unmotivatedAbsences.add(j,
+															noAbs + 1);
+												}
+
+												break;
+											}
+										}
+										if (!found) {
+											int index = absencesDays.size() - 1;
+											absencesDays.add(index,
+													absence.getString("date"));
+											if (absence.getInt("isMotivated") == 1) {
+												motivatedAbsences.add(index, 1);
+											} else {
+												unmotivatedAbsences.add(index,
+														1);
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					if (rawTcIds != null) {
+						// optionals
+						String[] tcIds = rawTcIds.split(",");
+						for (String tcId : tcIds) {
+							// each optional
+							int tcPk = Integer.parseInt(tcId);
+
+							prepStmt.setInt(1, tcPk);
+							prepStmt.setInt(2, 2);
+							prepStmt.setInt(3, studentId);
+
+							ResultSet allActivities = prepStmt.executeQuery();
+							if (allActivities.next()) {
+								String grades = allActivities
+										.getString("grades");
+								String absences = allActivities
+										.getString("absences");
+								if (grades != null) {
+									JSONArray gradesJson = JSONArray
+											.fromObject(grades);
+									JSONObject course = new JSONObject();
+									course.put(
+											"title",
+											getCourseNameFromAssocId(
+													dbConnection, tcPk, 1));
+									course.put("grades", gradesJson);
+									// compute the average
+									double avg = 0;
+									if (gradesJson.size() == 1) {
+										avg = gradesJson.getJSONObject(0)
+												.getInt("grade");
+									} else {
+										boolean hasSemestrialPaper = false;
+										int semestrialPaperIndex = -1;
+										for (int i = 0; i < gradesJson.size(); i++) {
+											JSONObject g = gradesJson
+													.getJSONObject(i);
+
+											if (g.getInt("isSemestrialPaper") == 1) {
+												semestrialPaperIndex = i;
+												hasSemestrialPaper = true;
+												continue;
+											}
+
+											avg += g.getInt("grade");
+										}
+
+										if (!hasSemestrialPaper) {
+											avg = avg / gradesJson.size();
+										} else {
+											int semestrialPaperGrade = gradesJson
+													.getJSONObject(
+															semestrialPaperIndex)
+													.getInt("grade");
+											avg = (((avg / (gradesJson.size() - 1)) * 3) + semestrialPaperGrade) / 4;
+										}
+									}
+									course.put("average", Grades.round(avg));
+
+									courses.add(course);
+								}
+								if (absences != null) {
+									JSONArray absencesJson = JSONArray
+											.fromObject(absences);
+									for (int i = 0; i < absencesJson.size(); i++) {
+										JSONObject absence = absencesJson
+												.getJSONObject(i);
+										boolean found = false;
+										for (int j = 0; j < absencesDays.size(); j++) {
+											if (absencesDays.get(j).equals(
+													absence.getString("date"))) {
+												found = true;
+
+												if (absence
+														.getInt("isMotivated") == 1) {
+													Integer noAbs = motivatedAbsences
+															.get(j);
+													motivatedAbsences.remove(j);
+													motivatedAbsences.add(j,
+															noAbs + 1);
+												} else {
+													Integer noAbs = unmotivatedAbsences
+															.get(j);
+													unmotivatedAbsences
+															.remove(j);
+													unmotivatedAbsences.add(j,
+															noAbs + 1);
+												}
+
+												break;
+											}
+										}
+										if (!found) {
+											int index = absencesDays.size() - 1;
+											absencesDays.add(index,
+													absence.getString("date"));
+											if (absence.getInt("isMotivated") == 1) {
+												motivatedAbsences.add(index, 1);
+											} else {
+												unmotivatedAbsences.add(index,
+														1);
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					// compute semester average
+					semester.put("courses", courses);
+					int average = 0;
+					for (int i = 0; i < courses.size(); i++) {
+						average += courses.getJSONObject(i).getInt("average");
+					}
+					semester.put("average", Grades.round(average, 2));
+					JSONArray absences = new JSONArray();
+					for (int i = 0; i < absencesDays.size(); i++) {
+						JSONObject absDay = new JSONObject();
+						absDay.put("day", absencesDays.get(i));
+						absDay.put("motivated", motivatedAbsences.get(i));
+						absDay.put("unmotivated", unmotivatedAbsences.get(i));
+						absences.add(absDay);
+					}
+					semester.put("absences", absences);
+
+					// here, the semester is completed, for student studentId
+					String archiveQuery = "SELECT `id`, `archive` FROM "
+							+ DBCredentials.GRADES_ARCHIVE_TABLE
+							+ " WHERE `student_id`=" + studentId;
+					ResultSet archiveResult = statement
+							.executeQuery(archiveQuery);
+					boolean isEntry = archiveResult.next();
+					boolean operationSuccedded = false;
+					String currYear = getYear(dbConnection);
+					
+					// archive the semester
+					if (!isEntry) {
+						JSONArray archive = new JSONArray();
+						JSONObject year = new JSONObject();
+						JSONArray semesters = new JSONArray();
+						semesters.add(semester);
+
+						year.put("year", currYear);
+						year.put("average", semester.getDouble("average"));
+						year.put("semesters", semesters);
+
+						archive.add(year);
+
+						String insertArchiveQuery = "INSERT INTO "
+								+ DBCredentials.GRADES_ARCHIVE_TABLE
+								+ " (`student_id`, `archive`) VALUES ("
+								+ studentId + ",'" + archive.toString() + "')";
+						operationSuccedded = statement.executeUpdate(insertArchiveQuery) == 1;
+					} else {
+						int archiveId = archiveResult.getInt("id");
+						JSONArray archive = JSONArray.fromObject(archiveResult
+								.getString("archive"));
+
+						// update
+						boolean yearFound = false;
+						for(int i = 0; i < archive.size(); i++) {
+							JSONObject yearArchive = archive.getJSONObject(i);
+							if(yearArchive.getString("year").equals(currYear)) {
+								yearArchive.getJSONArray("semesters").add(semester);
+								//compute new year average
+								JSONArray sems = yearArchive.getJSONArray("semesters");
+								double yearAvg = 0;
+								for(int j = 0; j < sems.size(); j++) {
+									yearAvg += sems.getJSONObject(i).getDouble("average");
+								}
+								yearAvg = Grades.round(yearAvg / (sems.size() - 1), 2);
+								//update new year average
+								yearArchive.put("average", yearAvg);
+								yearFound = true;
+								break;
+							}
+						}
+						
+						if(!yearFound) {
+							// create new year
+							JSONObject year = new JSONObject();
+							JSONArray semesters = new JSONArray();
+							semesters.add(semester);
+
+							year.put("year", currYear);
+							year.put("average", semester.getDouble("average"));
+							year.put("semesters", semesters);
+							
+							archive.add(year);
+						}
+
+						String updateArchiveQuery = "UPDATE "
+								+ DBCredentials.GRADES_ARCHIVE_TABLE
+								+ " SET `archive`='" + archive.toString()
+								+ "' WHERE `id`=" + archiveId;
+						operationSuccedded = statement.executeUpdate(updateArchiveQuery) == 1;
+					}
+				}
+
+				// remove student activities
+				statement.executeUpdate(removeQuery + studentId);
+			}
+			prepStmt.close();
+			statement.close();
+		} catch (Exception e) {
+		}
+
+	}
+
+	public static String getYear(DBConnection dbConnection) {
+		String query = "SELECT `year` FROM " + DBCredentials.YEAR_TABLE
+				+ " WHERE `id`=1";
+		String year = "";
+
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			ResultSet result = statement.executeQuery(query);
+
+			if (result.next()) {
+				year = result.getString("year");
+			}
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return year;
 	}
 
 	/*
