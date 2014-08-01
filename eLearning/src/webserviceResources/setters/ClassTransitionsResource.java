@@ -36,6 +36,21 @@ public class ClassTransitionsResource extends ServerResource {
 		//remove last-year students
 		DBUtils.removeLastYearStudents(dbConnection);
 		
+		//remove timetables
+		DBUtils.removeTimetables(dbConnection);
+		
+		//remove courses list
+		DBUtils.removeCoursesList(dbConnection);
+		
+		//remove homework tables
+		DBUtils.removeHomeworkTables(dbConnection);
+		
+		//remove holidays table
+		DBUtils.removeHolidays(dbConnection);
+		
+		//remove resources
+		DBUtils.removeResources(dbConnection);
+		
 		return rows + "";
 	}
 }

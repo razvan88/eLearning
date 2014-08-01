@@ -4096,15 +4096,15 @@ public class DBUtils {
 					for (int i = 0; i < absencesDays.size(); i++) {
 						JSONObject absDay = new JSONObject();
 						absDay.put("day", absencesDays.get(i));
-						
+
 						int motAbsNo = 0;
-						if(i <= (motivatedAbsences.size() - 1)) {
+						if (i <= (motivatedAbsences.size() - 1)) {
 							motAbsNo = motivatedAbsences.get(i);
 						}
 						absDay.put("motivated", motAbsNo);
-						
+
 						int unmotAbsNo = 0;
-						if(i <= (unmotivatedAbsences.size() - 1)) {
+						if (i <= (unmotivatedAbsences.size() - 1)) {
 							unmotAbsNo = unmotivatedAbsences.get(i);
 						}
 						absDay.put("unmotivated", unmotAbsNo);
@@ -4251,9 +4251,36 @@ public class DBUtils {
 		}
 	}
 
-	public static void removeLastYearStudents(DBConnection dbConnection) {
-		String query = "DELETE FROM " + DBCredentials.STUDENT_TABLE + " WHERE `group`='-'";
-		
+	public static void removeCoursesList(DBConnection dbConnection) {
+		String query = "TRUNCATE TABLE " + DBCredentials.COURSES_LIST_TABLE;
+
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+	}
+
+	public static void removeHomeworkTables(DBConnection dbConnection) {
+		String homeworkResultsQuery = "TRUNCATE TABLE "
+				+ DBCredentials.HOMEWORK_RESULTS_TABLE;
+		String homeworkQuery = "TRUNCATE TABLE " + DBCredentials.HOMEWORK_TABLE;
+
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			statement.executeUpdate(homeworkResultsQuery);
+			statement.executeUpdate(homeworkQuery);
+			statement.close();
+		} catch (Exception e) {
+		}
+	}
+
+	public static void removeResources(DBConnection dbConnection) {
+		String query = "TRUNCATE TABLE " + DBCredentials.COURSE_RESOURCES_TABLE;
+
 		Connection connection = dbConnection.getConnection();
 		try {
 			Statement statement = connection.createStatement();
@@ -4263,6 +4290,31 @@ public class DBUtils {
 		}
 	}
 	
+	public static void removeHolidays(DBConnection dbConnection) {
+		String query = "TRUNCATE TABLE " + DBCredentials.HOLIDAYS_TABLE;
+
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+	}
+
+	public static void removeLastYearStudents(DBConnection dbConnection) {
+		String query = "DELETE FROM " + DBCredentials.STUDENT_TABLE
+				+ " WHERE `group`='-'";
+
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+	}
+
 	/*
 	 * public static void main(String[] args) { DBConnection conn =
 	 * DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
