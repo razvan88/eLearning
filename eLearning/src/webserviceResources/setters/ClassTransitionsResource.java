@@ -27,7 +27,15 @@ public class ClassTransitionsResource extends ServerResource {
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
+		//do class transitions
 		int rows = DBUtils.doClassTransitions(dbConnection, classes);
+		
+		//remove associations
+		DBUtils.removeAssociations(dbConnection);
+		
+		//remove last-year students
+		DBUtils.removeLastYearStudents(dbConnection);
+		
 		return rows + "";
 	}
 }

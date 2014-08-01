@@ -3837,7 +3837,8 @@ public class DBUtils {
 	public static void computeAverage(DBConnection dbConnection) {
 		String studentsQuery = "SELECT `id` FROM "
 				+ DBCredentials.STUDENT_TABLE;
-		String coursesQuery = "SELECT `teacher_course_class_ids`, `teacher_course_ids` WHERE `studentId`=";
+		String coursesQuery = "SELECT `teacher_course_class_ids`, `teacher_course_ids` FROM "
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=";
 		String activitiesQuery = "SELECT `id`, `grades`, `absences` FROM "
 				+ DBCredentials.ACTIVITY_TABLE
 				+ " WHERE `assoc_id`=? AND `assoc_table_id`=? AND `student_id`=?";
@@ -3959,7 +3960,8 @@ public class DBUtils {
 											}
 										}
 										if (!found) {
-											int index = absencesDays.size() - 1;
+											int index = Math.max(0,
+													absencesDays.size() - 1);
 											absencesDays.add(index,
 													absence.getString("date"));
 											if (absence.getInt("isMotivated") == 1) {
@@ -4084,17 +4086,28 @@ public class DBUtils {
 					}
 					// compute semester average
 					semester.put("courses", courses);
-					int average = 0;
+					double average = 0;
 					for (int i = 0; i < courses.size(); i++) {
 						average += courses.getJSONObject(i).getInt("average");
 					}
+					average = average / courses.size();
 					semester.put("average", Grades.round(average, 2));
 					JSONArray absences = new JSONArray();
 					for (int i = 0; i < absencesDays.size(); i++) {
 						JSONObject absDay = new JSONObject();
 						absDay.put("day", absencesDays.get(i));
-						absDay.put("motivated", motivatedAbsences.get(i));
-						absDay.put("unmotivated", unmotivatedAbsences.get(i));
+						
+						int motAbsNo = 0;
+						if(i <= (motivatedAbsences.size() - 1)) {
+							motAbsNo = motivatedAbsences.get(i);
+						}
+						absDay.put("motivated", motAbsNo);
+						
+						int unmotAbsNo = 0;
+						if(i <= (unmotivatedAbsences.size() - 1)) {
+							unmotAbsNo = unmotivatedAbsences.get(i);
+						}
+						absDay.put("unmotivated", unmotAbsNo);
 						absences.add(absDay);
 					}
 					semester.put("absences", absences);
@@ -4108,7 +4121,7 @@ public class DBUtils {
 					boolean isEntry = archiveResult.next();
 					boolean operationSuccedded = false;
 					String currYear = getYear(dbConnection);
-					
+
 					// archive the semester
 					if (!isEntry) {
 						JSONArray archive = new JSONArray();
@@ -4126,7 +4139,8 @@ public class DBUtils {
 								+ DBCredentials.GRADES_ARCHIVE_TABLE
 								+ " (`student_id`, `archive`) VALUES ("
 								+ studentId + ",'" + archive.toString() + "')";
-						operationSuccedded = statement.executeUpdate(insertArchiveQuery) == 1;
+						operationSuccedded = statement
+								.executeUpdate(insertArchiveQuery) == 1;
 					} else {
 						int archiveId = archiveResult.getInt("id");
 						JSONArray archive = JSONArray.fromObject(archiveResult
@@ -4134,25 +4148,29 @@ public class DBUtils {
 
 						// update
 						boolean yearFound = false;
-						for(int i = 0; i < archive.size(); i++) {
+						for (int i = 0; i < archive.size(); i++) {
 							JSONObject yearArchive = archive.getJSONObject(i);
-							if(yearArchive.getString("year").equals(currYear)) {
-								yearArchive.getJSONArray("semesters").add(semester);
-								//compute new year average
-								JSONArray sems = yearArchive.getJSONArray("semesters");
+							if (yearArchive.getString("year").equals(currYear)) {
+								yearArchive.getJSONArray("semesters").add(
+										semester);
+								// compute new year average
+								JSONArray sems = yearArchive
+										.getJSONArray("semesters");
 								double yearAvg = 0;
-								for(int j = 0; j < sems.size(); j++) {
-									yearAvg += sems.getJSONObject(i).getDouble("average");
+								for (int j = 0; j < sems.size(); j++) {
+									yearAvg += sems.getJSONObject(i).getDouble(
+											"average");
 								}
-								yearAvg = Grades.round(yearAvg / (sems.size() - 1), 2);
-								//update new year average
+								yearAvg = Grades
+										.round(yearAvg / sems.size(), 2);
+								// update new year average
 								yearArchive.put("average", yearAvg);
 								yearFound = true;
 								break;
 							}
 						}
-						
-						if(!yearFound) {
+
+						if (!yearFound) {
 							// create new year
 							JSONObject year = new JSONObject();
 							JSONArray semesters = new JSONArray();
@@ -4161,7 +4179,7 @@ public class DBUtils {
 							year.put("year", currYear);
 							year.put("average", semester.getDouble("average"));
 							year.put("semesters", semesters);
-							
+
 							archive.add(year);
 						}
 
@@ -4169,7 +4187,8 @@ public class DBUtils {
 								+ DBCredentials.GRADES_ARCHIVE_TABLE
 								+ " SET `archive`='" + archive.toString()
 								+ "' WHERE `id`=" + archiveId;
-						operationSuccedded = statement.executeUpdate(updateArchiveQuery) == 1;
+						operationSuccedded = statement
+								.executeUpdate(updateArchiveQuery) == 1;
 					}
 				}
 
@@ -4204,6 +4223,46 @@ public class DBUtils {
 		return year;
 	}
 
+	public static void removeTimetables(DBConnection dbConnection) {
+		String query = "UPDATE " + DBCredentials.SCHOOL_TIMETABLE_TABLE
+				+ " SET `timetable`=''";
+
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+	}
+
+	public static void removeAssociations(DBConnection dbConnection) {
+		String tccQuery = "TRUNCATE TABLE "
+				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE;
+		String tcQuery = "TRUNCATE TABLE " + DBCredentials.TEACHER_COURSE_TABLE;
+
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			statement.executeUpdate(tccQuery);
+			statement.executeUpdate(tcQuery);
+			statement.close();
+		} catch (Exception e) {
+		}
+	}
+
+	public static void removeLastYearStudents(DBConnection dbConnection) {
+		String query = "DELETE FROM " + DBCredentials.STUDENT_TABLE + " WHERE `group`='-'";
+		
+		Connection connection = dbConnection.getConnection();
+		try {
+			Statement statement = connection.createStatement();
+			statement.executeUpdate(query);
+			statement.close();
+		} catch (Exception e) {
+		}
+	}
+	
 	/*
 	 * public static void main(String[] args) { DBConnection conn =
 	 * DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");

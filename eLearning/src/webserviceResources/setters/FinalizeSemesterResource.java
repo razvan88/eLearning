@@ -29,7 +29,12 @@ public class FinalizeSemesterResource extends ServerResource {
 		DBUtils.computeAverage(dbConnection);
 		
 		//change semester
-		boolean changed = DBUtils.cheangeSemester(dbConnection);
+		DBUtils.cheangeSemester(dbConnection);
+		
+		//remove timetables
+		if(removeTimetables) {
+			DBUtils.removeTimetables(dbConnection);
+		}
 		
 		return "";
 	}
