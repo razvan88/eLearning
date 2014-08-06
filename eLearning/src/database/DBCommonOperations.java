@@ -153,7 +153,7 @@ public class DBCommonOperations {
 			Statement statement = connection
 					.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
 							ResultSet.CONCUR_READ_ONLY);
-			String query = "SELECT `id`, `name`, `abbreviation`, `photo` FROM "
+			String query = "SELECT `id`, `name`, `abbreviation`, `photo`, `control` FROM "
 					+ DBCredentials.COURSES_TABLE;
 			ResultSet result = statement.executeQuery(query);
 
@@ -165,7 +165,8 @@ public class DBCommonOperations {
 				course.put("name", result.getString("name"));
 				course.put("abbreviation", result.getString("abbreviation"));
 				course.put("photo", result.getString("photo"));
-
+				course.put("control", result.getInt("control"));
+				
 				sCourses.put(id, course);
 			}
 		} catch (Exception e) {

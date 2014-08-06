@@ -1644,10 +1644,12 @@ public class DBUtils {
 				obj.put("class", new JSONObject());
 
 				obj.getJSONObject("course").put("id", courseId);
-				obj.getJSONObject("course").put(
-						"name",
-						DBCommonOperations.getCourseInfo(courseId).getString(
-								"name"));
+				JSONObject jsonCourse = DBCommonOperations
+						.getCourseInfo(courseId);
+				obj.getJSONObject("course").put("name",
+						jsonCourse.getString("name"));
+				obj.getJSONObject("course").put("control",
+						jsonCourse.getInt("control"));
 
 				obj.getJSONObject("class").put("id", classId);
 				obj.getJSONObject("class").put("name",
@@ -1694,10 +1696,12 @@ public class DBUtils {
 				obj.put("class", new JSONObject());
 
 				obj.getJSONObject("course").put("id", courseId);
-				obj.getJSONObject("course").put(
-						"name",
-						DBCommonOperations.getCourseInfo(courseId).getString(
-								"name"));
+				JSONObject jsonCourse = DBCommonOperations
+						.getCourseInfo(courseId);
+				obj.getJSONObject("course").put("name",
+						jsonCourse.getString("name"));
+				obj.getJSONObject("course").put("control",
+						jsonCourse.getInt("control"));
 
 				obj.getJSONObject("class").put("id", -1);
 				obj.getJSONObject("class").put("name", "Optional");
@@ -2805,6 +2809,23 @@ public class DBUtils {
 		return courseIds;
 	}
 
+	public static int updateYear(DBConnection dbConnection, String year) {
+		String query = "UPDATE " + DBCredentials.YEAR_TABLE + " SET `year`='"
+				+ year + "' WHERE `id`=1";
+		Connection connection = dbConnection.getConnection();
+		int rows = 0;
+
+		try {
+			Statement statement = connection.createStatement();
+			rows = statement.executeUpdate(query);
+
+			statement.close();
+		} catch (Exception e) {
+		}
+
+		return rows;
+	}
+
 	public static int uploadSemesterStructure(DBConnection dbConnection,
 			String date1, String week1, String holiday1, String date2,
 			String week2, String holiday2) {
@@ -2869,15 +2890,18 @@ public class DBUtils {
 		return rows;
 	}
 
-	public static JSONArray getSemestersStructure(DBConnection dbConnection) {
+	public static JSONObject getSemestersStructure(DBConnection dbConnection) {
 		Connection connection = dbConnection.getConnection();
 		JSONArray semesters = new JSONArray();
+		JSONObject resp = new JSONObject();
 
-		String query = "SELECT * FROM " + DBCredentials.HOLIDAYS_TABLE;
+		String yearQuery = "SELECT `year` FROM " + DBCredentials.YEAR_TABLE
+				+ " WHERE `id`=1";
+		String semestersQuery = "SELECT * FROM " + DBCredentials.HOLIDAYS_TABLE;
 
 		try {
 			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			ResultSet result = statement.executeQuery(semestersQuery);
 
 			while (result.next()) {
 				JSONObject semester = new JSONObject();
@@ -2890,11 +2914,21 @@ public class DBUtils {
 				semesters.add(semester);
 			}
 
+			resp.put("semesters", semesters);
+
+			String year = "";
+			result = statement.executeQuery(yearQuery);
+			if (result.next()) {
+				year = result.getString("year");
+			}
+
+			resp.put("year", year);
+
 			statement.close();
 		} catch (Exception e) {
 		}
 
-		return semesters;
+		return resp;
 	}
 
 	public static int getSemestersNumber(DBConnection dbConnection) {
@@ -4289,7 +4323,7 @@ public class DBUtils {
 		} catch (Exception e) {
 		}
 	}
-	
+
 	public static void removeHolidays(DBConnection dbConnection) {
 		String query = "TRUNCATE TABLE " + DBCredentials.HOLIDAYS_TABLE;
 

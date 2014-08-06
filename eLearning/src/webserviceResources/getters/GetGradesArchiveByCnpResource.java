@@ -1,5 +1,6 @@
 package webserviceResources.getters;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.restlet.data.Form;
@@ -12,20 +13,26 @@ import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
 
-public class GetSemesterStructureResource extends ServerResource {
+public class GetGradesArchiveByCnpResource extends ServerResource {
 
 	@Post
-	public String uploadSemesterStructure(Representation entity) {
+	public String getGradesArchive(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
-
+		
 		int schoolId = info.getInt("schoolId");
+		String cnp = info.getString("studentCnp");
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
-		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
-				database);
-
-		JSONObject semesters = DBUtils.getSemestersStructure(dbConnection);
-		return semesters.toString();
+		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
+		
+		JSONObject student = DBUtils.getStudentByCnp(dbConnection, cnp);
+		if(!student.containsKey("id")) {
+			return "[]";
+		}
+		
+		int studentId = student.getInt("id");
+		JSONArray responses = DBUtils.getGradesArchive(dbConnection, studentId);
+		return responses.toString();
 	}
 }

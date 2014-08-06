@@ -26,12 +26,14 @@ public class SemesterStructureResource extends ServerResource {
 		String week2 = info.getString("week2");
 		String holiday1 = info.getString("holiday1");
 		String holiday2 = info.getString("holiday2");
+		String year = info.getString("year");
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId,
 				database);
 
 		int rows = DBUtils.uploadSemesterStructure(dbConnection, date1, week1, holiday1, date2, week2, holiday2);
-		return rows + "";
+		rows += DBUtils.updateYear(dbConnection, year);
+		return --rows + "";
 	}
 }
