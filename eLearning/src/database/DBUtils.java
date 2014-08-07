@@ -3340,17 +3340,12 @@ public class DBUtils {
 				}
 				content.append("]");
 
-				String courseResourcesQuery = "INSERT INTO "
+				String resourcesQuery = "INSERT INTO "
 						+ DBCredentials.COURSE_RESOURCES_TABLE
-						+ " (`teacher_course_class_id`,`content`) VALUES ("
-						+ assocId + ",'" + content.toString() + "')";
-				String optionalResourcesQuery = "INSERT INTO "
-						+ DBCredentials.OPTIONAL_RESOURCES_TABLE
-						+ " (`teacher_course_id`,`content`) VALUES (" + assocId
-						+ ",'" + content.toString() + "')";
+						+ " (`assoc_id`,`assoc_table_id`,`content`) VALUES ("
+						+ assocId + "," + (isCourse ? 1 : 2) + ",'" + content.toString() + "')";
 				// add the empty resources into table
-				added = statement.executeUpdate(isCourse ? courseResourcesQuery
-						: optionalResourcesQuery) == 1;
+				added = statement.executeUpdate(resourcesQuery) == 1;
 
 				statement.close();
 			}
