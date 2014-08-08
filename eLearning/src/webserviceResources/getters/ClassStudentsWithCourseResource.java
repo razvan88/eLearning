@@ -13,34 +13,36 @@ import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
 
-public class FilteredCoursesListResource extends ServerResource {
+public class ClassStudentsWithCourseResource extends ServerResource {
 
 	@Post
-	public String getFilteredCoursesList(Representation entity) {
+	public String getClassStudents(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));
 		
 		int schoolId = info.getInt("schoolId");
-		int userId = info.getInt("userId");
-		int semester = info.getInt("semester");
+		int classId = info.getInt("classId");
+		int courseId = info.getInt("courseId");
 		
 		String database = ConfigurationSettings.getSchoolDatabaseName(schoolId);
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		
-		JSONArray courses = DBUtils.getCoursesList(dbConnection, userId);
-		JSONArray filteredCourses = new JSONArray();
-		for(int i = 0; i < courses.size(); i++) {
-			JSONObject crs = courses.getJSONObject(i);
-			if(crs.getInt("semester") == semester) {
-				JSONObject c = new JSONObject();
-				
-				c.put("id", crs.getInt("id"));
-				c.put("name", crs.getString("name"));
-				
-				filteredCourses.add(c);
+		JSONArray classStuds = DBUtils.getClassStudents(dbConnection, classId);
+		JSONArray filteredStuds = new JSONArray();
+		
+		for(int i = 0; i < classStuds.size(); i++) {
+			JSONObject stud = classStuds.getJSONObject(i);
+			int studId = stud.getInt("id");
+			JSONArray allCourses = DBUtils.getCoursesList(dbConnection, studId);
+			for(int j = 0; j < allCourses.size(); j++) {
+				if(allCourses.getJSONObject(j).getInt("id") == courseId) {
+					filteredStuds.add(stud);
+					break;
+				}
 			}
 		}
 		
-		return filteredCourses.toString();
+		return filteredStuds.toString();
 	}
+	
 }
