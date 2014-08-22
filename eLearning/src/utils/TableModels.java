@@ -3,10 +3,11 @@ package utils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import net.sf.json.JSONObject;
-import net.sf.json.JSONSerializer;
 
 public class TableModels {
 	private static HashMap<String, String> sTableModels;
@@ -56,10 +57,21 @@ public class TableModels {
 		String key = "#" + tableName + "TableModel";
 		
 		if(sTableModels.containsKey(key)) {
-			return (JSONObject)JSONSerializer.toJSON(sTableModels.get(key));
+			return JSONObject.fromObject(sTableModels.get(key));
 		}
 		
 		return null;
+	}
+	
+	public static List<JSONObject> getAllTableModels() {
+		List<JSONObject> models = new ArrayList<JSONObject>();
+		
+		for(String key : sTableModels.keySet()) {
+			JSONObject model = JSONObject.fromObject(sTableModels.get(key));
+			models.add(model);
+		}
+		
+		return models;
 	}
 	
 }

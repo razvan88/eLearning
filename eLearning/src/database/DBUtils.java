@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import utils.Grades;
+import utils.TableModels;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -22,7 +23,7 @@ public class DBUtils {
 		sTeachers = new HashMap<Integer, JSONArray>();
 	}
 
-	public static DBConnection createDatabase(String databaseName) {
+	private static DBConnection createDatabase(String databaseName) {
 		Connection connection = null;
 		String link = DBCredentials.getDefaultLink();
 		String createQuery = "CREATE DATABASE IF NOT EXISTS `" + databaseName
@@ -56,8 +57,14 @@ public class DBUtils {
 			JSONObject column = columns.getJSONObject(i);
 
 			String colName = column.getString("name");
-			String colType = column.getString("type");
-			int colLength = column.getInt("length");
+			String colType = column.getString("type").toUpperCase();
+			boolean isTextColumn = colType.equalsIgnoreCase("varchar")
+					|| colType.equalsIgnoreCase("mediumtext")
+					|| colType.equalsIgnoreCase("longtext")
+					|| colType.equalsIgnoreCase("tinytext")
+					|| colType.equalsIgnoreCase("text");
+			int colLength = column.containsKey("length") ? column
+					.getInt("length") : -1;
 			int colNull = column.getInt("isNull");
 			int colPK = column.getInt("isPrimaryKey");
 			int colAI = column.getInt("isAutoIncrement");
@@ -70,6 +77,10 @@ public class DBUtils {
 				query.append("(" + colLength + ") ");
 			} else {
 				query.append(" ");
+			}
+
+			if (isTextColumn) {
+				query.append("CHARACTER SET utf8 COLLATE utf8_general_ci ");
 			}
 
 			query.append((colNull == 0 ? "NOT " : "") + "NULL");
@@ -120,7 +131,7 @@ public class DBUtils {
 		return query.toString();
 	}
 
-	public static boolean createTable(DBConnection dbConnection,
+	private static boolean createTable(DBConnection dbConnection,
 			JSONObject structure) {
 		String query = getTableCreationQuery(structure);
 
@@ -134,6 +145,22 @@ public class DBUtils {
 		}
 
 		return true;
+	}
+
+	public static boolean generateEntireDatabase(String dbName) {
+		DBConnection conn = DBUtils.createDatabase(dbName);
+
+		if (conn == null) {
+			return false;
+		}
+
+		boolean ok = true;
+
+		for (JSONObject model : TableModels.getAllTableModels()) {
+			ok &= DBUtils.createTable(conn, model);
+		}
+
+		return ok;
 	}
 
 	public static JSONObject checkLogin(DBConnection dbConnection,
@@ -3343,7 +3370,8 @@ public class DBUtils {
 				String resourcesQuery = "INSERT INTO "
 						+ DBCredentials.COURSE_RESOURCES_TABLE
 						+ " (`assoc_id`,`assoc_table_id`,`content`) VALUES ("
-						+ assocId + "," + (isCourse ? 1 : 2) + ",'" + content.toString() + "')";
+						+ assocId + "," + (isCourse ? 1 : 2) + ",'"
+						+ content.toString() + "')";
 				// add the empty resources into table
 				added = statement.executeUpdate(resourcesQuery) == 1;
 
@@ -4344,11 +4372,7 @@ public class DBUtils {
 		}
 	}
 
-	/*
-	 * public static void main(String[] args) { DBConnection conn =
-	 * DBUtils.createDatabase("licTeorMinuneaNatiuniiBuc");
-	 * DBUtils.createTable(conn, TableModels.getTableModel("student"));
-	 * DBUtils.createTable(conn, TableModels.getTableModel("teacher"));
-	 * DBUtils.createTable(conn, TableModels.getTableModel("auxiliary")); }
-	 */
+	// public static void main(String[] args) {
+	// System.out.println(DBUtils.generateEntireDatabase("testDB"));
+	// }
 }

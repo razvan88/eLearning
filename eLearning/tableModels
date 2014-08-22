@@ -1,3 +1,1008 @@
+#activityTableModel
+	{ 
+		'name': 'activity', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '7', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'assoc_id',
+			'type': 'int',
+			'length': '6',
+			'isNull': '0',
+			'isPrimaryKey': '0',
+			'isAutoIncrement': '0',
+			'isUnique': '0'
+		},
+		{ 
+			'name': 'assoc_table_id', 
+			'type': 'int', 
+			'length': '1', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'student_id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'activities', 
+			'type': 'varchar',
+			'length': '10000', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'grades', 
+			'type': 'varchar', 
+			'length': '10000', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'absences', 
+			'type': 'varchar', 
+			'length': '1000', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+    }
+    
+#adminTableModel
+	{ 
+		'name': 'admin', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '1', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'username', 
+			'type': 'varchar', 
+			'length': '50', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'password', 
+			'type': 'varchar', 
+			'length': '500', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#assocTableModel
+	{ 
+		'name': 'assoc_table', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '2', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'table', 
+			'type': 'varchar', 
+			'length': '100',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		}]
+	}
+
+#auxiliaryTableModel
+	{ 
+		'name': 'auxiliary', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'firstName', 
+			'type': 'varchar', 
+			'length': '50', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'lastName', 
+			'type': 'varchar', 
+			'length': '100', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'cnp', 
+			'type': 'varchar', 
+			'length': '13', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'birthdate', 
+			'type': 'date',  /*YYYY-MM-DD, starting from 1*/
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'email', 
+			'type': 'varchar', 
+			'length': '100', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'photo', 
+			'type': 'varchar', 
+			'length': '200', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'username', 
+			'type': 'varchar', 
+			'length': '100', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '1' 
+		},
+		{ 
+			'name': 'password', 
+			'type': 'varchar', 
+			'length': '500', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'function', 
+			'type': 'int', 
+			'length': '2', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'timetable', 
+			'type': 'varchar', 
+			'length': '2000', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},		
+		{ 
+			'name': 'description', 
+			'type': 'varchar', 
+			'length': '2000', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#courseListTableModel
+	{ 
+		'name': 'course_list', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '7', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'studentId', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'teacher_course_class_ids', 
+			'type': 'varchar', 
+			'length': '200', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'teacher_course_ids', 
+			'type': 'varchar', 
+			'length': '200', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#courseResourcesTableModel
+	{ 
+		'name': 'course_resources', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'assoc_id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'assoc_table_id', 
+			'type': 'int', 
+			'length': '2', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'content', 
+			'type': 'varchar', 
+			'length': '10000', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#deadlinesTableModel
+	{ 
+		'name': 'deadlines', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'assoc_id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'assoc_table_id', 
+			'type': 'int', 
+			'length': '2', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'date', 
+			'type': 'varchar', 
+			'length': '150', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'name', 
+			'type': 'varchar', 
+			'length': '500', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#feedbackTableModel
+	{ 
+		'name': 'feedback', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '10', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'feedback_id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'student_id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'opinion', 
+			'type': 'varchar', 
+			'length': '5000', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#feedbackRequestTableModel
+	{ 
+		'name': 'feedback_request', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'assoc_id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'assoc_table_id', 
+			'type': 'int', 
+			'length': '2', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'available', 
+			'type': 'int', 
+			'length': '1', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'aspects', 
+			'type': 'varchar', 
+			'length': '1000', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#forumSubjectRequestTableModel
+	{ 
+		'name': 'forum_subject', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '12', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'subject_id', 
+			'type': 'int', 
+			'length': '11', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'parent_post_id', 
+			'type': 'int', 
+			'length': '12', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'sender_id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'sender_table', 
+			'type': 'varchar', 
+			'length': '250', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'date', 
+			'type': 'datetime',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'content', 
+			'type': 'varchar', 
+			'length': '1500', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#forumSummaryRequestTableModel
+	{ 
+		'name': 'forum_summary', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '11', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'assoc_id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'assoc_table_id', 
+			'type': 'int', 
+			'length': '2', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'is_announcement', 
+			'type': 'int', 
+			'length': '1', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'subject', 
+			'type': 'varchar', 
+			'length': '250', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'initiator_id', 
+			'type': 'int',
+            'length': '6',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'initiator_table', 
+			'type': 'varchar', 
+			'length': '250', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'total_posts', 
+			'type': 'int', 
+			'length': '4', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'last_post_date', 
+			'type': 'datetime', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'last_post_by_id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'last_post_by_table', 
+			'type': 'varchar', 
+			'length': '250', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#gradesArchiveTableModel
+	{ 
+		'name': 'grades_archive', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'student_id', 
+			'type': 'int', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'archive', 
+			'type': 'mediumtext', 
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#holidayTableModel
+	{ 
+		'name': 'holiday', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '1', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'starting_date', 
+			'type': 'date', 
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'total_weeks', 
+			'type': 'int',
+            'length': '2',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'holiday_weeks', 
+			'type': 'varchar',
+            'length': '50',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'semester', 
+			'type': 'int',
+            'length': '1',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#homeworkTableModel
+	{ 
+		'name': 'homework', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '9', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'assoc_id', 
+			'type': 'int',
+            'length': '6',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'assoc_table_id', 
+			'type': 'int',
+            'length': '2',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'name', 
+			'type': 'varchar',
+            'length': '500',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'content', 
+			'type': 'mediumtext',
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'deadline', 
+			'type': 'datetime',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'resources', 
+			'type': 'varchar',
+            'length': '1500',
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'maxGrade', 
+			'type': 'float',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#homeworkResultsTableModel
+	{ 
+		'name': 'homework_results', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '9', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'homework_id', 
+			'type': 'int',
+            'length': '9',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'student_id', 
+			'type': 'int',
+            'length': '6',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'uploaded', 
+			'type': 'int',
+            'length': '1',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'graded', 
+			'type': 'int',
+            'length': '1',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'grade', 
+			'type': 'float',
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'feedback', 
+			'type': 'varchar',
+            'length': '2500',
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'archive', 
+			'type': 'varchar',
+            'length': '200',
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'upload_time', 
+			'type': 'datetime',
+			'isNull': '1', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#messageTableModel
+	{ 
+		'name': 'message', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '12', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'initiator_id', 
+			'type': 'int',
+            'length': '6',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'initiator_table', 
+			'type': 'varchar',
+            'length': '250',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'responder_id', 
+			'type': 'int',
+            'length': '6',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'responder_table', 
+			'type': 'varchar',
+            'length': '250',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'messages', 
+			'type': 'longtext',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#schoolNewsTableModel
+	{ 
+		'name': 'school_news', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '11', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{
+			'name': 'date', 
+			'type': 'date',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'title', 
+			'type': 'varchar',
+            'length': '150',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'content', 
+			'type': 'varchar',
+            'length': '2000',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#semesterTableModel
+	{ 
+		'name': 'semester', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '1', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'semester', 
+			'type': 'int',
+            'length': '1',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
 #studentTableModel
 	{ 
 		'name': 'student', 
@@ -41,7 +1046,6 @@
 		{ 
 			'name': 'birthdate', 
 			'type': 'date',  /*YYYY-MM-DD, starting from 1*/
-			'length': '0', 
 			'isNull': '0', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
@@ -155,7 +1159,6 @@
 		{ 
 			'name': 'birthdate', 
 			'type': 'date',  /*YYYY-MM-DD, starting from 1*/
-			'length': '0', 
 			'isNull': '0', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
@@ -235,9 +1238,9 @@
 		}]
 	}
 	
-#auxiliaryTableModel
+#teacherCourseTableModel
 	{ 
-		'name': 'auxiliary', 
+		'name': 'teacher_course', 
 		'columns': [ 
 		{ 
 			'name': 'id', 
@@ -248,82 +1251,103 @@
 			'isAutoIncrement': '1', 
 			'isUnique': '0' 
 		},
-		{
-			'name': 'firstName', 
-			'type': 'varchar', 
-			'length': '50', 
+		{ 
+			'name': 'courseId', 
+			'type': 'int',
+            'length': '3',
 			'isNull': '0', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
 			'isUnique': '0' 
 		},
 		{ 
-			'name': 'lastName', 
-			'type': 'varchar', 
-			'length': '100', 
+			'name': 'teacherId', 
+			'type': 'int',
+            'length': '6',
 			'isNull': '0', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
 			'isUnique': '0' 
 		},
 		{ 
-			'name': 'cnp', 
-			'type': 'varchar', 
-			'length': '13', 
-			'isNull': '0', 
-			'isPrimaryKey': '0', 
-			'isAutoIncrement': '0', 
-			'isUnique': '1' 
-		},
-		{ 
-			'name': 'birthdate', 
-			'type': 'date',  /*YYYY-MM-DD, starting from 1*/
-			'length': '0', 
+			'name': 'semester', 
+			'type': 'int',
+            'length': '1',
 			'isNull': '0', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
 			'isUnique': '0' 
-		},
+		}]
+	}
+
+#teacherCourseClassTableModel
+	{ 
+		'name': 'teacher_course_class', 
+		'columns': [ 
 		{ 
-			'name': 'email', 
-			'type': 'varchar', 
-			'length': '100', 
-			'isNull': '1', 
-			'isPrimaryKey': '0', 
-			'isAutoIncrement': '0', 
-			'isUnique': '1' 
-		},
-		{ 
-			'name': 'photo', 
-			'type': 'varchar', 
-			'length': '200', 
-			'isNull': '1', 
-			'isPrimaryKey': '0', 
-			'isAutoIncrement': '0', 
-			'isUnique': '1' 
-		},
-		{ 
-			'name': 'username', 
-			'type': 'varchar', 
-			'length': '100', 
-			'isNull': '0', 
-			'isPrimaryKey': '0', 
-			'isAutoIncrement': '0', 
-			'isUnique': '1' 
-		},
-		{ 
-			'name': 'password', 
-			'type': 'varchar', 
-			'length': '500', 
-			'isNull': '1', 
-			'isPrimaryKey': '0', 
-			'isAutoIncrement': '0', 
-			'isUnique': '0' 
-		},
-		{ 
-			'name': 'function', 
+			'name': 'id', 
 			'type': 'int', 
-			'length': '2', 
+			'length': '6', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'courseId', 
+			'type': 'int',
+            'length': '3',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'teacherId', 
+			'type': 'int',
+            'length': '6',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+        { 
+			'name': 'classId', 
+			'type': 'int',
+            'length': '3',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'semester', 
+			'type': 'int',
+            'length': '1',
+			'isNull': '0', 
+			'isPrimaryKey': '0', 
+			'isAutoIncrement': '0', 
+			'isUnique': '0' 
+		}]
+	}
+
+#timetableTableModel
+	{ 
+		'name': 'timetable', 
+		'columns': [ 
+		{ 
+			'name': 'id', 
+			'type': 'int', 
+			'length': '3', 
+			'isNull': '0', 
+			'isPrimaryKey': '1', 
+			'isAutoIncrement': '1', 
+			'isUnique': '0' 
+		},
+		{ 
+			'name': 'classId', 
+			'type': 'int',
+            'length': '3',
 			'isNull': '0', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
@@ -331,27 +1355,18 @@
 		},
 		{ 
 			'name': 'timetable', 
-			'type': 'varchar', 
-			'length': '2000', 
-			'isNull': '1', 
-			'isPrimaryKey': '0', 
-			'isAutoIncrement': '0', 
-			'isUnique': '0' 
-		},		
-		{ 
-			'name': 'description', 
-			'type': 'varchar', 
-			'length': '2000', 
+			'type': 'varchar',
+            'length': '10000',
 			'isNull': '1', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
 			'isUnique': '0' 
 		}]
 	}
-	
-#adminTableModel
+
+#yearTableModel
 	{ 
-		'name': 'admin', 
+		'name': 'year', 
 		'columns': [ 
 		{ 
 			'name': 'id', 
@@ -363,18 +1378,9 @@
 			'isUnique': '0' 
 		},
 		{ 
-			'name': 'username', 
-			'type': 'varchar', 
-			'length': '50', 
-			'isNull': '0', 
-			'isPrimaryKey': '0', 
-			'isAutoIncrement': '0', 
-			'isUnique': '1' 
-		},
-		{ 
-			'name': 'password', 
-			'type': 'varchar', 
-			'length': '500', 
+			'name': 'year', 
+			'type': 'varchar',
+            'length': '20',
 			'isNull': '0', 
 			'isPrimaryKey': '0', 
 			'isAutoIncrement': '0', 
