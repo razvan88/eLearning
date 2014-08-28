@@ -4372,6 +4372,46 @@ public class DBUtils {
 		}
 	}
 
+	public static JSONObject getResetInfo(DBConnection dbConnection,
+			String email) {
+		Connection connection = dbConnection.getConnection();
+		JSONObject result = new JSONObject();
+
+		String queryPrefix = "SELECT `id`, `firstName`, `lastName` FROM ";
+		String queryPostfix = " WHERE `email` = ?";
+		String[] tables = new String[] { DBCredentials.STUDENT_TABLE,
+				DBCredentials.TEACHER_TABLE, DBCredentials.AUXILIARY_TABLE };
+
+		try {
+			for(String table : tables) {
+				String query = queryPrefix + table + queryPostfix;
+				PreparedStatement prepStmt = connection.prepareStatement(query);
+				prepStmt.setString(1, email);
+				
+				ResultSet resultSet = prepStmt.executeQuery();
+				boolean found = false;
+				
+				if (resultSet.next()) {
+					found = true;
+					result.put("userTable", table);
+					result.put("userId", resultSet.getInt("id"));
+					result.put("firstName", resultSet.getString("firstName"));
+					result.put("lastName", resultSet.getString("lastName"));
+				}
+				
+				resultSet.close();
+				
+				if(found) {
+					break;
+				}
+			}
+		} catch (Exception e) {
+			return result;
+		}
+
+		return result;
+	}
+
 	// public static void main(String[] args) {
 	// System.out.println(DBUtils.generateEntireDatabase("testDB"));
 	// }

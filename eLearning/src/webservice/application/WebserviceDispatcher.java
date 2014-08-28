@@ -74,6 +74,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/getGradesArchive", GetGradesArchiveResource.class);
 		router.attach("/getGradesArchiveByCnp", GetGradesArchiveByCnpResource.class);
 		router.attach("/getFilteredCoursesList", FilteredCoursesListResource.class);
+		router.attach("/getResetInfo", GetResetInfoResource.class);
 		
 		router.attach("/updateColumn", UpdateColumnResource.class);
 		router.attach("/startMessage", StartMessageResource.class);
