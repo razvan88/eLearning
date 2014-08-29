@@ -4092,7 +4092,6 @@ public class DBUtils {
 
 		return archive;
 	}
-	
 
 	public static boolean cheangeSemester(DBConnection dbConnection) {
 		String selectQuery = "SELECT `semester` FROM "
@@ -4147,12 +4146,12 @@ public class DBUtils {
 		String studentsQuery = "SELECT `id` FROM "
 				+ DBCredentials.STUDENT_TABLE;
 		String coursesQuery = "SELECT `teacher_course_class_ids`, `teacher_course_ids` FROM "
-				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=";
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=?";
 		String activitiesQuery = "SELECT `id`, `grades`, `absences` FROM "
 				+ DBCredentials.ACTIVITY_TABLE
 				+ " WHERE `assoc_id`=? AND `assoc_table_id`=? AND `student_id`=?";
 		String removeQuery = "DELETE FROM " + DBCredentials.ACTIVITY_TABLE
-				+ " WHERE `student_id`=";
+				+ " WHERE `student_id`=?";
 
 		Connection connection = dbConnection.getConnection();
 		try {
@@ -4163,8 +4162,12 @@ public class DBUtils {
 
 			while (studentIdsResult.next()) {
 				int studentId = studentIdsResult.getInt("id");
-				ResultSet coursesResult = statement.executeQuery(coursesQuery
-						+ studentId);
+
+				PreparedStatement prepStatement = connection
+						.prepareStatement(coursesQuery);
+				prepStatement.setInt(1, studentId);
+				ResultSet coursesResult = prepStatement.executeQuery();
+
 				if (coursesResult.next()) {
 					String rawTccIds = coursesResult
 							.getString("teacher_course_class_ids");
@@ -4285,6 +4288,7 @@ public class DBUtils {
 							}
 						}
 					}
+
 					if (rawTcIds != null) {
 						// optionals
 						String[] tcIds = rawTcIds.split(",");
@@ -4393,6 +4397,7 @@ public class DBUtils {
 							}
 						}
 					}
+
 					// compute semester average
 					semester.put("courses", courses);
 					double average = 0;
@@ -4425,10 +4430,11 @@ public class DBUtils {
 					String archiveQuery = "SELECT `id`, `archive` FROM "
 							+ DBCredentials.GRADES_ARCHIVE_TABLE
 							+ " WHERE `student_id`=" + studentId;
+					// should be fine, because "studentId" is the primary key,
+					// took from DB, not from user
 					ResultSet archiveResult = statement
 							.executeQuery(archiveQuery);
 					boolean isEntry = archiveResult.next();
-					boolean operationSuccedded = false;
 					String currYear = getYear(dbConnection);
 
 					// archive the semester
@@ -4446,10 +4452,13 @@ public class DBUtils {
 
 						String insertArchiveQuery = "INSERT INTO "
 								+ DBCredentials.GRADES_ARCHIVE_TABLE
-								+ " (`student_id`, `archive`) VALUES ("
-								+ studentId + ",'" + archive.toString() + "')";
-						operationSuccedded = statement
-								.executeUpdate(insertArchiveQuery) == 1;
+								+ " (`student_id`, `archive`) VALUES (?, ?)";
+						PreparedStatement stmt = connection
+								.prepareStatement(insertArchiveQuery);
+						stmt.setInt(1, studentId);
+						stmt.setString(2, archive.toString());
+						stmt.executeUpdate();
+						stmt.close();
 					} else {
 						int archiveId = archiveResult.getInt("id");
 						JSONArray archive = JSONArray.fromObject(archiveResult
@@ -4494,15 +4503,23 @@ public class DBUtils {
 
 						String updateArchiveQuery = "UPDATE "
 								+ DBCredentials.GRADES_ARCHIVE_TABLE
-								+ " SET `archive`='" + archive.toString()
-								+ "' WHERE `id`=" + archiveId;
-						operationSuccedded = statement
-								.executeUpdate(updateArchiveQuery) == 1;
+								+ " SET `archive`=? WHERE `id`=?";
+
+						PreparedStatement stmt = connection
+								.prepareStatement(updateArchiveQuery);
+						stmt.setString(1, archive.toString());
+						stmt.setInt(2, archiveId);
+						stmt.executeUpdate();
+						stmt.close();
 					}
 				}
 
 				// remove student activities
-				statement.executeUpdate(removeQuery + studentId);
+				PreparedStatement stmt = connection
+						.prepareStatement(removeQuery);
+				stmt.setInt(1, studentId);
+				stmt.executeUpdate();
+				stmt.close();
 			}
 			prepStmt.close();
 			statement.close();
@@ -4510,7 +4527,6 @@ public class DBUtils {
 		}
 
 	}
-	
 
 	public static String getYear(DBConnection dbConnection) {
 		String query = "SELECT `year` FROM " + DBCredentials.YEAR_TABLE
@@ -4533,7 +4549,6 @@ public class DBUtils {
 		return year;
 	}
 
-	
 	public static void removeTimetables(DBConnection dbConnection) {
 		String query = "UPDATE " + DBCredentials.SCHOOL_TIMETABLE_TABLE
 				+ " SET `timetable`=''";
@@ -4546,7 +4561,6 @@ public class DBUtils {
 		} catch (Exception e) {
 		}
 	}
-	
 
 	public static void removeAssociations(DBConnection dbConnection) {
 		String tccQuery = "TRUNCATE TABLE "
@@ -4563,7 +4577,6 @@ public class DBUtils {
 		}
 	}
 
-	
 	public static void removeCoursesList(DBConnection dbConnection) {
 		String query = "TRUNCATE TABLE " + DBCredentials.COURSES_LIST_TABLE;
 
@@ -4576,7 +4589,6 @@ public class DBUtils {
 		}
 	}
 
-	
 	public static void removeHomeworkTables(DBConnection dbConnection) {
 		String homeworkResultsQuery = "TRUNCATE TABLE "
 				+ DBCredentials.HOMEWORK_RESULTS_TABLE;
@@ -4592,7 +4604,6 @@ public class DBUtils {
 		}
 	}
 
-	
 	public static void removeResources(DBConnection dbConnection) {
 		String query = "TRUNCATE TABLE " + DBCredentials.COURSE_RESOURCES_TABLE;
 
@@ -4605,7 +4616,6 @@ public class DBUtils {
 		}
 	}
 
-	
 	public static void removeHolidays(DBConnection dbConnection) {
 		String query = "TRUNCATE TABLE " + DBCredentials.HOLIDAYS_TABLE;
 
@@ -4630,7 +4640,6 @@ public class DBUtils {
 		} catch (Exception e) {
 		}
 	}
-	
 
 	public static JSONObject getResetInfo(DBConnection dbConnection,
 			String email) {
