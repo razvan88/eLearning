@@ -2943,7 +2943,6 @@ public class DBUtils {
 
 		return rows;
 	}
-	
 
 	public static List<Integer> getCourseIdsFromAssocIds(
 			DBConnection dbConnection, String ids, String table) {
@@ -2954,6 +2953,7 @@ public class DBUtils {
 
 		try {
 			PreparedStatement statement = connection.prepareStatement(query);
+
 			for (String tccId : tccIdList) {
 				statement.setInt(1, Integer.parseInt(tccId));
 				ResultSet result = statement.executeQuery();
@@ -3117,15 +3117,19 @@ public class DBUtils {
 		int rows = 0;
 		String checkQuery = "SELECT * FROM " + DBCredentials.SEMESTER_TABLE;
 		String insertQuery = "INSERT INTO " + DBCredentials.SEMESTER_TABLE
-				+ " (`semester`) VALUES (" + semesterNo + ")";
+				+ " (`semester`) VALUES (?)";
 		String updateQuery = "UPDATE " + DBCredentials.SEMESTER_TABLE
-				+ " SET `semester`=" + semesterNo + " WHERE `id`=1";
+				+ " SET `semester`=? WHERE `id`=1";
 
 		try {
 			Statement statement = connection.createStatement();
 			boolean populated = statement.executeQuery(checkQuery).next();
-			rows = statement.executeUpdate(populated ? updateQuery
-					: insertQuery);
+			statement.close();
+
+			PreparedStatement prepStmt = connection
+					.prepareStatement(populated ? updateQuery : insertQuery);
+			prepStmt.setInt(1, semesterNo);
+			rows = prepStmt.executeUpdate();
 			statement.close();
 		} catch (Exception e) {
 		}
@@ -3137,18 +3141,21 @@ public class DBUtils {
 			int classId, int semester, boolean isOptional, int studentId) {
 		JSONArray assocs = new JSONArray();
 		Connection connection = dbConnection.getConnection();
+
 		String courseQuery = "SELECT `teacherId`, `courseId` FROM "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " WHERE `semester`=" + semester + " AND `classId`=" + classId;
+				+ " WHERE `semester`=? AND `classId`=?";
 		String optionalQuery = "SELECT `teacher_course_ids` FROM "
-				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
-				+ studentId;
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=?";
 		String tcQuery = "SELECT `teacherId`, `courseId` FROM "
 				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(courseQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(courseQuery);
+			prepStmt.setInt(1, semester);
+			prepStmt.setInt(2, classId);
+			ResultSet result = prepStmt.executeQuery();
 
 			while (result.next()) {
 				JSONObject assoc = new JSONObject();
@@ -3161,16 +3168,18 @@ public class DBUtils {
 			}
 
 			if (isOptional) {
-				result = statement.executeQuery(optionalQuery);
+				prepStmt = connection.prepareStatement(optionalQuery);
+				prepStmt.setInt(1, studentId);
+				result = prepStmt.executeQuery();
 
 				if (result.next()) {
 					String[] tcIds = result.getString("teacher_course_ids")
 							.split(",");
-					PreparedStatement prepStmt = connection
+					PreparedStatement prepStatement = connection
 							.prepareStatement(tcQuery);
 					for (String tcId : tcIds) {
-						prepStmt.setInt(1, Integer.parseInt(tcId));
-						ResultSet res = prepStmt.executeQuery();
+						prepStatement.setInt(1, Integer.parseInt(tcId));
+						ResultSet res = prepStatement.executeQuery();
 						if (res.next()) {
 							JSONObject assoc = new JSONObject();
 
@@ -3181,11 +3190,11 @@ public class DBUtils {
 							assocs.add(assoc);
 						}
 					}
-					prepStmt.close();
+					prepStatement.close();
 				}
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3197,34 +3206,38 @@ public class DBUtils {
 			int studentId) {
 		JSONObject assoc = new JSONObject();
 		Connection connection = dbConnection.getConnection();
+
 		String query = "SELECT `teacherId` FROM "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " WHERE `semester`=" + semester + " AND `classId`=" + classId
-				+ " AND `courseId`=" + courseId;
+				+ " WHERE `semester`=? AND `classId`=? AND `courseId`=?";
 		String optionalQuery = "SELECT `teacher_course_ids` FROM "
-				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
-				+ studentId;
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=?";
 		String tcQuery = "SELECT `teacherId`, `courseId` FROM "
 				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, semester);
+			prepStmt.setInt(2, classId);
+			prepStmt.setInt(3, courseId);
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				assoc.put("teacherId", result.getInt("teacherId"));
 				assoc.put("courseId", courseId);
 				assoc.put("optional", 0);
 			} else {
-				result = statement.executeQuery(optionalQuery);
+				prepStmt = connection.prepareStatement(optionalQuery);
+				prepStmt.setInt(1, studentId);
+				result = prepStmt.executeQuery();
 				if (result.next()) {
-					PreparedStatement prepStmt = connection
+					PreparedStatement prepStatement = connection
 							.prepareStatement(tcQuery);
 					String[] optIds = result.getString("teacher_course_ids")
 							.split(",");
 					for (String optId : optIds) {
-						prepStmt.setInt(1, Integer.parseInt(optId));
-						ResultSet res = prepStmt.executeQuery();
+						prepStatement.setInt(1, Integer.parseInt(optId));
+						ResultSet res = prepStatement.executeQuery();
 
 						if (res.next()) {
 							if (res.getInt("courseId") == courseId) {
@@ -3235,11 +3248,11 @@ public class DBUtils {
 							}
 						}
 					}
-					prepStmt.close();
+					prepStatement.close();
 				}
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3250,20 +3263,21 @@ public class DBUtils {
 			int classId, int studentId, int semester, boolean isOptional) {
 		Connection connection = dbConnection.getConnection();
 		int id = -1;
+
 		String tccQuery = "SELECT `id` FROM "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " WHERE `semester`=" + semester + " AND `classId`=" + classId
-				+ " AND `courseId`=" + courseId;
+				+ " WHERE `semester`=? AND `courseId`=? AND `classId`=?";
 		String tcQuery = "SELECT `id` FROM "
-				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `semester`="
-				+ semester + " AND `courseId`=" + courseId;
+				+ DBCredentials.TEACHER_COURSE_TABLE
+				+ " WHERE `semester`=? AND `courseId`=?";
 		String optionalsQuery = "SELECT `teacher_course_ids` FROM "
-				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `studentId`="
-				+ studentId;
+				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `studentId`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(optionalsQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(optionalsQuery);
+			prepStmt.setInt(1, studentId);
+			ResultSet result = prepStmt.executeQuery();
 
 			String optionals = "";
 			if (result.next()) {
@@ -3274,7 +3288,16 @@ public class DBUtils {
 			}
 			String[] optionalList = optionals.split(",");
 
-			result = statement.executeQuery(isOptional ? tcQuery : tccQuery);
+			prepStmt = connection.prepareStatement(isOptional ? tcQuery
+					: tccQuery);
+			prepStmt.setInt(1, semester);
+			prepStmt.setInt(2, courseId);
+
+			if (!isOptional) {
+				prepStmt.setInt(3, classId);
+			}
+
+			result = prepStmt.executeQuery();
 
 			while (result.next()) {
 				boolean found = false;
@@ -3299,7 +3322,8 @@ public class DBUtils {
 				}
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3312,17 +3336,20 @@ public class DBUtils {
 		List<Integer> ids = new ArrayList<Integer>();
 
 		String studentsQuery = "SELECT `id` FROM "
-				+ DBCredentials.STUDENT_TABLE + " WHERE `group`=" + classId;
+				+ DBCredentials.STUDENT_TABLE + " WHERE `group`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(studentsQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(studentsQuery);
+			prepStmt.setInt(1, classId);
+			ResultSet result = prepStmt.executeQuery();
 
 			while (result.next()) {
 				ids.add(result.getInt("id"));
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3363,30 +3390,29 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		String getCurrentCoursesQuery = "SELECT `teacher_course_class_ids` FROM "
-				+ DBCredentials.COURSES_LIST_TABLE
-				+ " WHERE `studentId`="
-				+ studentId;
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=?";
 		String updateCoursesQuery = "UPDATE "
 				+ DBCredentials.COURSES_LIST_TABLE
-				+ " SET `teacher_course_class_ids`=? WHERE `studentId`="
-				+ studentId;
+				+ " SET `teacher_course_class_ids`=? WHERE `studentId`=?";
 		String addCoursesQuery = "INSERT INTO "
 				+ DBCredentials.COURSES_LIST_TABLE
-				+ " (`studentId`,`teacher_course_class_ids`) VALUES ("
-				+ studentId + ",'" + tccId + "')";
+				+ " (`studentId`,`teacher_course_class_ids`) VALUES (?, ?)";
 
 		try {
-			Statement currCoursesStmt = connection.createStatement();
-			PreparedStatement updtCoursesStmt = connection
-					.prepareStatement(updateCoursesQuery);
-			Statement addCoursesStmt = connection.createStatement();
-
-			ResultSet currCour = currCoursesStmt
-					.executeQuery(getCurrentCoursesQuery);
+			PreparedStatement currCoursesStmt = connection
+					.prepareStatement(getCurrentCoursesQuery);
+			currCoursesStmt.setInt(1, studentId);
+			ResultSet currCour = currCoursesStmt.executeQuery();
 			boolean studentIsAdded = currCour.next();
+
 			if (!studentIsAdded) {
 				// add the student
-				addCoursesStmt.executeUpdate(addCoursesQuery);
+				PreparedStatement addCoursesStmt = connection
+						.prepareStatement(addCoursesQuery);
+				addCoursesStmt.setInt(1, studentId);
+				addCoursesStmt.setString(2, tccId + "");
+
+				addCoursesStmt.executeUpdate();
 				addCoursesStmt.close();
 			} else {
 				// update course list
@@ -3405,44 +3431,49 @@ public class DBUtils {
 				allCourses += allCourses.isEmpty() ? "" : ",";
 				allCourses += tccId;
 
+				PreparedStatement updtCoursesStmt = connection
+						.prepareStatement(updateCoursesQuery);
 				updtCoursesStmt.setString(1, allCourses);
+				updtCoursesStmt.setInt(2, studentId);
 				updtCoursesStmt.executeUpdate();
 
 				updtCoursesStmt.close();
 			}
 
+			currCour.close();
 			currCoursesStmt.close();
 		} catch (Exception e) {
 		}
 	}
 
 	private static void updateStudentOptionals(DBConnection dbConnection,
-			int studentId, int tccId, int oldTccId) {
+			int studentId, int tcId, int oldTccId) {
 		Connection connection = dbConnection.getConnection();
 
 		String getCurrentOptionalsQuery = "SELECT `teacher_course_ids` FROM "
-				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
-				+ studentId;
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=?";
 		String updateOptionalsQuery = "UPDATE "
 				+ DBCredentials.COURSES_LIST_TABLE
 				+ " SET `teacher_course_ids`=? WHERE `studentId`=" + studentId;
 		String addOptionalsQuery = "INSERT INTO "
 				+ DBCredentials.COURSES_LIST_TABLE
-				+ " (`studentId`,`teacher_course_ids`) VALUES (" + studentId
-				+ ",'" + tccId + "')";
+				+ " (`studentId`,`teacher_course_ids`) VALUES (?, ?)";
 
 		try {
-			Statement currOptionalsStmt = connection.createStatement();
-			PreparedStatement updtOptionalsStmt = connection
-					.prepareStatement(updateOptionalsQuery);
-			Statement addCoursesStmt = connection.createStatement();
-
-			ResultSet currOpts = currOptionalsStmt
-					.executeQuery(getCurrentOptionalsQuery);
+			PreparedStatement currOptionalsStmt = connection
+					.prepareStatement(getCurrentOptionalsQuery);
+			currOptionalsStmt.setInt(1, studentId);
+			ResultSet currOpts = currOptionalsStmt.executeQuery();
 			boolean studentIsAdded = currOpts.next();
+
 			if (!studentIsAdded) {
 				// add the student
-				addCoursesStmt.executeUpdate(addOptionalsQuery);
+				PreparedStatement addCoursesStmt = connection
+						.prepareStatement(addOptionalsQuery);
+				addCoursesStmt.setInt(1, studentId);
+				addCoursesStmt.setString(2, tcId + "");
+
+				addCoursesStmt.executeUpdate();
 				addCoursesStmt.close();
 			} else {
 				// update course list
@@ -3451,21 +3482,24 @@ public class DBUtils {
 					allOptionals = "";
 				}
 
-				if (tokenAlreadyAdded(allOptionals, tccId)) {
+				if (tokenAlreadyAdded(allOptionals, tcId)) {
 					return;
 				}
 
 				allOptionals = removeFromList(allOptionals, oldTccId);
 
 				allOptionals += allOptionals.isEmpty() ? "" : ",";
-				allOptionals += tccId;
+				allOptionals += tcId;
 
+				PreparedStatement updtOptionalsStmt = connection
+						.prepareStatement(updateOptionalsQuery);
 				updtOptionalsStmt.setString(1, allOptionals);
 				updtOptionalsStmt.executeUpdate();
 
 				updtOptionalsStmt.close();
 			}
 
+			currOpts.close();
 			currOptionalsStmt.close();
 		} catch (Exception e) {
 		}
@@ -3476,13 +3510,15 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 		boolean added = false;
 		String weeksQuery = "SELECT `total_weeks` FROM "
-				+ DBCredentials.HOLIDAYS_TABLE + " WHERE `semester`="
-				+ semester;
+				+ DBCredentials.HOLIDAYS_TABLE + " WHERE `semester`=?";
 
 		try {
-			Statement statement = connection.createStatement();
+			PreparedStatement prepStmt = connection
+					.prepareStatement(weeksQuery);
+			prepStmt.setInt(1, semester);
+
 			// get the number of weeks of semester
-			ResultSet result = statement.executeQuery(weeksQuery);
+			ResultSet result = prepStmt.executeQuery();
 			if (result.next()) {
 				int weeksNo = result.getInt("total_weeks");
 				// also create the empty resources for course
@@ -3501,13 +3537,16 @@ public class DBUtils {
 
 				String resourcesQuery = "INSERT INTO "
 						+ DBCredentials.COURSE_RESOURCES_TABLE
-						+ " (`assoc_id`,`assoc_table_id`,`content`) VALUES ("
-						+ assocId + "," + (isCourse ? 1 : 2) + ",'"
-						+ content.toString() + "')";
+						+ " (`assoc_id`,`assoc_table_id`,`content`) VALUES (?, ?, ?)";
 				// add the empty resources into table
-				added = statement.executeUpdate(resourcesQuery) == 1;
+				prepStmt = connection.prepareStatement(resourcesQuery);
+				prepStmt.setInt(1, assocId);
+				prepStmt.setInt(2, isCourse ? 1 : 2);
+				prepStmt.setString(3, content.toString());
 
-				statement.close();
+				added = prepStmt.executeUpdate() == 1;
+
+				prepStmt.close();
 			}
 		} catch (Exception e) {
 		}
@@ -3519,22 +3558,25 @@ public class DBUtils {
 			int classId, int courseId, int teacherId, int semester, int oldTccId) {
 		Connection connection = dbConnection.getConnection();
 		int row = 0;
+
 		String selectQuery = "SELECT `id` FROM "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " WHERE `courseId`=" + courseId + " AND `classId`=" + classId
-				+ " AND `semester`=" + semester + " AND `teacherId`="
-				+ teacherId;
+				+ " WHERE `courseId`=? AND `classId`=? AND `semester`=? AND `teacherId`=?";
 		String insertQuery = "INSERT INTO "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " (`courseId`,`classId`,`teacherId`,`semester`) VALUES ("
-				+ courseId + "," + classId + "," + teacherId + "," + semester
-				+ ")";
+				+ " (`courseId`,`classId`,`teacherId`,`semester`) VALUES (?, ?, ?, ?)";
 		// get students ids from class
 		List<Integer> studentIds = studentsFromGrupList(dbConnection, classId);
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(selectQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(selectQuery);
+			prepStmt.setInt(1, courseId);
+			prepStmt.setInt(2, classId);
+			prepStmt.setInt(3, semester);
+			prepStmt.setInt(4, teacherId);
+
+			ResultSet result = prepStmt.executeQuery();
 			boolean exists = result.next();
 
 			if (exists) {
@@ -3546,14 +3588,27 @@ public class DBUtils {
 				}
 			} else {
 				// insert
-				row = statement.executeUpdate(insertQuery);
+				prepStmt = connection.prepareStatement(insertQuery);
+				prepStmt.setInt(1, courseId);
+				prepStmt.setInt(2, classId);
+				prepStmt.setInt(3, teacherId);
+				prepStmt.setInt(4, semester);
+
+				row = prepStmt.executeUpdate();
 				if (row == 1) {
 					// get the id
-					result = statement.executeQuery(selectQuery);
+					prepStmt = connection.prepareStatement(selectQuery);
+					prepStmt.setInt(1, courseId);
+					prepStmt.setInt(2, classId);
+					prepStmt.setInt(3, semester);
+					prepStmt.setInt(4, teacherId);
+
+					result = prepStmt.executeQuery();
 					int tccId = -1;
 					if (result.next()) {
 						tccId = result.getInt("id");
 					}
+
 					if (tccId > 0) {
 						boolean added = setEmptyResources(dbConnection,
 								semester, tccId, true);
@@ -3567,7 +3622,7 @@ public class DBUtils {
 				}
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3580,17 +3635,20 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 		int row = 0;
 		String selectQuery = "SELECT `id` FROM "
-				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `courseId`="
-				+ courseId + " AND `semester`=" + semester
-				+ " AND `teacherId`=" + teacherId;
+				+ DBCredentials.TEACHER_COURSE_TABLE
+				+ " WHERE `courseId`=? AND `semester`=? AND `teacherId`=?";
 		String insertQuery = "INSERT INTO "
 				+ DBCredentials.TEACHER_COURSE_TABLE
-				+ " (`courseId`,`teacherId`,`semester`) VALUES (" + courseId
-				+ "," + "," + teacherId + "," + semester + ")";
+				+ " (`courseId`,`teacherId`,`semester`) VALUES (?, ?, ?)";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(selectQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(selectQuery);
+			prepStmt.setInt(1, courseId);
+			prepStmt.setInt(2, semester);
+			prepStmt.setInt(3, teacherId);
+
+			ResultSet result = prepStmt.executeQuery();
 			boolean exists = result.next();
 
 			if (exists) {
@@ -3599,10 +3657,20 @@ public class DBUtils {
 				updateStudentOptionals(dbConnection, studentId, tccId, oldTccId);
 			} else {
 				// insert
-				row = statement.executeUpdate(insertQuery);
+				prepStmt = connection.prepareStatement(insertQuery);
+				prepStmt.setInt(1, courseId);
+				prepStmt.setInt(2, teacherId);
+				prepStmt.setInt(3, semester);
+
+				row = prepStmt.executeUpdate();
 				if (row == 1) {
 					// get the id
-					result = statement.executeQuery(selectQuery);
+					prepStmt = connection.prepareStatement(selectQuery);
+					prepStmt.setInt(1, courseId);
+					prepStmt.setInt(2, semester);
+					prepStmt.setInt(3, teacherId);
+
+					result = prepStmt.executeQuery(selectQuery);
 					int tccId = -1;
 					if (result.next()) {
 						tccId = result.getInt("id");
@@ -3618,7 +3686,8 @@ public class DBUtils {
 				}
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3630,13 +3699,16 @@ public class DBUtils {
 		JSONObject activities = new JSONObject();
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `id`,`activities`,`grades`,`absences` FROM "
-				+ DBCredentials.ACTIVITY_TABLE + " WHERE `assoc_id`=" + assocId
-				+ " AND `assoc_table_id`=" + assocTableId
-				+ " AND `student_id`=" + studentId;
+				+ DBCredentials.ACTIVITY_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=? AND `student_id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+			prepStmt.setInt(3, studentId);
+
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				activities.put("id", result.getInt("id"));
@@ -3654,7 +3726,8 @@ public class DBUtils {
 						: JSONArray.fromObject(abs));
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3665,14 +3738,16 @@ public class DBUtils {
 			int activityPK, int oldSemPaperId, int newSemPaperId) {
 		Connection connection = dbConnection.getConnection();
 		String selectQuery = "SELECT `grades` FROM "
-				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
+				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=?";
 		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
-				+ " SET `grades`= ? WHERE `id`=" + activityPK;
+				+ " SET `grades`= ? WHERE `id`=?";
 
 		try {
 			JSONArray grades = new JSONArray();
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(selectQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(selectQuery);
+			prepStmt.setInt(1, activityPK);
+			ResultSet result = prepStmt.executeQuery();
 
 			// modify grades
 			if (result.next()) {
@@ -3688,14 +3763,14 @@ public class DBUtils {
 					}
 				}
 			}
-			statement.close();
+			result.close();
 
 			// update grades
-			PreparedStatement prepStmt = connection
-					.prepareStatement(updateQuery);
+			prepStmt = connection.prepareStatement(updateQuery);
 			prepStmt.setString(1, grades.toString());
-			prepStmt.executeUpdate();
+			prepStmt.setInt(2, activityPK);
 
+			prepStmt.executeUpdate();
 			prepStmt.close();
 		} catch (Exception e) {
 		}
@@ -3705,14 +3780,16 @@ public class DBUtils {
 			int activityPK, int absenceId, int isMotivated) {
 		Connection connection = dbConnection.getConnection();
 		String selectQuery = "SELECT `absences` FROM "
-				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
+				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=?";
 		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
-				+ " SET `absences`= ? WHERE `id`=" + activityPK;
+				+ " SET `absences`= ? WHERE `id`=?";
 
 		try {
 			JSONArray absences = new JSONArray();
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(selectQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(selectQuery);
+			prepStmt.setInt(1, activityPK);
+			ResultSet result = prepStmt.executeQuery();
 
 			// modify absence
 			if (result.next()) {
@@ -3726,14 +3803,14 @@ public class DBUtils {
 					}
 				}
 			}
-			statement.close();
+			result.close();
 
 			// update grades
-			PreparedStatement prepStmt = connection
-					.prepareStatement(updateQuery);
+			prepStmt = connection.prepareStatement(updateQuery);
 			prepStmt.setString(1, absences.toString());
-			prepStmt.executeUpdate();
+			prepStmt.setInt(2, activityPK);
 
+			prepStmt.executeUpdate();
 			prepStmt.close();
 		} catch (Exception e) {
 		}
@@ -3750,14 +3827,18 @@ public class DBUtils {
 	public static int addNewActivity(DBConnection dbConnection, int activityPK,
 			String columnName, JSONObject activity) {
 		Connection connection = dbConnection.getConnection();
+		int rows = 0;
+
 		String selectQuery = "SELECT `" + columnName + "` FROM "
-				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
+				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=?";
 		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
 				+ " SET `" + columnName + "`=? WHERE `id`=" + activityPK;
-		int rows = 0;
+
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(selectQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(selectQuery);
+			prepStmt.setInt(1, activityPK);
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				JSONArray allGenericActivities = new JSONArray();
@@ -3779,14 +3860,15 @@ public class DBUtils {
 				}
 				allGenericActivities.add(activity);
 
-				PreparedStatement stmt = connection
-						.prepareStatement(updateQuery);
-				stmt.setString(1, allGenericActivities.toString());
-				rows = stmt.executeUpdate();
-				stmt.close();
+				prepStmt = connection.prepareStatement(updateQuery);
+				prepStmt.setString(1, allGenericActivities.toString());
+				prepStmt.setInt(2, activityPK);
+
+				rows = prepStmt.executeUpdate();
+				prepStmt.close();
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3804,27 +3886,40 @@ public class DBUtils {
 			int assocTableId, int studentId, String columnName,
 			JSONObject activity) {
 		Connection connection = dbConnection.getConnection();
+		int rows = 0;
+
 		String insertQuery = "INSERT INTO " + DBCredentials.ACTIVITY_TABLE
 				+ " (`assoc_id`,`assoc_table_id`,`student_id`,`" + columnName
-				+ "`) VALUES (" + assocId + "," + assocTableId + ","
-				+ studentId + ",'[" + activity.toString() + "]')";
+				+ "`) VALUES (?, ?, ?, '[?]')";
 		String selectQuery = "SELECT `id` FROM " + DBCredentials.ACTIVITY_TABLE
 				+ " WHERE `assoc_id`=" + assocId + " AND `assoc_table_id`="
 				+ assocTableId + " AND `student_id`=" + studentId;
-		int rows = 0;
+
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(insertQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(insertQuery);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+			prepStmt.setInt(3, studentId);
+			prepStmt.setString(4, activity.toString());
+
+			rows = prepStmt.executeUpdate();
 
 			if (rows == 1) {
 				// added
-				ResultSet result = statement.executeQuery(selectQuery);
+				prepStmt = connection.prepareStatement(selectQuery);
+				prepStmt.setInt(1, assocId);
+				prepStmt.setInt(2, assocTableId);
+				prepStmt.setInt(3, studentId);
+
+				ResultSet result = prepStmt.executeQuery();
 				if (result.next()) {
 					// overwrite rows with id
 					rows = result.getInt("id");
 				}
+				result.close();
 			}
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3834,15 +3929,19 @@ public class DBUtils {
 	public static int removeActivity(DBConnection dbConnection, int activityPK,
 			String columnName, int activityId) {
 		Connection connection = dbConnection.getConnection();
-		String selectQuery = "SELECT `" + columnName + "` FROM "
-				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
-		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
-				+ " SET `" + columnName + "`=? WHERE `id`=" + activityPK;
 		int rows = 0;
 
+		String selectQuery = "SELECT `" + columnName + "` FROM "
+				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=?";
+		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
+				+ " SET `" + columnName + "`=? WHERE `id`=?";
+
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(selectQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(selectQuery);
+			prepStmt.setInt(1, activityPK);
+			ResultSet result = prepStmt.executeQuery();
+
 			if (result.next()) {
 				JSONArray genericActivities = JSONArray.fromObject(result
 						.getString(columnName));
@@ -3854,14 +3953,16 @@ public class DBUtils {
 					}
 				}
 
-				PreparedStatement stmt = connection
-						.prepareStatement(updateQuery);
-				stmt.setString(1, genericActivities.toString());
-				rows = stmt.executeUpdate();
-				stmt.close();
+				prepStmt = connection.prepareStatement(updateQuery);
+				prepStmt.setString(1, genericActivities.toString());
+				prepStmt.setInt(2, activityPK);
+
+				rows = prepStmt.executeUpdate();
+				prepStmt.close();
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3871,11 +3972,12 @@ public class DBUtils {
 	public static int updateActivity(DBConnection dbConnection, int activityPK,
 			String column, JSONObject activity) {
 		Connection connection = dbConnection.getConnection();
-		String selectQuery = "SELECT `" + column + "` FROM "
-				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=" + activityPK;
-		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
-				+ " SET `" + column + "`=? WHERE `id`=" + activityPK;
 		int rows = 0;
+
+		String selectQuery = "SELECT `" + column + "` FROM "
+				+ DBCredentials.ACTIVITY_TABLE + " WHERE `id`=?";
+		String updateQuery = "UPDATE " + DBCredentials.ACTIVITY_TABLE
+				+ " SET `" + column + "`=? WHERE `id`=?";
 
 		boolean doExclusiveCheck = false;
 		final String SENSIBLE_KEY = "isSemestrialPaper";
@@ -3885,8 +3987,11 @@ public class DBUtils {
 		}
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(selectQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(selectQuery);
+			prepStmt.setInt(1, activityPK);
+			ResultSet result = prepStmt.executeQuery();
+
 			if (result.next()) {
 				JSONArray genericActivities = JSONArray.fromObject(result
 						.getString(column));
@@ -3907,14 +4012,16 @@ public class DBUtils {
 					}
 				}
 
-				PreparedStatement stmt = connection
-						.prepareStatement(updateQuery);
-				stmt.setString(1, genericActivities.toString());
-				rows = stmt.executeUpdate();
-				stmt.close();
+				prepStmt = connection.prepareStatement(updateQuery);
+				prepStmt.setString(1, genericActivities.toString());
+				prepStmt.setInt(2, activityPK);
+
+				rows = prepStmt.executeUpdate();
+				prepStmt.close();
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3924,26 +4031,35 @@ public class DBUtils {
 	public static JSONArray getFeedbackResponses(DBConnection dbConnection,
 			int assocId, int assocTableId) {
 		JSONArray responses = new JSONArray();
-		String selectIdQuery = "SELECT `id` FROM "
-				+ DBCredentials.FEEDBACK_REQUEST_TABLE + " WHERE `assoc_id`="
-				+ assocId + " AND `assoc_table_id`=" + assocTableId;
-		String responsesQuery = "SELECT `opinion` FROM "
-				+ DBCredentials.FEEDBACK_TABLE + " WHERE `feedback_id`=";
 		Connection connection = dbConnection.getConnection();
+
+		String selectIdQuery = "SELECT `id` FROM "
+				+ DBCredentials.FEEDBACK_REQUEST_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
+		String responsesQuery = "SELECT `opinion` FROM "
+				+ DBCredentials.FEEDBACK_TABLE + " WHERE `feedback_id`=?";
+
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(selectIdQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(selectIdQuery);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				int id = result.getInt("id");
-				ResultSet resp = statement.executeQuery(responsesQuery + id);
+				prepStmt = connection.prepareStatement(responsesQuery);
+				prepStmt.setInt(1, id);
+				ResultSet resp = prepStmt.executeQuery();
+
 				while (resp.next()) {
 					String response = resp.getString("opinion");
 					responses.add(response);
 				}
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3954,12 +4070,13 @@ public class DBUtils {
 			int studentId) {
 		JSONArray archive = new JSONArray();
 		String query = "SELECT `archive` FROM "
-				+ DBCredentials.GRADES_ARCHIVE_TABLE + " WHERE `student_id`="
-				+ studentId;
+				+ DBCredentials.GRADES_ARCHIVE_TABLE + " WHERE `student_id`=?";
 		Connection connection = dbConnection.getConnection();
+
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, studentId);
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				String rawGrades = result.getString("archive");
@@ -3968,12 +4085,14 @@ public class DBUtils {
 				}
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
 		return archive;
 	}
+	
 
 	public static boolean cheangeSemester(DBConnection dbConnection) {
 		String selectQuery = "SELECT `semester` FROM "
@@ -4001,14 +4120,14 @@ public class DBUtils {
 	public static String getCourseNameFromAssocId(DBConnection dbConnection,
 			int assocId, int assocTableId) {
 		String table = getAssocTableName(dbConnection, assocTableId);
-		String query = "SELECT `courseId` FROM " + table + " WHERE `id`="
-				+ assocId;
+		String query = "SELECT `courseId` FROM " + table + " WHERE `id`=?";
 		String courseName = "";
 
 		Connection connection = dbConnection.getConnection();
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				int courseId = result.getInt("courseId");
@@ -4016,7 +4135,8 @@ public class DBUtils {
 				courseName = course.getString("name");
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -4390,6 +4510,7 @@ public class DBUtils {
 		}
 
 	}
+	
 
 	public static String getYear(DBConnection dbConnection) {
 		String query = "SELECT `year` FROM " + DBCredentials.YEAR_TABLE
@@ -4503,6 +4624,7 @@ public class DBUtils {
 		} catch (Exception e) {
 		}
 	}
+	
 
 	public static JSONObject getResetInfo(DBConnection dbConnection,
 			String email) {
