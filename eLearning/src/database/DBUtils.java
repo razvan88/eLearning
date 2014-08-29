@@ -1,9 +1,6 @@
 package database;
 
-import static database.DBCredentials.DRIVER;
-
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -12,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import utils.Grades;
-import utils.TableModels;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -23,146 +19,6 @@ public class DBUtils {
 		sTeachers = new HashMap<Integer, JSONArray>();
 	}
 
-	private static DBConnection createDatabase(String databaseName) {
-		Connection connection = null;
-		String link = DBCredentials.getDefaultLink();
-		String createQuery = "CREATE DATABASE IF NOT EXISTS `" + databaseName
-				+ "` " + "DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci";
-
-		try {
-			Class.forName(DRIVER).newInstance();
-			connection = DriverManager.getConnection(link);
-			Statement statement = connection.createStatement();
-
-			statement.executeUpdate(createQuery);
-			statement.close();
-		} catch (Exception e) {
-			return null;
-		}
-
-		DBConnection dbConnection = new DBConnection(databaseName);
-		dbConnection.openConnection();
-		return dbConnection;
-	}
-
-	private static String getTableCreationQuery(JSONObject structure) {
-		List<Integer> pk = new ArrayList<Integer>();
-		List<Integer> unq = new ArrayList<Integer>();
-		StringBuffer query = new StringBuffer("CREATE TABLE IF NOT EXISTS `");
-		String tableName = structure.getString("name");
-		query.append(tableName + "` (");
-
-		JSONArray columns = structure.getJSONArray("columns");
-		for (int i = 0; i < columns.size(); i++) {
-			JSONObject column = columns.getJSONObject(i);
-
-			String colName = column.getString("name");
-			String colType = column.getString("type").toUpperCase();
-			boolean isTextColumn = colType.equalsIgnoreCase("varchar")
-					|| colType.equalsIgnoreCase("mediumtext")
-					|| colType.equalsIgnoreCase("longtext")
-					|| colType.equalsIgnoreCase("tinytext")
-					|| colType.equalsIgnoreCase("text");
-			int colLength = column.containsKey("length") ? column
-					.getInt("length") : -1;
-			int colNull = column.getInt("isNull");
-			int colPK = column.getInt("isPrimaryKey");
-			int colAI = column.getInt("isAutoIncrement");
-			int colUnq = column.getInt("isUnique");
-
-			query.append("`" + colName + "` ");
-			query.append(colType);
-
-			if (colLength > 0) {
-				query.append("(" + colLength + ") ");
-			} else {
-				query.append(" ");
-			}
-
-			if (isTextColumn) {
-				query.append("CHARACTER SET utf8 COLLATE utf8_general_ci ");
-			}
-
-			query.append((colNull == 0 ? "NOT " : "") + "NULL");
-			query.append(colAI == 0 ? "" : " AUTO_INCREMENT");
-
-			if (i + 1 < columns.size()) {
-				query.append(", ");
-			}
-
-			if (colPK == 1) {
-				// save primary keys
-				pk.add(i);
-			}
-			if (colUnq == 1) {
-				// save unique keys
-				unq.add(i);
-			}
-		}
-
-		if (!pk.isEmpty()) {
-			// add primary keys
-			query.append(", PRIMARY KEY (");
-			for (int key = 0; key < pk.size(); key++) {
-				String name = columns.getJSONObject(key).getString("name");
-				query.append("`" + name + "`");
-				if (key + 1 < pk.size()) {
-					query.append(", ");
-				}
-			}
-			query.append(")");
-		}
-
-		if (!unq.isEmpty()) {
-			// add unique keys
-			query.append(", UNIQUE KEY (");
-			for (int key = 0; key < unq.size(); key++) {
-				String name = columns.getJSONObject(key).getString("name");
-				query.append("`" + name + "`");
-				if (key + 1 < unq.size()) {
-					query.append(", ");
-				}
-			}
-			query.append(")");
-		}
-
-		query.append(") ENGINE=InnoDB");
-
-		return query.toString();
-	}
-
-	private static boolean createTable(DBConnection dbConnection,
-			JSONObject structure) {
-		String query = getTableCreationQuery(structure);
-
-		try {
-			Connection connection = dbConnection.getConnection();
-			Statement statement = connection.createStatement();
-			statement.executeUpdate(query);
-			statement.close();
-		} catch (Exception e) {
-			return false;
-		}
-
-		return true;
-	}
-
-	public static boolean generateEntireDatabase(String dbName) {
-		DBConnection conn = DBUtils.createDatabase(dbName);
-
-		if (conn == null) {
-			return false;
-		}
-
-		boolean ok = true;
-
-		for (JSONObject model : TableModels.getAllTableModels()) {
-			ok &= DBUtils.createTable(conn, model);
-		}
-
-		return ok;
-	}
-
 	public static JSONObject checkLogin(DBConnection dbConnection,
 			String username, String password) {
 		Connection connection = dbConnection.getConnection();
@@ -170,62 +26,50 @@ public class DBUtils {
 
 		try {
 			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement
-					.executeQuery("SELECT `semester` FROM "
-							+ DBCredentials.SEMESTER_TABLE + " WHERE `id`=1");
-			if (resultSet.next()) {
-				result.put("semester", resultSet.getInt("semester"));
+			ResultSet resSet = statement.executeQuery("SELECT `semester` FROM "
+					+ DBCredentials.SEMESTER_TABLE + " WHERE `id`=1");
+			if (resSet.next()) {
+				result.put("semester", resSet.getInt("semester"));
 			}
 
-			resultSet = statement
-					.executeQuery("SELECT `id`, `password`, `firstName`, `lastName` FROM "
-							+ DBCredentials.STUDENT_TABLE
-							+ " WHERE `username`='" + username + "'");
-			if (resultSet.next()) {
-				result.put("login", resultSet.getString(2).equals(password));
-				result.put("userId", resultSet.getInt(1));
-				result.put("firstName", resultSet.getString(3));
-				result.put("lastName", resultSet.getString(4));
-				result.put("table", "student");
-			} else {
-				resultSet = statement
-						.executeQuery("SELECT `id`, `password`, `firstName`, `lastName` FROM "
-								+ DBCredentials.TEACHER_TABLE
-								+ " WHERE `username`='" + username + "'");
+			resSet.close();
+			statement.close();
+
+			String[] tables = new String[] { DBCredentials.STUDENT_TABLE,
+					DBCredentials.TEACHER_TABLE, DBCredentials.AUXILIARY_TABLE,
+					DBCredentials.ADMIN_TABLE };
+
+			for (String table : tables) {
+				String query = "SELECT `id`, `password`, `firstName`, `lastName` FROM "
+						+ table + " WHERE `username`=?";
+				String queryAdmin = "SELECT `id`, `password` FROM " + table
+						+ " WHERE `username`=?";
+
+				PreparedStatement prepStmt = connection.prepareStatement(query);
+
+				if (table.equals(DBCredentials.ADMIN_TABLE)) {
+					prepStmt = connection.prepareStatement(queryAdmin);
+				}
+
+				prepStmt.setString(1, username);
+				ResultSet resultSet = prepStmt.executeQuery();
+
 				if (resultSet.next()) {
-					result.put("login", resultSet.getString(2).equals(password));
-					result.put("userId", resultSet.getInt(1));
-					result.put("firstName", resultSet.getString(3));
-					result.put("lastName", resultSet.getString(4));
-					result.put("table", "teacher");
-				} else {
-					resultSet = statement
-							.executeQuery("SELECT `id`, `password`, `firstName`, `lastName` FROM "
-									+ DBCredentials.AUXILIARY_TABLE
-									+ " WHERE `username`='" + username + "'");
-					if (resultSet.next()) {
-						result.put("login",
-								resultSet.getString(2).equals(password));
-						result.put("userId", resultSet.getInt(1));
-						result.put("firstName", resultSet.getString(3));
-						result.put("lastName", resultSet.getString(4));
-						result.put("table", "auxiliary");
-					} else {
-						resultSet = statement
-								.executeQuery("SELECT `id`, `password` FROM "
-										+ DBCredentials.ADMIN_TABLE
-										+ " WHERE `username`='" + username
-										+ "'");
-						if (resultSet.next()) {
-							result.put("login",
-									resultSet.getString(2).equals(password));
-							result.put("userId", resultSet.getInt(1));
-							result.put("table", "admin");
-						}
+					result.put("login",
+							resultSet.getString("password").equals(password));
+					result.put("userId", resultSet.getInt("id"));
+					result.put("table", table);
+
+					if (!table.equals(DBCredentials.ADMIN_TABLE)) {
+						result.put("firstName",
+								resultSet.getString("firstName"));
+						result.put("lastName", resultSet.getString("lastName"));
 					}
 				}
+
+				resultSet.close();
+				prepStmt.close();
 			}
-			resultSet.close();
 		} catch (Exception e) {
 			return result;
 		}
@@ -236,35 +80,42 @@ public class DBUtils {
 	public static boolean checkPassword(DBConnection dbConnection,
 			String table, int userId, String pass) {
 		Connection connection = dbConnection.getConnection();
-
-		String query = "SELECT `password` FROM " + table + " WHERE `id`="
-				+ userId;
+		String query = "SELECT `password` FROM " + table + " WHERE `id`=?";
+		boolean match = false;
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, userId);
+			ResultSet resultSet = prepStmt.executeQuery();
 
-			if (result.next()) {
-				return pass.equals(result.getString(1));
+			if (resultSet.next()) {
+				match = pass.equals(resultSet.getString(1));
 			}
 
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
-			return false;
 		}
 
-		return false;
+		return match;
 	}
 
 	public static int updateColumn(DBConnection dbConnection, String table,
 			int userId, String column, String value) {
 		Connection connection = dbConnection.getConnection();
 
-		String query = "UPDATE " + table + " SET `" + column + "`='" + value
-				+ "' WHERE `id`=" + userId;
+		String query = "UPDATE " + table + " SET `" + column
+				+ "`=? WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			statement.executeUpdate(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+
+			prepStmt.setString(1, value);
+			prepStmt.setInt(2, userId);
+
+			prepStmt.executeUpdate();
+
+			prepStmt.close();
 		} catch (Exception e) {
 			return 0;
 		}
@@ -279,16 +130,17 @@ public class DBUtils {
 
 		String query = "SELECT `firstName`, `lastName`, `photo`, `birthdate`, `description`, `email`";
 
-		if (table.equals("student")) {
+		if (table.equals(DBCredentials.STUDENT_TABLE)) {
 			query += ",`group`";
-		} else if (table.equals("teacher")) {
+		} else if (table.equals(DBCredentials.TEACHER_TABLE)) {
 			query += ",`courses`";
 		}
 
-		query += " FROM " + table + " WHERE `id`=" + userId;
+		query += " FROM " + table + " WHERE `id`=?";
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet rs = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, userId);
+			ResultSet rs = prepStmt.executeQuery();
 
 			if (rs.next()) {
 				info.put("firstName", rs.getString("firstName"));
@@ -298,10 +150,10 @@ public class DBUtils {
 				info.put("email", rs.getString("email"));
 				info.put("birthdate", rs.getString("birthdate"));
 
-				if (table.equals("student")) {
+				if (table.equals(DBCredentials.STUDENT_TABLE)) {
 					info.put("group",
 							DBCommonOperations.getGroupName(rs.getInt("group")));
-				} else if (table.equals("teacher")) {
+				} else if (table.equals(DBCredentials.TEACHER_TABLE)) {
 					String[] courses = rs.getString("courses").split(",");
 					JSONArray coursesList = DBCommonOperations
 							.getCoursesInfo(courses);
@@ -309,8 +161,10 @@ public class DBUtils {
 				}
 
 			}
+
+			rs.close();
+			prepStmt.close();
 		} catch (Exception e) {
-			return null;
 		}
 
 		return info;
@@ -322,18 +176,21 @@ public class DBUtils {
 		JSONObject info = new JSONObject();
 
 		String query = "SELECT `description`, `email` FROM " + table
-				+ " WHERE `id`=" + userId;
+				+ " WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet rs = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, userId);
+			ResultSet rs = prepStmt.executeQuery();
 
 			if (rs.next()) {
 				info.put("description", rs.getString("description"));
 				info.put("email", rs.getString("email"));
 			}
+
+			rs.close();
+			prepStmt.close();
 		} catch (Exception e) {
-			return null;
 		}
 
 		return info;
@@ -370,12 +227,13 @@ public class DBUtils {
 			int newsArticleId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT * FROM " + DBCredentials.SCHOOL_NEWS_TABLE
-				+ " WHERE `id`=" + newsArticleId;
+				+ " WHERE `id`=?";
 		JSONObject article = new JSONObject();
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, newsArticleId);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			if (resultSet.next()) {
 				article.put("id", resultSet.getInt("id"));
@@ -384,7 +242,8 @@ public class DBUtils {
 				article.put("content", resultSet.getString("content"));
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -394,19 +253,20 @@ public class DBUtils {
 	public static String getTimetable(DBConnection dbConnection, int classId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `timetable` FROM "
-				+ DBCredentials.SCHOOL_TIMETABLE_TABLE + " WHERE `classId`="
-				+ classId;
+				+ DBCredentials.SCHOOL_TIMETABLE_TABLE + " WHERE `classId`=?";
 		String timetable = "";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, classId);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			if (resultSet.next()) {
 				timetable = resultSet.getString(1);
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 			timetable = "{}";
 		}
@@ -417,31 +277,32 @@ public class DBUtils {
 	public static int getClassIdForUser(DBConnection dbConnection, int userId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `group` FROM " + DBCredentials.STUDENT_TABLE
-				+ " WHERE `id`=" + userId;
+				+ " WHERE `id`=?";
+		int classId = -1;
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, userId);
+			ResultSet resultSet = prepStmt.executeQuery(query);
 
 			if (resultSet.next()) {
-				return resultSet.getInt(1);
+				classId = resultSet.getInt("group");
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
-		return -1;
+		return classId;
 	}
 
 	public static JSONArray getCoursesList(DBConnection dbConnection, int userId) {
 		Connection connection = dbConnection.getConnection();
 		String coursesIdsQuery = "SELECT `teacher_course_class_ids` FROM "
-				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
-				+ userId;
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=?";
 		String optionalIdsQuery = "SELECT `teacher_course_ids` FROM "
-				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
-				+ userId;
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=?";
 		String courseInfoQuery = "SELECT `teacherId`, `courseId`, `semester` FROM "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE + " WHERE `id`=?";
 		String optionalInfoQuery = "SELECT `teacherId`, `courseId`, `semester` FROM "
@@ -449,10 +310,12 @@ public class DBUtils {
 		JSONArray courses = new JSONArray();
 
 		try {
-			Statement statement = connection.createStatement();
-
 			// get courses
-			ResultSet resultSet = statement.executeQuery(coursesIdsQuery);
+			PreparedStatement prepStmtCourses = connection
+					.prepareStatement(coursesIdsQuery);
+			prepStmtCourses.setInt(1, userId);
+			ResultSet resultSet = prepStmtCourses.executeQuery();
+
 			if (resultSet.next()) {
 				PreparedStatement prepStmt = connection
 						.prepareStatement(courseInfoQuery);
@@ -478,9 +341,14 @@ public class DBUtils {
 				}
 				prepStmt.close();
 			}
+			prepStmtCourses.close();
 
 			// get optionals
-			resultSet = statement.executeQuery(optionalIdsQuery);
+			PreparedStatement prepStmtOptionals = connection
+					.prepareStatement(optionalIdsQuery);
+			prepStmtOptionals.setInt(1, userId);
+			resultSet = prepStmtOptionals.executeQuery();
+
 			if (resultSet.next()) {
 				PreparedStatement prepStmt = connection
 						.prepareStatement(optionalInfoQuery);
@@ -503,8 +371,8 @@ public class DBUtils {
 				}
 				prepStmt.close();
 			}
+			prepStmtOptionals.close();
 
-			statement.close();
 		} catch (Exception e) {
 		}
 
@@ -516,19 +384,22 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `id` FROM "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " WHERE `courseId`=" + courseId + " AND `classId`=" + classId
-				+ " AND `semester`=" + semester;
+				+ " WHERE `courseId`=? AND `classId`=? AND `semester`=?";
 		int id = 0;
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, courseId);
+			prepStmt.setInt(2, classId);
+			prepStmt.setInt(3, semester);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			if (resultSet.next()) {
 				id = resultSet.getInt("id");
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -539,28 +410,37 @@ public class DBUtils {
 			boolean isStudent, int courseId, int semester) {
 		Connection connection = dbConnection.getConnection();
 		String tcIdsQuery = "SELECT `teacher_course_ids` FROM "
-				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`="
-				+ userId;
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=?";
 		String tcQuery = "SELECT `id` FROM "
-				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `courseId`="
-				+ courseId + " AND `semester`=" + semester;
-		String teacherTcQuery = tcQuery + " AND `teacherId`=" + userId;
+				+ DBCredentials.TEACHER_COURSE_TABLE
+				+ " WHERE `courseId`=? AND `semester`=?";
+		String teacherTcQuery = tcQuery + " AND `teacherId`=?";
 		int id = 0;
 
 		try {
-			Statement statement = connection.createStatement();
+			PreparedStatement prepStmt = connection
+					.prepareStatement(teacherTcQuery);
+			prepStmt.setInt(1, courseId);
+			prepStmt.setInt(2, semester);
+			prepStmt.setInt(3, userId);
 
 			if (!isStudent) {
-				ResultSet resultSet = statement.executeQuery(teacherTcQuery);
+				ResultSet resultSet = prepStmt.executeQuery();
 				int tcId = -1;
+
 				if (resultSet.next()) {
 					tcId = resultSet.getInt("id");
 				}
-				statement.close();
+
+				resultSet.close();
+				prepStmt.close();
+
 				return tcId;
 			}
 
-			ResultSet resultSet = statement.executeQuery(tcIdsQuery);
+			prepStmt = connection.prepareStatement(tcIdsQuery);
+			prepStmt.setInt(1, userId);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			String tcIdsVal = "";
 			if (resultSet.next()) {
@@ -571,7 +451,11 @@ public class DBUtils {
 			for (String tcId : tcIdsArray) {
 				tcIds.add(Integer.parseInt(tcId));
 			}
-			resultSet = statement.executeQuery(tcQuery);
+
+			prepStmt = connection.prepareStatement(tcQuery);
+			prepStmt.setInt(1, courseId);
+			prepStmt.setInt(2, semester);
+			resultSet = prepStmt.executeQuery();
 
 			boolean found = false;
 			while (resultSet.next()) {
@@ -589,7 +473,7 @@ public class DBUtils {
 				}
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -609,17 +493,19 @@ public class DBUtils {
 			int assocTableId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `table` FROM " + DBCredentials.ASSOC_TABLE
-				+ " WHERE `id`=" + assocTableId;
+				+ " WHERE `id`=?";
 		String table = "";
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocTableId);
+			ResultSet resultSet = prepStmt.executeQuery(query);
 
 			if (resultSet.next()) {
 				table = resultSet.getString("table");
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -630,20 +516,23 @@ public class DBUtils {
 			int assocId, int assocTableId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `content` FROM "
-				+ DBCredentials.COURSE_RESOURCES_TABLE + " WHERE `assoc_id`="
-				+ assocId + " AND `assoc_table_id`=" + assocTableId;
+				+ DBCredentials.COURSE_RESOURCES_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
 		JSONArray resources = new JSONArray();
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			if (resultSet.next()) {
 				String rawJson = resultSet.getString("content");
 				resources = JSONArray.fromObject(rawJson);
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -654,12 +543,13 @@ public class DBUtils {
 			int semester) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT * FROM " + DBCredentials.HOLIDAYS_TABLE
-				+ " WHERE `semester`=" + semester;
+				+ " WHERE `semester`=?";
 		JSONObject result = new JSONObject();
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, semester);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			if (resultSet.next()) {
 				String startingDate = resultSet.getString("starting_date");
@@ -677,7 +567,7 @@ public class DBUtils {
 				result.put("holidayWeeks", dates);
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -689,22 +579,24 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		String homeworkQuery = "SELECT * FROM " + DBCredentials.HOMEWORK_TABLE
-				+ " WHERE `assoc_id`=" + assocId + " AND `assoc_table_id`="
-				+ assocTableId;
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
 		String homeworkResultQuery = "SELECT * FROM "
-				+ DBCredentials.HOMEWORK_RESULTS_TABLE + " WHERE `student_id`="
-				+ studentId + " AND `homework_id`=?";
+				+ DBCredentials.HOMEWORK_RESULTS_TABLE
+				+ " WHERE `student_id`=? AND `homework_id`=?";
 		JSONArray result = new JSONArray();
 
 		try {
-			Statement homeworkStatement = connection.createStatement();
-			ResultSet homeworkResultSet = homeworkStatement
-					.executeQuery(homeworkQuery);
+			PreparedStatement prepStmtHomework = connection
+					.prepareStatement(homeworkQuery);
+			prepStmtHomework.setInt(1, assocId);
+			prepStmtHomework.setInt(2, assocTableId);
+			ResultSet homeworkResultSet = prepStmtHomework.executeQuery();
 
 			while (homeworkResultSet.next()) {
 				JSONObject homework = new JSONObject();
 
-				homework.put("id", homeworkResultSet.getInt("id"));
+				int homeworkId = homeworkResultSet.getInt("id");
+				homework.put("id", homeworkId);
 				homework.put("name", homeworkResultSet.getString("name"));
 				homework.put("text", homeworkResultSet.getString("content"));
 				homework.put("deadline",
@@ -714,10 +606,11 @@ public class DBUtils {
 				homework.put("maxGrade",
 						homeworkResultSet.getString("maxGrade"));
 
-				PreparedStatement resultsStatement = connection
+				PreparedStatement prepStmtResults = connection
 						.prepareStatement(homeworkResultQuery);
-				resultsStatement.setInt(1, homeworkResultSet.getInt("id"));
-				ResultSet resultsResultSet = resultsStatement.executeQuery();
+				prepStmtResults.setInt(1, studentId);
+				prepStmtResults.setInt(2, homeworkId);
+				ResultSet resultsResultSet = prepStmtResults.executeQuery();
 
 				if (resultsResultSet.next()) {
 					homework.put("uploaded",
@@ -735,12 +628,14 @@ public class DBUtils {
 					homework.put("uploaded", 0);
 				}
 
-				resultsStatement.close();
+				resultsResultSet.close();
+				prepStmtResults.close();
 
 				result.add(homework);
 			}
 
-			homeworkStatement.close();
+			homeworkResultSet.close();
+			prepStmtHomework.close();
 		} catch (Exception e) {
 		}
 
@@ -751,20 +646,23 @@ public class DBUtils {
 			int assocId, int assocTableId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `available`, `aspects` FROM "
-				+ DBCredentials.FEEDBACK_REQUEST_TABLE + " WHERE `assoc_id`="
-				+ assocId + " AND `assoc_table_id`=" + assocTableId;
+				+ DBCredentials.FEEDBACK_REQUEST_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
 		JSONObject feedback = new JSONObject();
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			if (resultSet.next()) {
 				feedback.put("isAvailable", resultSet.getInt("available"));
 				feedback.put("aspects", resultSet.getString("aspects"));
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -774,14 +672,17 @@ public class DBUtils {
 	public static JSONArray getForumSummary(DBConnection dbConnection,
 			int assocId, int assocTableId, int isAnnouncement) {
 		Connection connection = dbConnection.getConnection();
-		String query = "SELECT * FROM " + DBCredentials.FORUM_SUMMARY_TABLE
-				+ " WHERE `assoc_id`=" + assocId + " AND `assoc_table_id`="
-				+ assocTableId + " AND `is_announcement`=" + isAnnouncement;
+		String query = "SELECT * FROM "
+				+ DBCredentials.FORUM_SUMMARY_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=? AND `is_announcement`=?";
 		JSONArray forum = new JSONArray();
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+			prepStmt.setInt(3, isAnnouncement);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			while (resultSet.next()) {
 				JSONObject subject = new JSONObject();
@@ -820,7 +721,8 @@ public class DBUtils {
 				forum.add(subject);
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -831,12 +733,13 @@ public class DBUtils {
 			int subjectId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT * FROM " + DBCredentials.FORUM_SUBJECT_TABLE
-				+ " WHERE `subject_id`=" + subjectId;
+				+ " WHERE `subject_id`=?";
 		JSONArray forum = new JSONArray();
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, subjectId);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			while (resultSet.next()) {
 				JSONObject subject = new JSONObject();
@@ -862,7 +765,8 @@ public class DBUtils {
 				forum.add(subject);
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -874,14 +778,16 @@ public class DBUtils {
 		JSONArray messages = new JSONArray();
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT * FROM " + DBCredentials.MESSAGES_TABLE
-				+ " WHERE (`initiator_id`=" + userId
-				+ " AND `initiator_table`='" + userTable + "')"
-				+ " OR (`responder_id`=" + userId + " AND `responder_table`='"
-				+ userTable + "')";
+				+ " WHERE (`initiator_id`=? AND `initiator_table`=?)"
+				+ " OR (`responder_id`=? AND `responder_table`=?)";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, userId);
+			prepStmt.setString(2, userTable);
+			prepStmt.setInt(3, userId);
+			prepStmt.setString(4, userTable);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			while (resultSet.next()) {
 				JSONObject message = new JSONObject();
@@ -892,15 +798,19 @@ public class DBUtils {
 				int initiatorId = resultSet.getInt("initiator_id");
 				String tableName = resultSet.getString("initiator_table");
 				String userQuery = "SELECT `firstName`, `lastName`, `photo` FROM "
-						+ tableName + " WHERE `id`=" + initiatorId;
-				Statement userStmt = connection.createStatement();
-				ResultSet userResultSet = userStmt.executeQuery(userQuery);
-				if (userResultSet.next()) {
-					initiatorName = userResultSet.getString("firstName") + " "
-							+ userResultSet.getString("lastName");
-					initiatorPhoto = userResultSet.getString("photo");
+						+ tableName + " WHERE `id`=?";
+
+				PreparedStatement prepStmtUser = connection
+						.prepareStatement(userQuery);
+				prepStmtUser.setInt(1, initiatorId);
+				ResultSet resultSetUser = prepStmtUser.executeQuery();
+				if (resultSetUser.next()) {
+					initiatorName = resultSetUser.getString("firstName") + " "
+							+ resultSetUser.getString("lastName");
+					initiatorPhoto = resultSetUser.getString("photo");
 				}
-				userStmt.close();
+				resultSetUser.close();
+				prepStmtUser.close();
 
 				int selfIndex = 1;
 				if (initiatorId == userId && tableName.equals(userTable)) {
@@ -914,15 +824,18 @@ public class DBUtils {
 				int responderId = resultSet.getInt("responder_id");
 				tableName = resultSet.getString("responder_table");
 				userQuery = "SELECT `firstName`, `lastName`, `photo` FROM "
-						+ tableName + " WHERE `id`=" + responderId;
-				userStmt = connection.createStatement();
-				userResultSet = userStmt.executeQuery(userQuery);
-				if (userResultSet.next()) {
-					responderName = userResultSet.getString("firstName") + " "
-							+ userResultSet.getString("lastName");
-					responderPhoto = userResultSet.getString("photo");
+						+ tableName + " WHERE `id`=?";
+
+				prepStmtUser = connection.prepareStatement(userQuery);
+				prepStmtUser.setInt(1, responderId);
+				resultSetUser = prepStmtUser.executeQuery();
+				if (resultSetUser.next()) {
+					responderName = resultSetUser.getString("firstName") + " "
+							+ resultSetUser.getString("lastName");
+					responderPhoto = resultSetUser.getString("photo");
 				}
-				userStmt.close();
+				resultSetUser.close();
+				prepStmtUser.close();
 
 				message.put("with", selfIndex == 0 ? responderName
 						: initiatorName);
@@ -945,7 +858,8 @@ public class DBUtils {
 				messages.add(message);
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1075,12 +989,13 @@ public class DBUtils {
 	public static JSONObject getTeacher(DBConnection dbConnection, int teacherId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `firstName`, `lastName`,`title` FROM "
-				+ DBCredentials.TEACHER_TABLE + " WHERE `id`=" + teacherId;
+				+ DBCredentials.TEACHER_TABLE + " WHERE `id`=?";
 
 		JSONObject teacher = new JSONObject();
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, teacherId);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			if (resultSet.next()) {
 				teacher.put("firstname", resultSet.getString("firstName"));
@@ -1101,7 +1016,8 @@ public class DBUtils {
 				teacher.put("titles", teacherTitles);
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1140,11 +1056,12 @@ public class DBUtils {
 		JSONArray students = new JSONArray();
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `id` FROM " + DBCredentials.STUDENT_TABLE
-				+ " WHERE `group`=" + classId;
+				+ " WHERE `group`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, classId);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			while (resultSet.next()) {
 				JSONObject student = getInformation(dbConnection,
@@ -1153,7 +1070,8 @@ public class DBUtils {
 				students.add(student);
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1212,31 +1130,34 @@ public class DBUtils {
 			JSONObject messageContent) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `messages` FROM " + DBCredentials.MESSAGES_TABLE
-				+ " WHERE `id`=" + messageId;
+				+ " WHERE `id`=?";
 		String newMessages = "";
 		int result = 0;
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, messageId);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			if (resultSet.next()) {
 				JSONArray messages = JSONArray.fromObject(resultSet
-						.getString(1));
+						.getString("messages"));
 				messages.add(messageContent);
 				newMessages = messages.toString();
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 
 			query = "UPDATE " + DBCredentials.MESSAGES_TABLE
-					+ " SET `messages`='" + newMessages + "' WHERE `id`="
-					+ messageId;
+					+ " SET `messages`=? WHERE `id`=?";
 
-			statement = connection.createStatement();
-			result = statement.executeUpdate(query);
+			prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, newMessages);
+			prepStmt.setInt(2, messageId);
+			result = prepStmt.executeUpdate();
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1247,14 +1168,14 @@ public class DBUtils {
 			int userId) {
 		Connection connection = dbConnection.getConnection();
 		String coursesQuery = "SELECT `teacher_course_class_ids`, `teacher_course_ids` FROM "
-				+ DBCredentials.COURSES_LIST_TABLE
-				+ " WHERE `studentId`="
-				+ userId;
+				+ DBCredentials.COURSES_LIST_TABLE + " WHERE `studentId`=?";
 		JSONArray deadlines = new JSONArray();
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(coursesQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(coursesQuery);
+			prepStmt.setInt(1, userId);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			List<Integer> courseIds = new ArrayList<Integer>();
 			if (resultSet.next()) {
@@ -1290,7 +1211,8 @@ public class DBUtils {
 				}
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1303,17 +1225,21 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		String homeworkDeadlineQuery = "SELECT `name`, `deadline` FROM "
-				+ DBCredentials.HOMEWORK_TABLE + " WHERE `assoc_id`=" + assocId
-				+ " AND `assoc_table_id`=" + assocTableId;
+				+ DBCredentials.HOMEWORK_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
 		String simpleDeadlineQuery = "SELECT `date`, `name` FROM "
-				+ DBCredentials.DEADLINES_TABLE + " WHERE `assoc_id`="
-				+ assocId + " AND `assoc_table_id`=" + assocTableId;
+				+ DBCredentials.DEADLINES_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
 		String courseName = DBCommonOperations.getCourseInfo(courseId)
 				.getString("name");
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet resultSet = statement.executeQuery(homeworkDeadlineQuery);
+			PreparedStatement prepStmt = connection
+					.prepareStatement(homeworkDeadlineQuery);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+			ResultSet resultSet = prepStmt.executeQuery();
+
 			while (resultSet.next()) {
 				JSONObject deadline = new JSONObject();
 
@@ -1324,7 +1250,11 @@ public class DBUtils {
 				deadlines.add(deadline);
 			}
 
-			resultSet = statement.executeQuery(simpleDeadlineQuery);
+			prepStmt = connection.prepareStatement(simpleDeadlineQuery);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+			resultSet = prepStmt.executeQuery();
+
 			while (resultSet.next()) {
 				JSONObject deadline = new JSONObject();
 
@@ -1335,7 +1265,8 @@ public class DBUtils {
 				deadlines.add(deadline);
 			}
 
-			statement.close();
+			resultSet.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1363,33 +1294,45 @@ public class DBUtils {
 		int primaryKey = -1;
 		String query = "INSERT INTO "
 				+ DBCredentials.FORUM_SUMMARY_TABLE
-				+ " (`assoc_id`, `assoc_table_id`,`is_announcement`, `subject`, `initiator_id`, `initiator_table`, `total_posts`, `last_post_date`, `last_post_by_id`, `last_post_by_table`) VALUES ("
-				+ assocId + "," + assocTableId + "," + isAnnouncement + ",'"
-				+ subject + "'," + initiatorId + ",'" + initiatorTable + "',"
-				+ totalPosts + ",'" + lastPostDate + "'," + lastPostById + ",'"
-				+ lastPostByTable + "')";
+				+ " (`assoc_id`, `assoc_table_id`,`is_announcement`, `subject`, `initiator_id`, `initiator_table`, `total_posts`, `last_post_date`, `last_post_by_id`, `last_post_by_table`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 		try {
-			Statement statement = connection.createStatement();
-			int rows = statement.executeUpdate(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+			prepStmt.setInt(3, isAnnouncement);
+			prepStmt.setString(4, subject);
+			prepStmt.setInt(5, initiatorId);
+			prepStmt.setString(6, initiatorTable);
+			prepStmt.setInt(7, totalPosts);
+			prepStmt.setString(8, lastPostDate);
+			prepStmt.setInt(9, lastPostById);
+			prepStmt.setString(10, lastPostByTable);
+			int rows = prepStmt.executeUpdate();
 
 			if (rows == 1) {
 				// added row, so get the primary key
-				query = "SELECT `id` FROM " + DBCredentials.FORUM_SUMMARY_TABLE
-						+ " WHERE `assoc_id`=" + assocId
-						+ " AND `assoc_table_id`=" + assocTableId
-						+ " AND `is_announcement`=" + isAnnouncement
-						+ " AND `subject`='" + subject + "'"
-						+ " AND `last_post_date`='" + lastPostDate + "'"
-						+ " AND `initiator_id`=" + initiatorId
-						+ " AND `initiator_table`='" + initiatorTable + "'";
-				ResultSet result = statement.executeQuery(query);
+				query = "SELECT `id` FROM "
+						+ DBCredentials.FORUM_SUMMARY_TABLE
+						+ " WHERE `assoc_id`=? AND `assoc_table_id`=? AND `is_announcement`=? AND `subject`=? AND `last_post_date`=? AND `initiator_id`=? AND `initiator_table`=?";
+				prepStmt = connection.prepareStatement(query);
+				prepStmt.setInt(1, assocId);
+				prepStmt.setInt(2, assocTableId);
+				prepStmt.setInt(3, isAnnouncement);
+				prepStmt.setString(4, subject);
+				prepStmt.setString(5, lastPostDate);
+				prepStmt.setInt(6, initiatorId);
+				prepStmt.setString(7, initiatorTable);
+				ResultSet result = prepStmt.executeQuery(query);
+
 				if (result.next()) {
 					primaryKey = result.getInt("id");
 				}
+
+				result.close();
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1403,15 +1346,19 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 		String query = "INSERT INTO "
 				+ DBCredentials.FORUM_SUBJECT_TABLE
-				+ " (`subject_id`, `parent_post_id`, `sender_id`, `sender_table`, `date`, `content`) VALUES ("
-				+ forumTopicId + ",-1," + senderId + ",'" + senderTable + "','"
-				+ date + "','" + content + "')";
+				+ " (`subject_id`, `parent_post_id`, `sender_id`, `sender_table`, `date`, `content`) VALUES (?, -1, ?, ?, ?, ?)";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, forumTopicId);
+			prepStmt.setInt(2, senderId);
+			prepStmt.setString(3, senderTable);
+			prepStmt.setString(4, date);
+			prepStmt.setString(5, content);
 
-			statement.close();
+			rows = prepStmt.executeUpdate();
+
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1422,13 +1369,14 @@ public class DBUtils {
 			int forumTopicId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "DELETE FROM " + DBCredentials.FORUM_SUMMARY_TABLE
-				+ " WHERE `id`=" + forumTopicId;
+				+ " WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			statement.executeUpdate(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, forumTopicId);
+			prepStmt.executeUpdate();
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 	}
@@ -1440,31 +1388,41 @@ public class DBUtils {
 		int rows = 0;
 		String query = "INSERT INTO "
 				+ DBCredentials.FORUM_SUBJECT_TABLE
-				+ " (`subject_id`, `parent_post_id`, `sender_id`, `sender_table`, `date`, `content`) VALUES ("
-				+ subjectId + "," + parentPostId + "," + senderId + ",'"
-				+ senderTable + "','" + date + "','" + content + "')";
+				+ " (`subject_id`, `parent_post_id`, `sender_id`, `sender_table`, `date`, `content`) VALUES (?, ?, ?, ?, ?, ?)";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, subjectId);
+			prepStmt.setInt(2, parentPostId);
+			prepStmt.setInt(3, senderId);
+			prepStmt.setString(4, senderTable);
+			prepStmt.setString(5, date);
+			prepStmt.setString(6, content);
+			rows = prepStmt.executeUpdate();
 
 			if (rows == 1) {
 				// if added the entry, increase the total posts number
 				query = "SELECT `total_posts` FROM "
-						+ DBCredentials.FORUM_SUMMARY_TABLE + " WHERE `id`="
-						+ subjectId;
-				ResultSet result = statement.executeQuery(query);
+						+ DBCredentials.FORUM_SUMMARY_TABLE + " WHERE `id`=?";
+				prepStmt = connection.prepareStatement(query);
+				prepStmt.setInt(1, subjectId);
+				ResultSet result = prepStmt.executeQuery();
+
 				if (result.next()) {
 					int totalPosts = result.getInt("total_posts");
 
 					query = "UPDATE " + DBCredentials.FORUM_SUMMARY_TABLE
-							+ " SET `total_posts`=" + (++totalPosts)
-							+ " WHERE `id`=" + subjectId;
-					statement.executeUpdate(query);
+							+ " SET `total_posts`=? WHERE `id`=?";
+					prepStmt = connection.prepareStatement(query);
+					prepStmt.setInt(1, ++totalPosts);
+					prepStmt.setInt(2, subjectId);
+					prepStmt.executeUpdate(query);
 				}
+
+				result.close();
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1475,24 +1433,29 @@ public class DBUtils {
 			int firstId, String firstTable, int secondId, String secondTable) {
 		int pk = -1;
 		Connection connection = dbConnection.getConnection();
-		String query = "SELECT `id` FROM " + DBCredentials.MESSAGES_TABLE
-				+ " WHERE (`initiator_id`=" + firstId
-				+ " AND `initiator_table`='" + firstTable
-				+ "' AND `responder_id`=" + secondId
-				+ " AND `responder_table`='" + secondTable + "') OR "
-				+ "(`initiator_id`=" + secondId + " AND `initiator_table`='"
-				+ secondTable + "' AND `responder_id`=" + firstId
-				+ " AND `responder_table`='" + firstTable + "')";
+		String query = "SELECT `id` FROM "
+				+ DBCredentials.MESSAGES_TABLE
+				+ " WHERE (`initiator_id`=? AND `initiator_table`=? AND `responder_id`=? AND `responder_table`=?) OR "
+				+ "(`initiator_id`=? AND `initiator_table`=? AND `responder_id`=? AND `responder_table`=?)";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, firstId);
+			prepStmt.setString(2, firstTable);
+			prepStmt.setInt(3, secondId);
+			prepStmt.setString(4, secondTable);
+			prepStmt.setInt(5, secondId);
+			prepStmt.setString(6, secondTable);
+			prepStmt.setInt(7, firstId);
+			prepStmt.setString(8, firstTable);
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				pk = result.getInt("id");
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1506,18 +1469,25 @@ public class DBUtils {
 
 		int rows = 0;
 
-		String messages = "[{\"sender_index\":0, \"timestamp\":\"" + timestamp
-				+ "\", \"content\":\"" + content + "\"}]";
+		String messages = "[{\"sender_index\":0, \"timestamp\":\"?\", \"content\":\"?\"}]";
 		String query = "INSERT INTO "
 				+ DBCredentials.MESSAGES_TABLE
-				+ " (`initiator_id`, `initiator_table`, `responder_id`, `responder_table`, `messages`) VALUES ("
-				+ initiatorId + ",'" + initiatorTable + "'," + responderId
-				+ ",'" + responderTable + "','" + messages + "')";
+				+ " (`initiator_id`, `initiator_table`, `responder_id`, `responder_table`, `messages`) VALUES (?, ?, ?, ?, '"
+				+ messages + "')";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+
+			prepStmt.setInt(1, initiatorId);
+			prepStmt.setString(2, initiatorTable);
+			prepStmt.setInt(3, responderId);
+			prepStmt.setString(4, responderTable);
+			prepStmt.setString(5, timestamp);
+			prepStmt.setString(6, content);
+
+			rows = prepStmt.executeUpdate();
+
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1529,18 +1499,21 @@ public class DBUtils {
 		int index = 0;
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `initiator_id`, `initiator_table` FROM "
-				+ DBCredentials.MESSAGES_TABLE + " WHERE `id`=" + messageId;
+				+ DBCredentials.MESSAGES_TABLE + " WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, messageId);
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				index = (result.getInt("initiator_id") == userId && result
-						.getString("initiator_table") == userTable) ? 0 : 1;
+						.getString("initiator_table").equals(userTable)) ? 0
+						: 1;
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1554,14 +1527,17 @@ public class DBUtils {
 		int rows = 0;
 		String query = "INSERT INTO "
 				+ DBCredentials.HOMEWORK_RESULTS_TABLE
-				+ " (`homework_id`, `student_id`, `uploaded`, `graded`, `archive`, `upload_time`) VALUES ("
-				+ homeworkId + "," + studentId + ",1,0,'" + archivePath + "','"
-				+ date + "')";
+				+ " (`homework_id`, `student_id`, `uploaded`, `graded`, `archive`, `upload_time`) VALUES (?, ? , 1, 0, ?, ?)";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, homeworkId);
+			prepStmt.setInt(2, studentId);
+			prepStmt.setString(3, archivePath);
+			prepStmt.setString(4, date);
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1574,18 +1550,21 @@ public class DBUtils {
 
 		int id = 0;
 		String query = "SELECT `id` FROM "
-				+ DBCredentials.FEEDBACK_REQUEST_TABLE + " WHERE `assoc_id`="
-				+ assocId + " AND `assoc_table_id`=" + assocTableId;
+				+ DBCredentials.FEEDBACK_REQUEST_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				id = result.getInt("id");
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1598,13 +1577,16 @@ public class DBUtils {
 
 		int rows = 0;
 		String query = "INSERT INTO " + DBCredentials.FEEDBACK_TABLE
-				+ " (`feedback_id`, `student_id`, `opinion`) VALUES ("
-				+ feedbackId + "," + studentId + ",'" + opinion + "')";
+				+ " (`feedback_id`, `student_id`, `opinion`) VALUES (?, ?, ?)";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, feedbackId);
+			prepStmt.setInt(2, studentId);
+			prepStmt.setString(3, opinion);
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1617,16 +1599,18 @@ public class DBUtils {
 
 		boolean given = false;
 		String query = "SELECT `id` FROM " + DBCredentials.FEEDBACK_TABLE
-				+ " WHERE `feedback_id`=" + feedbackId + " AND `student_id`="
-				+ studentId;
+				+ " WHERE `feedback_id`=? AND `student_id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, feedbackId);
+			prepStmt.setInt(2, studentId);
 
+			ResultSet result = prepStmt.executeQuery();
 			given = result.next();
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1639,10 +1623,9 @@ public class DBUtils {
 
 		String tccQuery = "SELECT `courseId`, `classId`, `semester` FROM "
 				+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-				+ " WHERE `teacherId`=" + teacherId;
+				+ " WHERE `teacherId`=?";
 		String tcQuery = "SELECT `courseId`, `semester` FROM "
-				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `teacherId`="
-				+ teacherId;
+				+ DBCredentials.TEACHER_COURSE_TABLE + " WHERE `teacherId`=?";
 
 		JSONArray semesterAssocs = new JSONArray();
 
@@ -1657,8 +1640,9 @@ public class DBUtils {
 		semesterAssocs.add(sem2);
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(tccQuery);
+			PreparedStatement statement = connection.prepareStatement(tccQuery);
+			statement.setInt(1, teacherId);
+			ResultSet result = statement.executeQuery();
 
 			// add all courses
 			while (result.next()) {
@@ -1712,7 +1696,9 @@ public class DBUtils {
 			}
 
 			// add all optionals
-			result = statement.executeQuery(tcQuery);
+			statement = connection.prepareStatement(tcQuery);
+			statement.setInt(1, teacherId);
+			result = statement.executeQuery();
 
 			while (result.next()) {
 				int courseId = result.getInt("courseId");
@@ -1762,6 +1748,7 @@ public class DBUtils {
 				}
 			}
 
+			result.close();
 			statement.close();
 		} catch (Exception e) {
 		}
@@ -1775,18 +1762,22 @@ public class DBUtils {
 
 		int id = -1;
 		String query = "SELECT `id` FROM "
-				+ DBCredentials.FEEDBACK_REQUEST_TABLE + " WHERE `assoc_id`="
-				+ assocId + " AND `assoc_table_id`=" + assocTableId;
+				+ DBCredentials.FEEDBACK_REQUEST_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				id = result.getInt("id");
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1799,13 +1790,16 @@ public class DBUtils {
 
 		int rows = 0;
 		String query = "UPDATE " + DBCredentials.FEEDBACK_REQUEST_TABLE
-				+ " SET `available`=" + available + ", `aspects`='" + aspects
-				+ "' WHERE `id`=" + feedbackId;
+				+ " SET `available`=?, `aspects`=? WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, available);
+			prepStmt.setString(2, aspects);
+			prepStmt.setInt(3, feedbackId);
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1819,14 +1813,17 @@ public class DBUtils {
 		int rows = 0;
 		String query = "INSERT INTO "
 				+ DBCredentials.FEEDBACK_REQUEST_TABLE
-				+ " (`assoc_id`, `assoc_table_id`, `available`, `aspects`) VALUES ("
-				+ assocId + "," + assocTableId + "," + available + ",'"
-				+ aspects + "')";
+				+ " (`assoc_id`, `assoc_table_id`, `available`, `aspects`) VALUES (?, ?, ?, ?)";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+			prepStmt.setInt(3, available);
+			prepStmt.setString(4, aspects);
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1841,27 +1838,38 @@ public class DBUtils {
 		int rows = 0, id = -1;
 		String query = "INSERT INTO "
 				+ DBCredentials.HOMEWORK_TABLE
-				+ " (`assoc_id`, `assoc_table_id`, `content`, `deadline`, `resources`, `maxGrade`) VALUES ("
-				+ assocId + "," + assocTableId + ",'" + name + "','" + content
-				+ "','" + deadline + "','" + resources + "'," + maxGrade + ")";
+				+ " (`assoc_id`, `assoc_table_id`, `name`, `content`, `deadline`, `resources`, `maxGrade`) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+			prepStmt.setString(3, name);
+			prepStmt.setString(4, content);
+			prepStmt.setString(5, deadline);
+			prepStmt.setString(6, resources);
+			prepStmt.setFloat(7, maxGrade);
+
+			rows = prepStmt.executeUpdate();
 
 			if (rows == 1) {
-				query = "SELECT `id` FROM " + DBCredentials.HOMEWORK_TABLE
-						+ " WHERE `assoc_id`=" + assocId
-						+ " AND `assoc_table_id`=" + assocTableId
-						+ " AND `name`='" + name + "' and `deadline`='"
-						+ deadline + "'";
-				ResultSet result = statement.executeQuery(query);
+				query = "SELECT `id` FROM "
+						+ DBCredentials.HOMEWORK_TABLE
+						+ " WHERE `assoc_id`=? AND `assoc_table_id`=? AND `name`=? AND `deadline`=?";
+				prepStmt = connection.prepareStatement(query);
+				prepStmt.setInt(1, assocId);
+				prepStmt.setInt(2, assocTableId);
+				prepStmt.setString(3, name);
+				prepStmt.setString(4, deadline);
+
+				ResultSet result = prepStmt.executeQuery(query);
 				if (result.next()) {
 					id = result.getInt("id");
 				}
+				result.close();
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1874,13 +1882,15 @@ public class DBUtils {
 
 		int rows = 0;
 		String resourcesQuery = "SELECT `resources` FROM "
-				+ DBCredentials.HOMEWORK_TABLE + " WHERE `id`=" + homeworkId;
+				+ DBCredentials.HOMEWORK_TABLE + " WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
+			PreparedStatement prepStmt = connection
+					.prepareStatement(resourcesQuery);
+			prepStmt.setInt(1, homeworkId);
 
 			// first get the resources and keep the links
-			ResultSet result = statement.executeQuery(resourcesQuery);
+			ResultSet result = prepStmt.executeQuery();
 			JSONArray links = new JSONArray();
 			JSONArray res = JSONArray.fromObject(resources);
 			if (result.next()) {
@@ -1893,10 +1903,14 @@ public class DBUtils {
 			}
 
 			String query = "UPDATE " + DBCredentials.HOMEWORK_TABLE
-					+ " SET `resources`='" + res.toString() + "' WHERE `id`="
-					+ homeworkId;
-			rows = statement.executeUpdate(query);
-			statement.close();
+					+ " SET `resources`=? WHERE `id`=?";
+
+			prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, res.toString());
+			prepStmt.setInt(2, homeworkId);
+
+			rows = prepStmt.executeUpdate(query);
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1907,13 +1921,17 @@ public class DBUtils {
 			DBConnection dbConnection, int assocId, int assocTableId) {
 		JSONArray homework = new JSONArray();
 		Connection connection = dbConnection.getConnection();
+
 		String query = "SELECT `id`, `name` FROM "
-				+ DBCredentials.HOMEWORK_TABLE + " WHERE `assoc_id`=" + assocId
-				+ " AND `assoc_table_id`=" + assocTableId;
+				+ DBCredentials.HOMEWORK_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+
+			ResultSet result = prepStmt.executeQuery();
 
 			while (result.next()) {
 				JSONObject homewrk = new JSONObject();
@@ -1924,7 +1942,8 @@ public class DBUtils {
 				homework.add(homewrk);
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1936,11 +1955,12 @@ public class DBUtils {
 		JSONObject homework = new JSONObject();
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `name`, `content`, `deadline`, `resources`, `maxGrade` FROM "
-				+ DBCredentials.HOMEWORK_TABLE + " WHERE `id`=" + homeworkId;
+				+ DBCredentials.HOMEWORK_TABLE + " WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, homeworkId);
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				homework.put("name", result.getString("name"));
@@ -1950,7 +1970,7 @@ public class DBUtils {
 				homework.put("maxGrade", result.getDouble("maxGrade"));
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1963,15 +1983,21 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0;
-		String query = "UPDATE " + DBCredentials.HOMEWORK_TABLE
-				+ " SET `name`='" + name + "', `content`='" + content
-				+ "', `deadline`='" + deadline + "', `resources`='" + resources
-				+ "', `maxGrade`=" + maxGrade + " WHERE `id`=" + homeworkId;
+		String query = "UPDATE "
+				+ DBCredentials.HOMEWORK_TABLE
+				+ " SET `name`=?, `content`=?, `deadline`=?, `resources`=?, `maxGrade`=? WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, name);
+			prepStmt.setString(2, content);
+			prepStmt.setString(3, deadline);
+			prepStmt.setString(4, resources);
+			prepStmt.setFloat(5, maxGrade);
+			prepStmt.setInt(6, homeworkId);
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -1984,11 +2010,12 @@ public class DBUtils {
 
 		JSONObject json = new JSONObject();
 		String query = "SELECT `name`, `maxGrade`, `deadline` FROM "
-				+ DBCredentials.HOMEWORK_TABLE + " WHERE `id`=" + homeworkId;
+				+ DBCredentials.HOMEWORK_TABLE + " WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, homeworkId);
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				json.put("title", result.getString("name"));
@@ -1996,7 +2023,7 @@ public class DBUtils {
 				json.put("deadline", result.getString("deadline"));
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2010,11 +2037,12 @@ public class DBUtils {
 		JSONArray json = new JSONArray();
 		String query = "SELECT `id`, `student_id`, `uploaded`, `graded`, `grade`, `feedback`, `archive`, `upload_time` FROM "
 				+ DBCredentials.HOMEWORK_RESULTS_TABLE
-				+ " WHERE `homework_id`=" + homeworkId;
+				+ " WHERE `homework_id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, homeworkId);
+			ResultSet result = prepStmt.executeQuery();
 
 			while (result.next()) {
 				JSONObject obj = new JSONObject();
@@ -2040,10 +2068,11 @@ public class DBUtils {
 				obj.put("feedback", feedback != null ? feedback : "");
 
 				query = "SELECT `firstName`, `lastName` FROM "
-						+ DBCredentials.STUDENT_TABLE + " WHERE `id`="
-						+ result.getInt("student_id");
-				Statement stmt = connection.createStatement();
-				ResultSet res = stmt.executeQuery(query);
+						+ DBCredentials.STUDENT_TABLE + " WHERE `id`=?";
+				PreparedStatement prepStmt2 = connection
+						.prepareStatement(query);
+				prepStmt2.setInt(1, result.getInt("student_id"));
+				ResultSet res = prepStmt2.executeQuery();
 
 				if (res.next()) {
 					obj.put("student",
@@ -2052,10 +2081,12 @@ public class DBUtils {
 				}
 
 				json.add(obj);
-				stmt.close();
+				res.close();
+				prepStmt2.close();
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2063,19 +2094,23 @@ public class DBUtils {
 	}
 
 	public static int rateHomework(DBConnection dbConnection, int homeworkId,
-			int graded, int grade, String feedback) {
+			int graded, float grade, String feedback) {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0;
-		String query = "UPDATE " + DBCredentials.HOMEWORK_RESULTS_TABLE
-				+ " SET `graded`=" + graded + ", `grade`=" + grade
-				+ ", `feedback`='" + feedback + "' WHERE `homework_id`="
-				+ homeworkId;
+		String query = "UPDATE "
+				+ DBCredentials.HOMEWORK_RESULTS_TABLE
+				+ " SET `graded`=?, `grade`=?, `feedback`=? WHERE `homework_id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, graded);
+			prepStmt.setFloat(2, grade);
+			prepStmt.setString(3, feedback);
+			prepStmt.setInt(4, homeworkId);
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2088,12 +2123,15 @@ public class DBUtils {
 
 		JSONObject resource = new JSONObject();
 		String query = "SELECT `content` FROM "
-				+ DBCredentials.COURSE_RESOURCES_TABLE + " WHERE `assoc_id`="
-				+ assocId + " AND `assoc_table_id`=" + assocTableId;
+				+ DBCredentials.COURSE_RESOURCES_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				JSONArray array = JSONArray.fromObject(result
@@ -2107,7 +2145,7 @@ public class DBUtils {
 				}
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2120,14 +2158,17 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0, id = 0;
-		String query = "SELECT `id`, `content` FROM "
-				+ DBCredentials.COURSE_RESOURCES_TABLE + " WHERE `assoc_id`="
-				+ assocId + " AND `assoc_table_id`=" + assocTableId;
 		JSONArray allResources = new JSONArray();
+		String query = "SELECT `id`, `content` FROM "
+				+ DBCredentials.COURSE_RESOURCES_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				id = result.getInt("id");
@@ -2143,12 +2184,16 @@ public class DBUtils {
 				}
 			}
 
+			result.close();
 			query = "UPDATE " + DBCredentials.COURSE_RESOURCES_TABLE
-					+ " SET `content`='" + allResources.toString()
-					+ "' WHERE `id`=" + id;
-			rows = statement.executeUpdate(query);
+					+ " SET `content`=? WHERE `id`=?";
+			prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, allResources.toString());
+			prepStmt.setInt(2, id);
 
-			statement.close();
+			rows = prepStmt.executeUpdate(query);
+
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2161,13 +2206,16 @@ public class DBUtils {
 
 		int rows = 0, id = 0;
 		String query = "SELECT `id`, `content` FROM "
-				+ DBCredentials.COURSE_RESOURCES_TABLE + " WHERE `assoc_id`="
-				+ assocId + " AND `assoc_table_id`=" + assocTableId;
+				+ DBCredentials.COURSE_RESOURCES_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
 		JSONArray allResources = new JSONArray();
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, assocId);
+			prepStmt.setInt(2, assocTableId);
+
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				id = result.getInt("id");
@@ -2190,13 +2238,16 @@ public class DBUtils {
 					}
 				}
 			}
-
+			result.close();
 			query = "UPDATE " + DBCredentials.COURSE_RESOURCES_TABLE
-					+ " SET `content`='" + allResources.toString()
-					+ "' WHERE `id`=" + id;
-			rows = statement.executeUpdate(query);
+					+ " SET `content`=? WHERE `id`=?";
+			prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, allResources.toString());
+			prepStmt.setInt(2, id);
 
-			statement.close();
+			rows = prepStmt.executeUpdate(query);
+
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2209,17 +2260,19 @@ public class DBUtils {
 
 		JSONArray timetable = new JSONArray();
 		String query = "SELECT `timetable` FROM "
-				+ DBCredentials.AUXILIARY_TABLE + " WHERE `id`=" + userId;
+				+ DBCredentials.AUXILIARY_TABLE + " WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, userId);
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				timetable = JSONArray.fromObject(result.getString("timetable"));
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2232,12 +2285,15 @@ public class DBUtils {
 
 		int rows = 0;
 		String query = "UPDATE " + DBCredentials.AUXILIARY_TABLE
-				+ " SET `timetable`='" + timetable + "' WHERE `id`=" + userId;
+				+ " SET `timetable`=? WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, timetable);
+			prepStmt.setInt(2, userId);
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2283,13 +2339,15 @@ public class DBUtils {
 
 		int rows = 0;
 		String query = "UPDATE " + DBCredentials.SCHOOL_TIMETABLE_TABLE
-				+ " SET `timetable`='" + timetable + "' WHERE `classId`="
-				+ classId;
+				+ " SET `timetable`=? WHERE `classId`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, timetable);
+			prepStmt.setInt(2, classId);
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2302,13 +2360,16 @@ public class DBUtils {
 
 		int rows = 0;
 		String query = "INSERT INTO " + DBCredentials.SCHOOL_NEWS_TABLE
-				+ " (`date`, `title`, `content`) VALUES ('" + date + "','"
-				+ title + "','" + content + "')";
+				+ " (`date`, `title`, `content`) VALUES (?, ?, ?)";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, date);
+			prepStmt.setString(2, title);
+			prepStmt.setString(3, content);
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2427,28 +2488,29 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int i = 0;
-		String queryPart = "INSERT INTO "
+		String query = "INSERT INTO "
 				+ DBCredentials.STUDENT_TABLE
-				+ " (`firstName`, `lastName`, `cnp`, `birthdate`, `photo`, `username`, `password`, `roles`, `group`) VALUES ";
+				+ " (`firstName`, `lastName`, `cnp`, `birthdate`, `photo`, `username`, `password`, `roles`, `group`) VALUES (?, ?, ?, ?, ?, ?, ?, 4, ?)";
 
 		try {
-			Statement statement = connection.createStatement();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
 
 			for (i = 0; i < students.size(); i++) {
 				JSONObject student = students.getJSONObject(i);
-				String query = queryPart + "('"
-						+ student.getString("firstname") + "','"
-						+ student.getString("lastname") + "','"
-						+ student.getString("cnp") + "','"
-						+ student.getString("birthdate") + "','"
-						+ student.getString("photo") + "','"
-						+ student.getString("username") + "','"
-						+ student.getString("password") + "',4," + groupId
-						+ ")";
-				statement.executeUpdate(query);
+
+				prepStmt.setString(1, student.getString("firstname"));
+				prepStmt.setString(2, student.getString("lastname"));
+				prepStmt.setString(3, student.getString("cnp"));
+				prepStmt.setString(4, student.getString("birthdate"));
+				prepStmt.setString(5, student.getString("photo"));
+				prepStmt.setString(6, student.getString("username"));
+				prepStmt.setString(7, student.getString("password"));
+				prepStmt.setInt(8, groupId);
+
+				prepStmt.executeUpdate();
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2460,29 +2522,30 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int i = 0;
-		String queryPart = "INSERT INTO "
+		String query = "INSERT INTO "
 				+ DBCredentials.TEACHER_TABLE
-				+ " (`firstName`, `lastName`, `cnp`, `birthdate`, `photo`, `username`, `password`, `roles`, `title`, `courses`) VALUES ";
+				+ " (`firstName`, `lastName`, `cnp`, `birthdate`, `photo`, `username`, `password`, `roles`, `title`, `courses`) VALUES (?, ?, ?, ?, ?, ?, ?, 2, ?, ?)";
 
 		try {
-			Statement statement = connection.createStatement();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
 
 			for (i = 0; i < teachers.size(); i++) {
 				JSONObject teacher = teachers.getJSONObject(i);
-				String query = queryPart + "('"
-						+ teacher.getString("firstname") + "','"
-						+ teacher.getString("lastname") + "','"
-						+ teacher.getString("cnp") + "','"
-						+ teacher.getString("birthdate") + "','"
-						+ teacher.getString("photo") + "','"
-						+ teacher.getString("username") + "','"
-						+ teacher.getString("password") + "',2,"
-						+ teacher.getInt("title") + ",'"
-						+ teacher.getString("courses") + "')";
-				statement.executeUpdate(query);
+
+				prepStmt.setString(1, teacher.getString("firstname"));
+				prepStmt.setString(2, teacher.getString("lastname"));
+				prepStmt.setString(3, teacher.getString("cnp"));
+				prepStmt.setString(4, teacher.getString("birthdate"));
+				prepStmt.setString(5, teacher.getString("photo"));
+				prepStmt.setString(6, teacher.getString("username"));
+				prepStmt.setString(7, teacher.getString("password"));
+				prepStmt.setInt(8, teacher.getInt("title"));
+				prepStmt.setString(9, teacher.getString("courses"));
+
+				prepStmt.executeUpdate();
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2498,27 +2561,29 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int i = 0;
-		String queryPart = "INSERT INTO "
+		String query = "INSERT INTO "
 				+ DBCredentials.AUXILIARY_TABLE
-				+ " (`firstName`, `lastName`, `cnp`, `birthdate`, `photo`, `username`, `password`, `function`) VALUES ";
+				+ " (`firstName`, `lastName`, `cnp`, `birthdate`, `photo`, `username`, `password`, `function`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
 		try {
-			Statement statement = connection.createStatement();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
 
 			for (i = 0; i < auxiliary.size(); i++) {
 				JSONObject aux = auxiliary.getJSONObject(i);
-				String query = queryPart + "('" + aux.getString("firstname")
-						+ "','" + aux.getString("lastname") + "','"
-						+ aux.getString("cnp") + "','"
-						+ aux.getString("birthdate") + "','"
-						+ aux.getString("photo") + "','"
-						+ aux.getString("username") + "','"
-						+ aux.getString("password") + "',"
-						+ aux.getInt("function") + ")";
-				statement.executeUpdate(query);
+
+				prepStmt.setString(1, aux.getString("firstname"));
+				prepStmt.setString(2, aux.getString("lastname"));
+				prepStmt.setString(3, aux.getString("cnp"));
+				prepStmt.setString(4, aux.getString("birthdate"));
+				prepStmt.setString(5, aux.getString("photo"));
+				prepStmt.setString(6, aux.getString("username"));
+				prepStmt.setString(7, aux.getString("password"));
+				prepStmt.setInt(8, aux.getInt("function"));
+
+				prepStmt.executeUpdate(query);
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2531,11 +2596,13 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		String query = "SELECT * FROM " + DBCredentials.TEACHER_TABLE
-				+ " WHERE `cnp`='" + cnp + "'";
+				+ " WHERE `cnp`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, cnp);
+
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				teacher.put("id", result.getInt("id"));
@@ -2548,7 +2615,8 @@ public class DBUtils {
 				teacher.put("courses", result.getString("courses"));
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2561,11 +2629,12 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		String query = "SELECT * FROM " + DBCredentials.AUXILIARY_TABLE
-				+ " WHERE `cnp`='" + cnp + "'";
+				+ " WHERE `cnp`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, cnp);
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				teacher.put("id", result.getInt("id"));
@@ -2577,7 +2646,8 @@ public class DBUtils {
 				teacher.put("function", result.getInt("function"));
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2590,11 +2660,12 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		String query = "SELECT * FROM " + DBCredentials.STUDENT_TABLE
-				+ " WHERE `cnp`='" + cnp + "'";
+				+ " WHERE `cnp`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			ResultSet result = statement.executeQuery(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, cnp);
+			ResultSet result = prepStmt.executeQuery();
 
 			if (result.next()) {
 				student.put("id", result.getInt("id"));
@@ -2606,7 +2677,8 @@ public class DBUtils {
 				student.put("group", result.getInt("group"));
 			}
 
-			statement.close();
+			result.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2618,20 +2690,23 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0;
-		String query = "UPDATE " + DBCredentials.TEACHER_TABLE
-				+ " SET `firstName`='" + teacher.getString("firstname")
-				+ "', `lastName`='" + teacher.getString("lastname")
-				+ "', `cnp`='" + teacher.getString("cnp") + "', `birthdate`='"
-				+ teacher.getString("birthdate") + "', `username`='"
-				+ teacher.getString("username") + "', `title`="
-				+ teacher.getInt("title") + ", `courses`='"
-				+ teacher.getString("courses") + "' WHERE `id`="
-				+ teacher.getInt("id");
+		String query = "UPDATE "
+				+ DBCredentials.TEACHER_TABLE
+				+ " SET `firstName`=?, `lastName`=?, `cnp`=?, `birthdate`=?, `username`=?, `title`=?, `courses`=? WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, teacher.getString("firstname"));
+			prepStmt.setString(2, teacher.getString("lastname"));
+			prepStmt.setString(3, teacher.getString("cnp"));
+			prepStmt.setString(4, teacher.getString("birthdate"));
+			prepStmt.setString(5, teacher.getString("username"));
+			prepStmt.setInt(6, teacher.getInt("title"));
+			prepStmt.setString(7, teacher.getString("courses"));
+			prepStmt.setInt(8, teacher.getInt("id"));
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2643,19 +2718,22 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0;
-		String query = "UPDATE " + DBCredentials.AUXILIARY_TABLE
-				+ " SET `firstName`='" + auxiliary.getString("firstname")
-				+ "', `lastName`='" + auxiliary.getString("lastname")
-				+ "', `cnp`='" + auxiliary.getString("cnp")
-				+ "', `birthdate`='" + auxiliary.getString("birthdate")
-				+ "', `username`='" + auxiliary.getString("username")
-				+ "', `function`=" + auxiliary.getInt("job") + " WHERE `id`="
-				+ auxiliary.getInt("id");
+		String query = "UPDATE "
+				+ DBCredentials.AUXILIARY_TABLE
+				+ " SET `firstName`=?, `lastName`=?, `cnp`=?, `birthdate`=?, `username`=?, `function`=? WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, auxiliary.getString("firstname"));
+			prepStmt.setString(2, auxiliary.getString("lastname"));
+			prepStmt.setString(3, auxiliary.getString("cnp"));
+			prepStmt.setString(4, auxiliary.getString("birthdate"));
+			prepStmt.setString(5, auxiliary.getString("username"));
+			prepStmt.setInt(6, auxiliary.getInt("job"));
+			prepStmt.setInt(7, auxiliary.getInt("id"));
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2667,44 +2745,90 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0;
-		String query = "DELETE FROM " + table + " WHERE `id`=" + userId;
+		String query = "DELETE FROM " + table + " WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, userId);
+
+			rows = prepStmt.executeUpdate();
 
 			if (rows == 1) {
 				// successful delete
 
-				if (table.equals("teacher")) {
-					// get all tccIds for this teacher
+				if (table.equals(DBCredentials.TEACHER_TABLE)) {
+					// GET ALL TCC_IDS FOR THIS TEACHER
 					query = "SELECT `id` FROM "
 							+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-							+ " WHERE `teacherId`=" + userId;
+							+ " WHERE `teacherId`=?";
+					prepStmt = connection.prepareStatement(query);
+					prepStmt.setInt(1, userId);
+					ResultSet result = prepStmt.executeQuery();
+
 					List<Integer> tccIds = new ArrayList<Integer>();
-					ResultSet result = statement.executeQuery(query);
+
 					while (result.next()) {
 						tccIds.add(result.getInt("id"));
 					}
+
 					// remove all tccIds for a teacher removal
 					query = "DELETE FROM "
 							+ DBCredentials.TEACHER_COURSE_CLASS_TABLE
-							+ " WHERE `teacherId`=" + userId;
-					statement.executeUpdate(query);
+							+ " WHERE `teacherId`=?";
+					prepStmt = connection.prepareStatement(query);
+					prepStmt.setInt(1, userId);
+
+					prepStmt.executeUpdate();
 					// also remove any feedback request
 					for (int tccId : tccIds) {
 						query = "DELETE FROM "
 								+ DBCredentials.FEEDBACK_REQUEST_TABLE
-								+ " WHERE `teacher_course_id`=" + tccId;
-						statement.executeUpdate(query);
+								+ " WHERE `assoc_id`=? AND `assoc_table_id`=1";
+						prepStmt = connection.prepareStatement(query);
+						prepStmt.setInt(1, tccId);
+						prepStmt.executeUpdate();
 					}
 					// free to add other deletions, based on tccIds list
+
+					// GET ALL TC_IDS FOR THIS TEACHER
+					query = "SELECT `id` FROM "
+							+ DBCredentials.TEACHER_COURSE_TABLE
+							+ " WHERE `teacherId`=?";
+					prepStmt = connection.prepareStatement(query);
+					prepStmt.setInt(1, userId);
+					result = prepStmt.executeQuery();
+
+					List<Integer> tcIds = new ArrayList<Integer>();
+
+					while (result.next()) {
+						tcIds.add(result.getInt("id"));
+					}
+
+					// remove all tccIds for a teacher removal
+					query = "DELETE FROM " + DBCredentials.TEACHER_COURSE_TABLE
+							+ " WHERE `teacherId`=?";
+					prepStmt = connection.prepareStatement(query);
+					prepStmt.setInt(1, userId);
+
+					prepStmt.executeUpdate();
+					// also remove any feedback request
+					for (int tcId : tcIds) {
+						query = "DELETE FROM "
+								+ DBCredentials.FEEDBACK_REQUEST_TABLE
+								+ " WHERE `assoc_id`=? AND `assoc_table_id`=2";
+						prepStmt = connection.prepareStatement(query);
+						prepStmt.setInt(1, tcId);
+						prepStmt.executeUpdate();
+					}
+					// free to add other deletions, based on tccIds list
+
+					result.close();
 				}
 
 				// nothing to do for an auxiliary person
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2716,19 +2840,22 @@ public class DBUtils {
 		Connection connection = dbConnection.getConnection();
 
 		int rows = 0;
-		String query = "UPDATE " + DBCredentials.STUDENT_TABLE
-				+ " SET `firstName`='" + student.getString("firstname")
-				+ "', `lastName`='" + student.getString("lastname")
-				+ "', `cnp`='" + student.getString("cnp") + "', `birthdate`='"
-				+ student.getString("birthdate") + "', `username`='"
-				+ student.getString("username") + "', `group`="
-				+ student.getInt("group") + " WHERE `id`="
-				+ student.getInt("id");
+		String query = "UPDATE "
+				+ DBCredentials.STUDENT_TABLE
+				+ " SET `firstName`=?, `lastName`=?, `cnp`=?, `birthdate`=?, `username`=?, `group`=? WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, student.getString("firstname"));
+			prepStmt.setString(2, student.getString("lastname"));
+			prepStmt.setString(3, student.getString("cnp"));
+			prepStmt.setString(4, student.getString("birthdate"));
+			prepStmt.setString(5, student.getString("username"));
+			prepStmt.setInt(6, student.getInt("group"));
+			prepStmt.setInt(7, student.getInt("id"));
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2781,15 +2908,17 @@ public class DBUtils {
 
 		int rows = 0;
 		String query = "UPDATE " + DBCredentials.SCHOOL_NEWS_TABLE
-				+ " SET `date`='" + date + "', `title`='"
-				+ news.getString("title") + "', `content`='"
-				+ news.getString("content") + "' WHERE `id`="
-				+ news.getInt("id");
+				+ " SET `date`=?, `title`=?, `content`=? WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, date);
+			prepStmt.setString(2, news.getString("title"));
+			prepStmt.setString(3, news.getString("content"));
+			prepStmt.setInt(4, news.getInt("id"));
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -2801,17 +2930,20 @@ public class DBUtils {
 
 		int rows = 0;
 		String query = "DELETE FROM " + DBCredentials.SCHOOL_NEWS_TABLE
-				+ " WHERE `id`=" + newsId;
+				+ " WHERE `id`=?";
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
-			statement.close();
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setInt(1, newsId);
+
+			rows = prepStmt.executeUpdate();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
 		return rows;
 	}
+	
 
 	public static List<Integer> getCourseIdsFromAssocIds(
 			DBConnection dbConnection, String ids, String table) {
@@ -4383,14 +4515,14 @@ public class DBUtils {
 				DBCredentials.TEACHER_TABLE, DBCredentials.AUXILIARY_TABLE };
 
 		try {
-			for(String table : tables) {
+			for (String table : tables) {
 				String query = queryPrefix + table + queryPostfix;
 				PreparedStatement prepStmt = connection.prepareStatement(query);
 				prepStmt.setString(1, email);
-				
+
 				ResultSet resultSet = prepStmt.executeQuery();
 				boolean found = false;
-				
+
 				if (resultSet.next()) {
 					found = true;
 					result.put("userTable", table);
@@ -4398,10 +4530,10 @@ public class DBUtils {
 					result.put("firstName", resultSet.getString("firstName"));
 					result.put("lastName", resultSet.getString("lastName"));
 				}
-				
+
 				resultSet.close();
-				
-				if(found) {
+
+				if (found) {
 					break;
 				}
 			}
@@ -4412,7 +4544,4 @@ public class DBUtils {
 		return result;
 	}
 
-	// public static void main(String[] args) {
-	// System.out.println(DBUtils.generateEntireDatabase("testDB"));
-	// }
 }
