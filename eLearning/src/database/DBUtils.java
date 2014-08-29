@@ -4533,6 +4533,7 @@ public class DBUtils {
 		return year;
 	}
 
+	
 	public static void removeTimetables(DBConnection dbConnection) {
 		String query = "UPDATE " + DBCredentials.SCHOOL_TIMETABLE_TABLE
 				+ " SET `timetable`=''";
@@ -4545,6 +4546,7 @@ public class DBUtils {
 		} catch (Exception e) {
 		}
 	}
+	
 
 	public static void removeAssociations(DBConnection dbConnection) {
 		String tccQuery = "TRUNCATE TABLE "
@@ -4561,6 +4563,7 @@ public class DBUtils {
 		}
 	}
 
+	
 	public static void removeCoursesList(DBConnection dbConnection) {
 		String query = "TRUNCATE TABLE " + DBCredentials.COURSES_LIST_TABLE;
 
@@ -4573,6 +4576,7 @@ public class DBUtils {
 		}
 	}
 
+	
 	public static void removeHomeworkTables(DBConnection dbConnection) {
 		String homeworkResultsQuery = "TRUNCATE TABLE "
 				+ DBCredentials.HOMEWORK_RESULTS_TABLE;
@@ -4588,6 +4592,7 @@ public class DBUtils {
 		}
 	}
 
+	
 	public static void removeResources(DBConnection dbConnection) {
 		String query = "TRUNCATE TABLE " + DBCredentials.COURSE_RESOURCES_TABLE;
 
@@ -4600,6 +4605,7 @@ public class DBUtils {
 		}
 	}
 
+	
 	public static void removeHolidays(DBConnection dbConnection) {
 		String query = "TRUNCATE TABLE " + DBCredentials.HOLIDAYS_TABLE;
 
