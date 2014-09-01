@@ -166,7 +166,7 @@ public class DBCommonOperations {
 				course.put("abbreviation", result.getString("abbreviation"));
 				course.put("photo", result.getString("photo"));
 				course.put("control", result.getInt("control"));
-				
+
 				sCourses.put(id, course);
 			}
 		} catch (Exception e) {
@@ -191,28 +191,33 @@ public class DBCommonOperations {
 
 	public static int addClass(String className) {
 		int id = -1;
+		String query = "INSERT INTO " + DBCredentials.CLASS_TABLE
+				+ " (`name`) VALUES (?)";
 
 		try {
 			Connection connection = sConnection.getConnection();
-			Statement statement = connection
-					.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
-							ResultSet.CONCUR_READ_ONLY);
-			String query = "INSERT INTO " + DBCredentials.CLASS_TABLE
-					+ " (`name`) VALUES ('" + className + "')";
-			int rows = statement.executeUpdate(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, className);
+			int rows = prepStmt.executeUpdate();
 
 			if (rows == 1) {
 				query = "SELECT `id` FROM " + DBCredentials.CLASS_TABLE
-						+ " WHERE `name`='" + className + "'";
-				ResultSet result = statement.executeQuery(query);
+						+ " WHERE `name`=?";
+
+				prepStmt = connection.prepareStatement(query);
+				prepStmt.setString(1, className);
+				ResultSet result = prepStmt.executeQuery(query);
+
 				if (result.next()) {
 					id = result.getInt("id");
 
 					sHighschoolGroups.put(id, className);
 				}
+
+				result.close();
 			}
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -221,47 +226,56 @@ public class DBCommonOperations {
 
 	public static int addCourses(JSONArray courses) {
 		int rows = 0;
+		String query1 = "INSERT INTO " + DBCredentials.COURSES_TABLE
+				+ " (`name`,`abbreviation`,`photo`) VALUES (?,?,?)";
+		String query2 = "INSERT INTO " + DBCredentials.COURSES_TABLE
+				+ " (`name`,`photo`) VALUES (?,?)";
 
 		try {
 			Connection connection = sConnection.getConnection();
-			Statement statement = connection
-					.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
-							ResultSet.CONCUR_READ_ONLY);
-			String query1 = "INSERT INTO " + DBCredentials.COURSES_TABLE
-					+ " (`name`,`abbreviation`,`photo`) VALUES (";
-			String query2 = "INSERT INTO " + DBCredentials.COURSES_TABLE
-					+ " (`name`,`photo`) VALUES (";
 
 			for (int i = 0; i < courses.size(); i++) {
 				JSONObject course = courses.getJSONObject(i);
-				
+
 				String courseName = course.getString("name");
 				String courseAbbreviation = course.getString("abbreviation");
+				String photo = course.getString("photo");
 				boolean hasAbbreviation = !courseAbbreviation.isEmpty();
-				
-				String sql = "'" + courseName + "',";
-				if(hasAbbreviation) {
-					sql += "'" + course.getString("abbreviation") + "',";
-				}
-				sql += "'" + course.getString("photo") + "')";
 
-				String q = (hasAbbreviation ? query1 : query2) + sql;
-				int added = statement.executeUpdate(q);
+				PreparedStatement prepStmt = null;
+				if (hasAbbreviation) {
+					prepStmt = connection.prepareStatement(query1);
+					prepStmt.setString(1, courseName);
+					prepStmt.setString(2, courseAbbreviation);
+					prepStmt.setString(3, photo);
+
+				} else {
+					prepStmt = connection.prepareStatement(query2);
+					prepStmt.setString(1, courseName);
+					prepStmt.setString(2, photo);
+				}
+				int added = prepStmt.executeUpdate();
 
 				if (added == 1) {
 					rows++;
-					q = "SELECT `id` FROM " + DBCredentials.COURSES_TABLE
-							+ " WHERE `name`='" + courseName + "'";
-					ResultSet result = statement.executeQuery(q);
+					String query = "SELECT `id` FROM "
+							+ DBCredentials.COURSES_TABLE + " WHERE `name`=?";
+					prepStmt = connection.prepareStatement(query);
+					prepStmt.setString(1, courseName);
+					ResultSet result = prepStmt.executeQuery();
+
 					if (result.next()) {
 						int id = result.getInt("id");
 
 						sCourses.put(id, course);
 					}
+
+					result.close();
 				} else
 					break;
+
+				prepStmt.close();
 			}
-			statement.close();
 		} catch (Exception e) {
 		}
 
@@ -392,7 +406,7 @@ public class DBCommonOperations {
 
 		return course;
 	}
-	
+
 	public static JSONArray getCoursesInfo(List<Integer> coursesIds) {
 		JSONArray courses = new JSONArray();
 
@@ -417,7 +431,7 @@ public class DBCommonOperations {
 
 		return courses;
 	}
-	
+
 	public static List<String> getRolesNames(String[] rolesIds) {
 		List<String> roles = new ArrayList<String>();
 
