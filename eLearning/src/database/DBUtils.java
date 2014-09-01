@@ -283,7 +283,7 @@ public class DBUtils {
 		try {
 			PreparedStatement prepStmt = connection.prepareStatement(query);
 			prepStmt.setInt(1, userId);
-			ResultSet resultSet = prepStmt.executeQuery(query);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			if (resultSet.next()) {
 				classId = resultSet.getInt("group");
@@ -498,7 +498,7 @@ public class DBUtils {
 		try {
 			PreparedStatement prepStmt = connection.prepareStatement(query);
 			prepStmt.setInt(1, assocTableId);
-			ResultSet resultSet = prepStmt.executeQuery(query);
+			ResultSet resultSet = prepStmt.executeQuery();
 
 			if (resultSet.next()) {
 				table = resultSet.getString("table");
@@ -696,9 +696,11 @@ public class DBUtils {
 				int userId = resultSet.getInt("initiator_id");
 				String tableName = resultSet.getString("initiator_table");
 				String userQuery = "SELECT `firstName`, `lastName` FROM "
-						+ tableName + " WHERE `id`=" + userId;
-				Statement userStmt = connection.createStatement();
-				ResultSet userResultSet = userStmt.executeQuery(userQuery);
+						+ tableName + " WHERE `id`=?";
+				PreparedStatement userStmt = connection
+						.prepareStatement(userQuery);
+				userStmt.setInt(1, userId);
+				ResultSet userResultSet = userStmt.executeQuery();
 				if (userResultSet.next()) {
 					subject.put("initiator",
 							userResultSet.getString("firstName") + " "
@@ -708,14 +710,17 @@ public class DBUtils {
 				userId = resultSet.getInt("last_post_by_id");
 				tableName = resultSet.getString("last_post_by_table");
 				userQuery = "SELECT `firstName`, `lastName` FROM " + tableName
-						+ " WHERE `id`=" + userId;
-				userResultSet = userStmt.executeQuery(userQuery);
+						+ " WHERE `id`=?";
+				userStmt = connection.prepareStatement(userQuery);
+				userStmt.setInt(1, userId);
+				userResultSet = userStmt.executeQuery();
 				if (userResultSet.next()) {
 					subject.put("lastPostBy",
 							userResultSet.getString("firstName") + " "
 									+ userResultSet.getString("lastName"));
 				}
 
+				userResultSet.close();
 				userStmt.close();
 
 				forum.add(subject);
@@ -752,9 +757,11 @@ public class DBUtils {
 				int userId = resultSet.getInt("sender_id");
 				String tableName = resultSet.getString("sender_table");
 				String userQuery = "SELECT `firstName`, `lastName`, `photo` FROM "
-						+ tableName + " WHERE `id`=" + userId;
-				Statement userStmt = connection.createStatement();
-				ResultSet userResultSet = userStmt.executeQuery(userQuery);
+						+ tableName + " WHERE `id`=?";
+				PreparedStatement userStmt = connection
+						.prepareStatement(userQuery);
+				userStmt.setInt(1, userId);
+				ResultSet userResultSet = userStmt.executeQuery();
 				if (userResultSet.next()) {
 					subject.put("sender", userResultSet.getString("firstName")
 							+ " " + userResultSet.getString("lastName"));
@@ -1323,7 +1330,7 @@ public class DBUtils {
 				prepStmt.setString(5, lastPostDate);
 				prepStmt.setInt(6, initiatorId);
 				prepStmt.setString(7, initiatorTable);
-				ResultSet result = prepStmt.executeQuery(query);
+				ResultSet result = prepStmt.executeQuery();
 
 				if (result.next()) {
 					primaryKey = result.getInt("id");
@@ -1416,7 +1423,7 @@ public class DBUtils {
 					prepStmt = connection.prepareStatement(query);
 					prepStmt.setInt(1, ++totalPosts);
 					prepStmt.setInt(2, subjectId);
-					prepStmt.executeUpdate(query);
+					prepStmt.executeUpdate();
 				}
 
 				result.close();
@@ -1862,7 +1869,7 @@ public class DBUtils {
 				prepStmt.setString(3, name);
 				prepStmt.setString(4, deadline);
 
-				ResultSet result = prepStmt.executeQuery(query);
+				ResultSet result = prepStmt.executeQuery();
 				if (result.next()) {
 					id = result.getInt("id");
 				}
@@ -1909,7 +1916,7 @@ public class DBUtils {
 			prepStmt.setString(1, res.toString());
 			prepStmt.setInt(2, homeworkId);
 
-			rows = prepStmt.executeUpdate(query);
+			rows = prepStmt.executeUpdate();
 			prepStmt.close();
 		} catch (Exception e) {
 		}
@@ -2191,7 +2198,7 @@ public class DBUtils {
 			prepStmt.setString(1, allResources.toString());
 			prepStmt.setInt(2, id);
 
-			rows = prepStmt.executeUpdate(query);
+			rows = prepStmt.executeUpdate();
 
 			prepStmt.close();
 		} catch (Exception e) {
@@ -2245,7 +2252,7 @@ public class DBUtils {
 			prepStmt.setString(1, allResources.toString());
 			prepStmt.setInt(2, id);
 
-			rows = prepStmt.executeUpdate(query);
+			rows = prepStmt.executeUpdate();
 
 			prepStmt.close();
 		} catch (Exception e) {
@@ -2580,7 +2587,7 @@ public class DBUtils {
 				prepStmt.setString(7, aux.getString("password"));
 				prepStmt.setInt(8, aux.getInt("function"));
 
-				prepStmt.executeUpdate(query);
+				prepStmt.executeUpdate();
 			}
 
 			prepStmt.close();
@@ -2969,16 +2976,17 @@ public class DBUtils {
 	}
 
 	public static int updateYear(DBConnection dbConnection, String year) {
-		String query = "UPDATE " + DBCredentials.YEAR_TABLE + " SET `year`='"
-				+ year + "' WHERE `id`=1";
+		String query = "UPDATE " + DBCredentials.YEAR_TABLE
+				+ " SET `year`=? WHERE `id`=1";
 		Connection connection = dbConnection.getConnection();
 		int rows = 0;
 
 		try {
-			Statement statement = connection.createStatement();
-			rows = statement.executeUpdate(query);
+			PreparedStatement prepStmt = connection.prepareStatement(query);
+			prepStmt.setString(1, year);
+			rows = prepStmt.executeUpdate();
 
-			statement.close();
+			prepStmt.close();
 		} catch (Exception e) {
 		}
 
@@ -3670,7 +3678,7 @@ public class DBUtils {
 					prepStmt.setInt(2, semester);
 					prepStmt.setInt(3, teacherId);
 
-					result = prepStmt.executeQuery(selectQuery);
+					result = prepStmt.executeQuery();
 					int tccId = -1;
 					if (result.next()) {
 						tccId = result.getInt("id");
