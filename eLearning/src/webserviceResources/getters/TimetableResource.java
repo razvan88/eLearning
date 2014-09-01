@@ -8,7 +8,7 @@ import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 
 import utils.ConfigurationSettings;
-
+import database.DBCommonOperations;
 import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
@@ -27,6 +27,9 @@ public class TimetableResource extends ServerResource {
 		DBConnection dbConnection = DBConnectionManager.getConnection(schoolId, database);
 		int classId = DBUtils.getClassIdForUser(dbConnection, userId);
 		
-		return DBUtils.getTimetable(dbConnection, classId);
+		JSONObject timetable = DBUtils.getTimetable(dbConnection, classId);
+		String className = DBCommonOperations.getClassName(classId);
+		timetable.put("class", className);
+		return timetable.toString();
 	}
 }

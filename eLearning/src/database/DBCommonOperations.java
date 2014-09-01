@@ -286,6 +286,14 @@ public class DBCommonOperations {
 		return sHighschoolGroups.containsKey(classId);
 	}
 
+	public static String getClassName(int classId) {
+		if(sHighschoolGroups.containsKey(classId)) {
+			return sHighschoolGroups.get(classId);
+		}
+		
+		return "";
+	}
+	
 	public static JSONArray getAllClasses() {
 		JSONArray classes = new JSONArray();
 

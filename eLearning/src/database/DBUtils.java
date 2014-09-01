@@ -250,11 +250,11 @@ public class DBUtils {
 		return article;
 	}
 
-	public static String getTimetable(DBConnection dbConnection, int classId) {
+	public static JSONObject getTimetable(DBConnection dbConnection, int classId) {
 		Connection connection = dbConnection.getConnection();
 		String query = "SELECT `timetable` FROM "
 				+ DBCredentials.SCHOOL_TIMETABLE_TABLE + " WHERE `classId`=?";
-		String timetable = "";
+		JSONObject timetable = new JSONObject();
 
 		try {
 			PreparedStatement prepStmt = connection.prepareStatement(query);
@@ -262,13 +262,13 @@ public class DBUtils {
 			ResultSet resultSet = prepStmt.executeQuery();
 
 			if (resultSet.next()) {
-				timetable = resultSet.getString(1);
+				timetable = JSONObject.fromObject(resultSet
+						.getString("timetable"));
 			}
 
 			resultSet.close();
 			prepStmt.close();
 		} catch (Exception e) {
-			timetable = "{}";
 		}
 
 		return timetable;
