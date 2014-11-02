@@ -18,6 +18,15 @@ public class WebserviceDispatcher extends Application {
 	
 	@Override
 	public synchronized Restlet createInboundRoot() {
+		Router router = getAttachetRouter();
+		
+		CORSFilter filter = new CORSFilter(getContext());
+		filter.setNext(router);
+		
+		return filter;
+	}
+
+	private Router getAttachetRouter() {
 		Router router = new Router(getContext());
 		
 		router.attach("/getSchoolsList", SchoolsListResource.class);
@@ -113,14 +122,7 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/removeActivity", RemoveActivityResource.class);
 		router.attach("/updateActivity", UpdateActivityResource.class);
 		router.attach("/finalizeSemester", FinalizeSemesterResource.class);
-
-		return router;
-	}
-
-	@Override
-	public synchronized Restlet createOutboundRoot() {
-		CORSFilter filter = new CORSFilter(getContext());
 		
-		return filter;
+		return router;
 	}
 }
