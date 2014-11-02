@@ -113,7 +113,14 @@ public class WebserviceDispatcher extends Application {
 		router.attach("/removeActivity", RemoveActivityResource.class);
 		router.attach("/updateActivity", UpdateActivityResource.class);
 		router.attach("/finalizeSemester", FinalizeSemesterResource.class);
-		
+
 		return router;
+	}
+
+	@Override
+	public synchronized Restlet createOutboundRoot() {
+		CORSFilter filter = new CORSFilter(getContext());
+		
+		return filter;
 	}
 }
