@@ -24,10 +24,6 @@ public class CORSFilter extends Filter {
 		    response.getAttributes().put(HEADERS, responseHeaders);
 		}
 	
-		responseHeaders.add("Access-Control-Allow-Origin", 
-				"*");
-		responseHeaders.add("Access-Control-Allow-Methods",
-				"GET, POST");
 		responseHeaders.add("Access-Control-Allow-Headers", 
 				"access-control-allow-origin, " +
 				"access-control-allow-credentials," +
@@ -37,8 +33,10 @@ public class CORSFilter extends Filter {
 				"accept, " +
 				"authorization, " +
 				"x-requested-with");
-		responseHeaders.add("Access-Control-Allow-Credentials", 
-				"true");
+		responseHeaders.add("Access-Control-Allow-Origin", 
+				"*");
+		responseHeaders.add("Access-Control-Allow-Methods",
+				"GET, POST");
 		responseHeaders.add("Access-Control-Max-Age", 
 				"1209600");
     }
