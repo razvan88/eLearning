@@ -1,14 +1,10 @@
 package webservice.application;
 
 
-import java.util.HashMap;
-
-import org.restlet.representation.Representation;
 import org.restlet.routing.Filter;
 import org.restlet.Context;
 import org.restlet.Request;
 import org.restlet.Response;
-import org.restlet.data.CacheDirective;
 import org.restlet.data.Form;
 
 
@@ -21,7 +17,7 @@ public class CORSFilter extends Filter {
     @Override
     protected void afterHandle(Request request, Response response) {
     	final String HEADERS = "org.restlet.http.headers";
-
+    	
         Form responseHeaders = (Form) response.getAttributes().get(HEADERS);
 		if (responseHeaders == null) {
 		    responseHeaders = new Form();
@@ -31,7 +27,7 @@ public class CORSFilter extends Filter {
 		responseHeaders.add("Access-Control-Allow-Origin", 
 				"*");
 		responseHeaders.add("Access-Control-Allow-Methods",
-				"GET, POST, PUT, DELETE, OPTIONS, HEAD");
+				"GET, POST");
 		responseHeaders.add("Access-Control-Allow-Headers", 
 				"access-control-allow-origin, " +
 				"access-control-allow-credentials," +

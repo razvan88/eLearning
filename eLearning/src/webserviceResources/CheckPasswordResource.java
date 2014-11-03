@@ -19,7 +19,6 @@ public class CheckPasswordResource extends ServerResource {
 	@Post
 	public String getInforamtion(Representation entity) throws IOException {
 		Form request = new Form(this.getRequestEntity());
-		
 		String pass = request.getValues("password");
 		
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));

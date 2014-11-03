@@ -12,8 +12,8 @@ import database.DBCommonOperations;
 
 public class TeacherTitlesResource extends ServerResource {
 
-	@SuppressWarnings("unused")
 	@Post
+	@SuppressWarnings("unused")
 	public String getTeacherTitles(Representation entity) {
 		Form request = new Form(this.getRequestEntity());
 		JSONObject info = JSONObject.fromObject(request.getValues("info"));

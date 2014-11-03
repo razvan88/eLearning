@@ -12,13 +12,12 @@ import org.restlet.resource.ServerResource;
 import database.DBConnection;
 import database.DBConnectionManager;
 import database.DBUtils;
-
 import utils.ConfigurationSettings;
 
 public class LoginCheckResource extends ServerResource {
 
 	@Post
-	public String getJsonContent(Representation entity) throws IOException {
+	public String checkInput(Representation entity) throws IOException {
 		String stringUserInput = new Form(this.getRequestEntity()).getValues("userData");
 		JSONObject jsonUserInput = JSONObject.fromObject(stringUserInput);
 		

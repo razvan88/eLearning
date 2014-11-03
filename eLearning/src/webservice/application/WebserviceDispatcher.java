@@ -18,11 +18,10 @@ public class WebserviceDispatcher extends Application {
 	
 	@Override
 	public synchronized Restlet createInboundRoot() {
+		CORSFilter filter = new CORSFilter(getContext());
 		Router router = getAttachetRouter();
 		
-		CORSFilter filter = new CORSFilter(getContext());
 		filter.setNext(router);
-		
 		return filter;
 	}
 
