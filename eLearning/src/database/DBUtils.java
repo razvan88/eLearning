@@ -4688,5 +4688,69 @@ public class DBUtils {
 
 		return result;
 	}
+	
+	public static JSONArray getSemestrialGradesForCourse(DBConnection dbConnection, int assocId, int assocTableId, int studentId) {
+		String query = "SELECT `grades` FROM " + DBCredentials.ACTIVITY_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=? AND `student_id`=?";
+		JSONArray grades = new JSONArray();
+		
+		Connection connection = dbConnection.getConnection();
+		try {
+			PreparedStatement statement = connection.prepareStatement(query);
+			statement.setInt(1, assocId);
+			statement.setInt(2, assocTableId);
+			statement.setInt(3, studentId);
+			
+			ResultSet result = statement.executeQuery();
+			
+			if(result.next()) {
+				String rawGrades = result.getString("grades");
+				if(rawGrades != null) {
+					grades = JSONArray.fromObject(rawGrades);
+				}
+			}
+			
+			result.close();
+			statement.close();
+		} catch (Exception e) {
+		}
+		
+		return grades;
+	}
+	
+	public static JSONArray getSemestrialGradesForCourseForGroup(DBConnection dbConnection, int assocId, int assocTableId) {
+		String query = "SELECT `student_id`, `grades` FROM " + DBCredentials.ACTIVITY_TABLE
+				+ " WHERE `assoc_id`=? AND `assoc_table_id`=?";
+		JSONArray grades = new JSONArray();
+		
+		Connection connection = dbConnection.getConnection();
+		try {
+			PreparedStatement statement = connection.prepareStatement(query);
+			statement.setInt(1, assocId);
+			statement.setInt(2, assocTableId);
+			
+			ResultSet result = statement.executeQuery();
+			
+			while(result.next()) {
+				String rawGrades = result.getString("grades");
+				int student_id = result.getInt("student_id");
+				
+				if(rawGrades != null) {
+					JSONArray auxGrades = JSONArray.fromObject(rawGrades);
+					JSONObject aux = new JSONObject();
+					aux.put("student", student_id);
+					aux.put("grades", auxGrades);
+					
+					grades.add(aux);
+				}
+			}
+			
+			result.close();
+			statement.close();
+		} catch (Exception e) {
+		}
+		
+		return grades;
+	}
 
 }
